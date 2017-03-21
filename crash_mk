@@ -1,0 +1,186 @@
+#!/bin/bash
+
+WDIR=${WDIR:-"$HOME/work"}
+rpmdir=$WDIR/releases
+debuginfo_dir=$WDIR/debuginfo
+vmcore=$1
+
+mkdir -p $rpmdir
+mkdir -p $debuginfo_dir
+
+[ -z "$APPD" ] && echo "APPD is empty" && exit 1
+[ -z "$vmcore" ] && exit 1
+
+download_kernel_debuginfo() {
+	local kernel_rpm=kernel-debuginfo-$kernel_str.rpm
+	local url="$APPD/$NEO_ver/job/$NEO_kernel/$kernel_build/artifact/RPMBUILD/$kernel_rpm"
+	echo $url
+	wget -nc $url -O $rpmdir/$kernel_rpm
+	[ $? -ge 2 ] && exit 4
+	rpm2cpio $rpmdir/$kernel_rpm | cpio -idmv ./usr/lib/debug/lib/modules/$kernel_str/vmlinux
+	mv ./usr/lib/debug/lib/modules/$kernel_str/vmlinux $debuginfo_dir/vmlinux-$kernel_str
+	rm -rf ./usr
+}
+
+get_lustre_ver_from_core() {
+	local addr
+	local v
+	local aa=$(echo "lsmod" | crash  -s ./vmlinux $vmcore | grep obdclass)
+	IFS=' ' read -a addr <<<"$aa"
+	echo "addr=$addr"
+	[ -z $addr ] && exit 2
+	aa=$(echo "module $addr" | crash  -s ./vmlinux $vmcore | grep module_core)
+	IFS=' ' read -a v <<<"$aa"
+	local m=${v[2]}
+	local module_core=${m:0:18}
+	echo "module_core=$module_core"
+	local b=$(echo "search -s $module_core  -c \"Build Version\"" | crash  -s ./vmlinux $vmcore | grep "Build")
+	IFS=' ' read -a v <<<"$b"
+	build_str=${v[3]}
+}
+
+download_lustre_1x() {
+	echo $build_str
+	IFS='-' read -a v <<<"$build_str"
+	githash=${v[2]}
+	build=${v[1]}
+	echo "githash: $githash appdev build: $build"
+	touch 2.1.0.x$X-"$build"_"$kernel_ver"_$githash
+
+	lustre_modules="lustre-modules-2.1.0.x$X-"$build"_"$kernel_ver"_$githash.x86_64.rpm"
+	url="$APPD/$NEO_ver/job/$lustre_ver/$build/artifact/rpmbuild/RPMS/$lustre_modules"
+	echo $url
+	wget -nc $url -O $rpmdir/$lustre_modules
+	[ $? -ge 2 ] && exit 3
+	rpm2cpio $rpmdir/$lustre_modules | cpio -idmv
+	rm -rf ./usr
+
+	echo "mod -S ./lib/modules/$kernel_str/updates/kernel/fs/lustre" > load_modules
+	echo "mod -S ./lib/modules/$kernel_str/updates/kernel/net/lustre" >> load_modules
+}
+
+download_lustre() {
+	IFS='-' read -a v <<<"$build_str"
+	githash=${v[4]}$extra_git
+	build=${v[3]}
+	echo "githash: $githash appdev build: $build"
+	build_id=$base_ver.x$X-"$build"_"$kernel_ver"_$githash
+	touch $build_id
+	lustre_modules="lustre-debuginfo-$build_id.x86_64.rpm"
+
+	url="$APPD/$NEO_ver/job/$lustre_ver/$build/artifact/rpmbuild/RPMS/$lustre_modules"
+	echo $url
+	wget -nc $url -O $rpmdir/$lustre_modules
+	[ $? -ge 2 ] && exit 3
+	rpm2cpio $rpmdir/$lustre_modules | cpio -idmv
+	mv ./usr/lib/debug/lib .
+	rm -rf ./usr
+
+	echo "mod -S ./lib/modules/$kernel_str/extra/kernel/fs/lustre" > load_modules
+	echo "mod -S ./lib/modules/$kernel_str/extra/kernel/net/lustre" >> load_modules
+}
+
+if [ -d ./lustre_kos ]; then
+	echo "mod -S ./lustre_kos" > load_modules
+	exit
+fi
+
+kernel_str=`crash --osrelease $1`
+IFS='.' read -a v <<<"$kernel_str"
+rm -f vmlinux
+ln -s $debuginfo_dir/vmlinux-$kernel_str ./vmlinux
+kernel_ver=${kernel_str/-/_}
+echo $kernel_ver
+
+kernel_build_full=${v[7]}
+echo "full:" $kernel_build_full
+echo ${v[5]}
+if [ ${v[5]} == "x3" ]; then
+	NEO_rel="NEO3.X"
+	NEO_ver="NEO3.X"
+	base_ver="2.7.14"
+	X="8"
+else
+case ${v[6]} in
+	"1")
+		NEO_rel="Aero"
+		NEO_ver="NEO_Aero"
+		base_ver="2.5.1"
+		X="7"
+		kernel_build=$kernel_build_full
+		;;
+	*)
+		kernel_build=${kernel_build_full:2:2}
+
+		case ${kernel_build_full:0:2} in
+			"40")
+				NEO_rel="NEO1.3"
+				NEO_ver="NEO1.3"
+				base_ver="2.1.0"
+				X="3"
+				;;
+			"41")
+				NEO_rel="Antares"
+				NEO_ver="NEO_Antares"
+				base_ver="2.1.0"
+				X="4"
+				;;
+			"42")
+				NEO_rel="Betazoid"
+				NEO_ver="NEO_Betazoid"
+				base_ver="2.1.0"
+				X="5"
+				;;
+			"43")
+				NEO_rel="Changeling"
+				NEO_ver="NEO_Changeling"
+				base_ver="2.1.0"
+				X="5"
+				kernel_build="43"
+				;;
+			"52")
+				NEO_rel="Changeling"
+				NEO_ver="NEO_Changeling"
+				base_ver="2.5.1"
+				X="5"
+				kernel_build="52"
+				;;
+			*)
+				NEO_rel="Changeling"
+				NEO_ver="NEO_Changeling"
+				base_ver="2.5.1"
+				X="6"
+				extra_git="f"
+				kernel_build=${kernel_build_full:0:2}
+				;;
+		esac
+	esac
+fi
+echo $NEO_rel
+
+dump_dmesg $vmcore &
+
+lustre_ver=$NEO_rel"_Lustre"
+NEO_kernel=$NEO_rel"_Kernel"
+
+[ -e vmlinux ] || download_kernel_debuginfo
+
+wait
+bb=`grep "Build Version" dmesg_$vmcore`
+echo $bb
+IFS=' ' read -a v <<<"$bb"
+build_str=${v[6]}
+echo "Build : $build_str"
+
+[ -z $build_str ] && get_lustre_ver_from_core
+
+echo $build_str
+echo "base_ver=$base_ver"
+
+if [ $base_ver = "2.1.0" ]; then
+	download_lustre_1x
+else
+	download_lustre
+fi
+
+parse_vmcore $vmcore

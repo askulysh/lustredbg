@@ -1,0 +1,14 @@
+#!/bin/sh
+
+crash=crash
+WDIR=${WDIR:-"$HOME/work"}
+
+if [ -f ./crash ]; then
+	crash=./crash
+else
+	if [ -d ./lustre_kos ]; then
+		crash=crash-7.0.1-29bit
+	fi
+fi
+
+CRASH_EXTENSIONS=$WDIR/crash_ext $crash -x -i ./load_modules ./vmlinux $1

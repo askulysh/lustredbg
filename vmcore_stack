@@ -1,0 +1,7 @@
+#!/bin/sh
+
+core=`basename $1`
+
+crash_cmd $1 "foreach bt > ./btall_$core"
+parse_btall.awk ./btall_$core > ./st_$core
+rm ./btall_$core

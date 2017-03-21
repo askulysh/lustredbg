@@ -1,0 +1,5 @@
+#!/bin/sh
+
+core=`basename $1`
+
+crash_cmd $1 "fp >> ./analysis_$core \n bt -FF >>./analysis_$core"

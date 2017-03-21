@@ -1,0 +1,7 @@
+#!/bin/sh
+
+core=`basename $1`
+
+crash_cmd $1 "lustre -l log.dl"
+lctl df log.dl > log.dk_$core
+rm log.dl

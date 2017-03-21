@@ -1,0 +1,8 @@
+#!/bin/sh
+
+core=`basename $1`
+
+rm -f dmesg_$core
+makedumpfile --dump-dmesg $1 dmesg_$core ||
+	([ -e vmlinux ] &&
+	 printf "dmesg > dmesg_$core \n q" | crash -s vmlinux $1)
