@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from pykdump.API import *
 from LinuxDump.Time import *
+import re
 
 __LDLM_flags_c = '''
 #define LDLM_FL_LOCK_CHANGED            0x0000000000000001
@@ -76,17 +77,76 @@ def print_ldlm_lock(ldlm_lock, prefix) :
     else :
         print("%s enqueued %us ago" % (prefix,
                 get_seconds() - ldlm_lock.l_last_activity))
-    print("%s %s" % (prefix, ldlm_lock.l_conn_export.exp_obd.obd_name))
+    print("%s %s %s" % (prefix, ldlm_lock.l_conn_export.exp_obd.obd_name,
+        ldlm_lock.l_resource.lr_name.name))
     if ldlm_lock.l_callback_timeout != 0 :
         print("will timeout in ", j_delay(ldlm_lock.l_callback_timeout))
+
+def hash_for_each(hs, func) :
+    buckets = hs.hs_buckets
+    bucket_num = 1 << (hs.hs_cur_bits - hs.hs_bkt_bits)
+    for ix in range(0, bucket_num) :
+        bd = buckets[ix]
+        if bd != 0 :
+            a = int(bd.hsb_head)
+            for offset in range(0, 1 << hs.hs_bkt_bits) :
+                hlist = readSU("struct hlist_head", a + 8*2*offset)
+                if hlist != 0 :
+                    func(hlist)
+
+def walk_res_hash2(hlist) :
+    head = hlist.first
+
+    while head != 0 :
+        a = int(head) - 8 # lr_hash
+        res = readSU("struct ldlm_resource", a)
+        print("res %x %s refc %d %d" % (res, res.lr_name.name,
+            res.lr_refcount.counter, res.lr_most_restr))
+        head = head.next
+
+def show_ns_locks(ns) :
+    print("ns %x %s total granted %d" % (ns, ns.ns_obd.obd_name,
+        ns.ns_pool.pl_granted.counter))
+    hs = ns.ns_rs_hash
+    hash_for_each(ns.ns_rs_hash, walk_res_hash2)
+
+def ns_list(l, regexp) :
+    scan=l.next
+    while scan != l :
+        a = int(scan) - 48 # ns_list_chain
+        ns = readSU("struct ldlm_namespace", a)
+        if re.match(regexp, ns.ns_obd.obd_name, re.I) :
+            show_ns_locks(ns)
+        scan = scan.next
+
+def show_namespaces(regexp) :
+    print("Looking for CLI active name spaces")
+    l = readSymbol("ldlm_cli_active_namespace_list")
+    ns_list(l, regexp)
+
+#    print("Looking for CLI inactive name spaces:")
+#    l = readSymbol("ldlm_cli_inactive_namespace_list")
+#    ns_list(l, regexp)
+
+#    printf "Looking for SRV name spaces:\n"
+#    srv_namespaces $arg0
 
 if ( __name__ == '__main__'):
     import argparse
 
     parser =  argparse.ArgumentParser()
     parser.add_argument("-l","--lock", dest="lock", default = 0)
+    parser.add_argument("-n","--ns", dest="ns", default = 0)
+    parser.add_argument("-g","--grep", dest="g", default = 0)
     args = parser.parse_args()
     if args.lock != 0 :
         l = readSU("struct ldlm_lock", int(args.lock, 0))
         print_ldlm_lock(l, "")
+    elif args.ns != 0 :
+        ns = readSU("struct ldlm_namespace", int(args.ns, 0))
+        show_ns_locks(ns)
+    elif args.g != 0 :
+        show_namespaces(args.g)
+    else :
+        show_namespaces(r'.*')
 
