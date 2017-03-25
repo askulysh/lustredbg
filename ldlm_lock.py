@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 from pykdump.API import *
-from LinuxDump.Time import *
+from ktime import *
 import re
 
 __LDLM_flags_c = '''
@@ -52,20 +52,6 @@ __LDLM_flags_c = '''
 '''
 
 LDLM_flags = CDefine(__LDLM_flags_c)
-
-if (symbol_exists("xtime")):
-    xtime = readSymbol("xtime")
-    def get_seconds():
-        return xtime.tv_sec
-else :
-    if (symbol_exists("wall_to_monotonic")):
-        tk = readSymbol()
-        def get_seconds():
-            return tk.xtime.tv_sec
-    else:
-        tk = readSymbol("timekeeper")
-        def get_seconds():
-            return tk.xtime_sec
 
 def print_ldlm_lock(ldlm_lock, prefix) :
     print("%s 0x%x/0x%x refc %u" % (prefix, ldlm_lock.l_handle.h_cookie,
