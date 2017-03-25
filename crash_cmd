@@ -2,7 +2,6 @@
 
 core=$1
 crash=crash
-WDIR=${WDIR:-"$HOME/work"}
 
 if [ -f ./crash ]; then
 	crash=./crash
@@ -20,4 +19,4 @@ else
 	done < "load_modules"
 fi
 
-printf "$mod_cmd $2 \n q" | CRASH_EXTENSIONS=$WDIR/crash_ext $crash -s -x ./vmlinux $core
+printf "$mod_cmd $2 \n q" | $crash -s ./vmlinux $core
