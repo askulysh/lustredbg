@@ -41,6 +41,13 @@ def phase2str(phase) :
         -339681785 : 'UNDEFINED',
     } [phase]
 
+def req_sent(req) :
+    if req.rq_sent != 0 :
+        return ("sent %4ds ago dl in %5ds" %
+            (get_seconds() - req.rq_sent, req.rq_deadline - get_seconds()))
+    else :
+        return "Waiting...                  "
+
 def show_ptlrpc_set(s) :
     print("set %x new %d remaining %d" % (s,
         s.set_new_count.counter, s.set_remaining.counter))
@@ -55,10 +62,9 @@ def show_ptlrpc_set(s) :
         head = head.next
         a = int(head) - 224 # rq_cli.cr_set_chain
         req = readSU("struct ptlrpc_request", a)
-        print("%x x%d %s sent %4ds ago deadline in %5ds %4d %s %s" %
+        print("%x x%d %s %s %4d %s %s" %
             (req, req.rq_xid,
-            req.rq_import.imp_obd.obd_name,get_seconds() - req.rq_sent,
-            req.rq_deadline - get_seconds(), req.rq_status,
+            req.rq_import.imp_obd.obd_name,req_sent(req), req.rq_status,
             phase2str(req.rq_phase), print_req_flags(req)))
         i = i + 1
         if i == max_req :
