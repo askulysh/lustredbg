@@ -3,6 +3,8 @@
 from __future__ import print_function
 
 from pykdump.API import *
+from LinuxDump.BTstack import *
+import fregsapi
 from ktime import *
 import re
 
@@ -63,10 +65,13 @@ def print_ldlm_lock(ldlm_lock, prefix) :
     else :
         print("%s enqueued %us ago" % (prefix,
                 get_seconds() - ldlm_lock.l_last_activity))
-    print("%s %s %s" % (prefix, ldlm_lock.l_conn_export.exp_obd.obd_name,
-        ldlm_lock.l_resource.lr_name.name))
-    if ldlm_lock.l_callback_timeout != 0 :
-        print("will timeout in ", j_delay(ldlm_lock.l_callback_timeout))
+    if ldlm_lock.l_flags & 0x0040000000000000 :
+        print("%s srv lock %s" % (prefix, ldlm_lock.l_resource.lr_name.name))
+    else :
+        print("%s %s %s" % (prefix, ldlm_lock.l_conn_export.exp_obd.obd_name,
+            ldlm_lock.l_resource.lr_name.name))
+        if ldlm_lock.l_callback_timeout != 0 :
+            print("will timeout in ", j_delay(ldlm_lock.l_callback_timeout))
 
 def hash_for_each(hs, func) :
     buckets = hs.hs_buckets
@@ -117,6 +122,31 @@ def show_namespaces(regexp) :
 #    printf "Looking for SRV name spaces:\n"
 #    srv_namespaces $arg0
 
+def search_for_reg(r, pid, func) :
+    #     with DisasmFlavor('att'):
+    try:
+        stacklist = exec_bt("bt %d" % pid, MEMOIZE=False)
+    except:
+        print("Unable to get stack trace")
+        return 0
+    for s in stacklist:
+        fregsapi.search_for_registers(s)
+        for f in s.frames:
+            if f.func == func :
+                return f.reg[r][0]
+    return 0
+
+def show_completition_waiting_locks() :
+    (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
+    waiting_pids = funcsMatch(funcpids, "ldlm_completion_ast")
+    for pid in waiting_pids :
+        print(pid)
+        addr = search_for_reg("RBX", pid, "schedule_timeout")
+        lock = readSU("struct ldlm_lock", addr)
+        print(lock)
+        print_ldlm_lock(lock, "")
+
+
 if ( __name__ == '__main__'):
     import argparse
 
@@ -124,6 +154,8 @@ if ( __name__ == '__main__'):
     parser.add_argument("-l","--lock", dest="lock", default = 0)
     parser.add_argument("-n","--ns", dest="ns", default = 0)
     parser.add_argument("-g","--grep", dest="g", default = 0)
+    parser.add_argument("-w","--compwait", dest="compl_waiting",
+                        action='store_true')
     args = parser.parse_args()
     if args.lock != 0 :
         l = readSU("struct ldlm_lock", int(args.lock, 0))
@@ -131,6 +163,8 @@ if ( __name__ == '__main__'):
     elif args.ns != 0 :
         ns = readSU("struct ldlm_namespace", int(args.ns, 0))
         show_ns_locks(ns)
+    elif args.compl_waiting != 0 :
+        show_completition_waiting_locks()
     elif args.g != 0 :
         show_namespaces(args.g)
     else :
