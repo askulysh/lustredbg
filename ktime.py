@@ -2,8 +2,6 @@
 
 from pykdump.API import *
 
-__all__ = ['get_seconds']
-
 if (symbol_exists("xtime")):
     xtime = readSymbol("xtime")
     def get_seconds():
@@ -20,4 +18,15 @@ else :
                 return tk.xtime_sec
             except KeyError:
                 return tk.xtime.tv_sec
+
+def j_delay(ts, jiffies,maxhours = 20):
+    v = (jiffies - ts) & INT_MASK
+    if (v > INT_MAX):
+        print(v)
+        v = "     n/a"
+    elif (v > HZ*3600*maxhours):
+        v = ">20hours"
+    else:
+        v = "%8.2f s" % (float(v)/HZ)
+    return v
 

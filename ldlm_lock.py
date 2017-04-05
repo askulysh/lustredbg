@@ -74,7 +74,9 @@ def print_ldlm_lock(ldlm_lock, prefix) :
         print("%s %s %s" % (prefix, export.exp_obd.obd_name,
             ldlm_lock.l_resource.lr_name.name))
         if ldlm_lock.l_callback_timeout != 0 :
-            print("will timeout in ", j_delay(ldlm_lock.l_callback_timeout))
+            jiffies = readSymbol("jiffies")
+            print("will timeout in ", j_delay(jiffies,
+                ldlm_lock.l_callback_timeout))
 
 def hash_for_each(hs, func) :
     buckets = hs.hs_buckets
