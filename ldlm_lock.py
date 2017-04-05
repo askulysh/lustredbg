@@ -65,10 +65,13 @@ def print_ldlm_lock(ldlm_lock, prefix) :
     else :
         print("%s enqueued %us ago" % (prefix,
                 get_seconds() - ldlm_lock.l_last_activity))
-    if ldlm_lock.l_flags & 0x0040000000000000 :
+    export =  ldlm_lock.l_export
+    if export == 0 :
+        export =  ldlm_lock.l_conn_export
+    if export == 0 :
         print("%s srv lock %s" % (prefix, ldlm_lock.l_resource.lr_name.name))
     else :
-        print("%s %s %s" % (prefix, ldlm_lock.l_conn_export.exp_obd.obd_name,
+        print("%s %s %s" % (prefix, export.exp_obd.obd_name,
             ldlm_lock.l_resource.lr_name.name))
         if ldlm_lock.l_callback_timeout != 0 :
             print("will timeout in ", j_delay(ldlm_lock.l_callback_timeout))
