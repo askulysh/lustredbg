@@ -1,0 +1,20 @@
+#!/bin/sh
+
+core=`basename $1`
+bt=btall_FF_$core
+
+crash=crash
+
+if [ -f ./crash ]; then
+	crash=./crash
+else
+	if [ -d ./lustre_kos ]; then
+		crash=crash-7.0.1-29bit
+	fi
+fi
+
+[[ -f $bt ]] || printf "foreach bt -FF > $bt \n q" | crash -s ./vmlinux $1
+cp load_modules ldlm_wait_cmd
+srv_waiting_locks.awk $bt >> ./ldlm_wait_cmd
+$crash -s -i ./ldlm_wait_cmd ./vmlinux $1 > waiting_locks
+rm ./ldlm_wait_cmd
