@@ -16,5 +16,8 @@ else :
     else:
         tk = readSymbol("timekeeper")
         def get_seconds():
-            return tk.xtime_sec
+            try:
+                return tk.xtime_sec
+            except KeyError:
+                return tk.xtime.tv_sec
 
