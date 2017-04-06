@@ -6,6 +6,7 @@ from pykdump.API import *
 from LinuxDump.BTstack import *
 import fregsapi
 from ktime import *
+from lnet import *
 import re
 
 __LDLM_flags_c = '''
@@ -55,28 +56,32 @@ __LDLM_flags_c = '''
 
 LDLM_flags = CDefine(__LDLM_flags_c)
 
+def print_connection(conn) :
+    print_nid(conn.c_peer.nid)
+
 def print_ldlm_lock(ldlm_lock, prefix) :
-    print("%s 0x%x/0x%x refc %u" % (prefix, ldlm_lock.l_handle.h_cookie,
+    if ldlm_lock.l_export != 0 :
+        conn = ldlm_lock.l_export.exp_imp_reverse.imp_connection
+        remote = ("%s@%s" % (conn.c_remote_uuid.uuid, nid2str(conn.c_peer.nid)))
+    elif ldlm_lock.l_conn_export != 0 :
+        remote = ldlm_lock.l_conn_export.exp_obd.obd_name
+    else :
+        remote = "local lock"
+
+    print("%s 0x%x/0x%x refc %u %s %s" % (prefix, ldlm_lock.l_handle.h_cookie,
                             ldlm_lock.l_remote_handle.cookie,
-                            ldlm_lock.l_refc.counter))
+                            ldlm_lock.l_refc.counter, remote,
+                            ldlm_lock.l_resource.lr_name.name))
     print(prefix, "flags:", dbits2str(ldlm_lock.l_flags, LDLM_flags))
     if ldlm_lock.l_req_mode == ldlm_lock.l_granted_mode :
-        print(prefix, "granted")
+        if ldlm_lock.l_callback_timeout != 0 :
+            jiffies = readSymbol("jiffies")
+            timeout = "will timeout in " + j_delay(jiffies,
+                ldlm_lock.l_callback_timeout)
+        print(prefix, "granted", timeout)
     else :
         print("%s enqueued %us ago" % (prefix,
                 get_seconds() - ldlm_lock.l_last_activity))
-    export =  ldlm_lock.l_export
-    if export == 0 :
-        export =  ldlm_lock.l_conn_export
-    if export == 0 :
-        print("%s srv lock %s" % (prefix, ldlm_lock.l_resource.lr_name.name))
-    else :
-        print("%s %s %s" % (prefix, export.exp_obd.obd_name,
-            ldlm_lock.l_resource.lr_name.name))
-        if ldlm_lock.l_callback_timeout != 0 :
-            jiffies = readSymbol("jiffies")
-            print("will timeout in ", j_delay(jiffies,
-                ldlm_lock.l_callback_timeout))
 
 def hash_for_each(hs, func) :
     buckets = hs.hs_buckets

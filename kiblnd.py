@@ -3,12 +3,10 @@
 from __future__ import print_function
 
 from pykdump.API import *
+from lnet import *
+
 
 max_req = 10
-
-def print_nid(nid) :
-    print("%d.%d.%d.%d" % ((nid >>24) & 0xff, (nid >> 16) & 0xff,
-                            (nid >> 8) & 0xff, nid & 0xff))
 
 def show_peers() :
     kiblnd_data = readSymbol("kiblnd_data")
