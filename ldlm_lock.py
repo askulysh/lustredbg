@@ -113,13 +113,11 @@ def show_ns_locks(ns) :
     hash_for_each(ns.ns_rs_hash, walk_res_hash2)
 
 def ns_list(l, regexp) :
-    scan=l.next
-    while scan != l :
-        a = int(scan) - 48 # ns_list_chain
-        ns = readSU("struct ldlm_namespace", a)
+    nss = readSUListFromHead(l, "ns_list_chain", "struct ldlm_namespace")
+    for ns in nss :
+        print(ns)
         if re.match(regexp, ns.ns_obd.obd_name, re.I) :
             show_ns_locks(ns)
-        scan = scan.next
 
 def show_namespaces(regexp) :
     print("Looking for CLI active name spaces")
