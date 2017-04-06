@@ -152,6 +152,12 @@ def find_conflicting_lock(lock) :
         return granted[0]
     else :
         print("TODO: granted > 1")
+        if lock.l_resource.lr_type == 13 :
+            bits = lock.l_policy_data.l_inodebits.bits
+            for gr in granted :
+                if bits & gr.l_policy_data.l_inodebits.bits != 0 :
+                   return gr
+
         return nil
 
 def show_completition_waiting_locks() :
