@@ -1,0 +1,4 @@
+#!/bin/sh
+
+tar zcf vmcoreinfo.tar.bz2 dmesg_* analysis_* st_* log.dk_*
+
