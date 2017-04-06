@@ -146,7 +146,17 @@ def search_for_reg(r, pid, func) :
                 return f.reg[r][0]
     return 0
 
+def find_conflicting_lock(lock) :
+    granted = readSUListFromHead(lock.l_resource.lr_granted,
+                "l_res_link", "struct ldlm_lock")
+    if len(granted) == 1 :
+        return granted[0]
+    else :
+        print("TODO: granted > 1")
+        return nil
+
 def show_completition_waiting_locks() :
+    res = dict()
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
     waiting_pids = funcsMatch(funcpids, "ldlm_completion_ast")
     for pid in waiting_pids :
@@ -157,7 +167,23 @@ def show_completition_waiting_locks() :
         lock = readSU("struct ldlm_lock", addr)
         print(lock)
         print_ldlm_lock(lock, "")
-
+        conflict = find_conflicting_lock(lock)
+        try :
+            count = res[conflict][0]
+            max_wait = res[conflict][1]
+        except :
+            count = 0
+            max_wait = 0
+        count = count + 1
+        cur_wait = get_seconds() - lock.l_last_activity
+        if max_wait < cur_wait :
+            max_wait = cur_wait
+        res[conflict] = [count, max_wait]
+    print("--------------")
+    for l in res :
+        print("%d threads are waiting (max %ss) for" % (res[l][0], res[l][1]))
+        print(l)
+        print_ldlm_lock(l, "")
 
 if ( __name__ == '__main__'):
     import argparse
