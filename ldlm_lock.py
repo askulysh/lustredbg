@@ -74,6 +74,7 @@ def print_ldlm_lock(ldlm_lock, prefix) :
                             ldlm_lock.l_resource.lr_name.name))
     print(prefix, "flags:", dbits2str(ldlm_lock.l_flags, LDLM_flags))
     if ldlm_lock.l_req_mode == ldlm_lock.l_granted_mode :
+        timeout = ""
         if ldlm_lock.l_callback_timeout != 0 :
             jiffies = readSymbol("jiffies")
             timeout = "will timeout in " + j_delay(jiffies,
