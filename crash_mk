@@ -100,6 +100,7 @@ if [ ${v[5]} == "x3" ]; then
 	NEO_ver="NEO3.X"
 	base_ver="2.7.14"
 	X="8"
+	kernel_build=$kernel_build_full
 else
 case ${v[6]} in
 	"1")
