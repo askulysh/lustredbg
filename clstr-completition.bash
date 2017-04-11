@@ -11,4 +11,17 @@ _clstr_screen() {
 	fi
 }
 
+_crash_start() {
+	COMPREPLY=()
+	if [[ ${COMP_CWORD} == 1 ]] ; then
+		cur="${COMP_WORDS[COMP_CWORD]}"
+		f=$(ls | grep -E "^c.+cdump$|^vmcore$")
+		[ -z "$f" ] &&
+			f=$(ls |grep -v -E "^st_|^log.dk_|^analysis_|^dmesg_")
+		COMPREPLY=($(compgen -W "$f" -- $cur))
+	fi
+
+}
+
 complete -F _clstr_screen clstr_screen
+complete -F _crash_start crash_start
