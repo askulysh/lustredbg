@@ -67,8 +67,6 @@ download_lustre() {
 	if [ $NEO_ver = "NEO3.X" ]; then
 		if [ $build -ge 238 ]; then
 			base_ver="2.7.19"
-		else
-			base_ver="2.7.14"
 		fi
 	fi
 
@@ -108,6 +106,7 @@ if [ ${v[5]} == "x3" ]; then
 	NEO_ver="NEO3.X"
 	X="8"
 	kernel_build=$kernel_build_full
+	base_ver="2.7.14"
 else
 case ${v[6]} in
 	"1")
