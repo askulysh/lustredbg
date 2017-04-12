@@ -66,7 +66,7 @@ download_lustre() {
 	echo "githash: $githash appdev build: $build"
 	if [ $NEO_ver = "NEO3.X" ]; then
 		if [ $build -ge 238 ]; then
-			base_ver="2.7.19"
+			base_ver="2.7.19.8"
 		fi
 	fi
 
