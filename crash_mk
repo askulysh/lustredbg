@@ -64,6 +64,14 @@ download_lustre() {
 	githash=${v[4]}$extra_git
 	build=${v[3]}
 	echo "githash: $githash appdev build: $build"
+	if [ $NEO_ver -eq "NEO3.X" ]; then
+		if [ $build -ge 238 ]; then
+			base_ver="2.7.19"
+		else
+			base_ver="2.7.14"
+		fi
+	fi
+
 	build_id=$base_ver.x$X-"$build"_"$kernel_ver"_$githash
 	touch $build_id
 	lustre_modules="lustre-debuginfo-$build_id.x86_64.rpm"
@@ -100,11 +108,6 @@ if [ ${v[5]} == "x3" ]; then
 	NEO_ver="NEO3.X"
 	X="8"
 	kernel_build=$kernel_build_full
-	if [ $kernel_build -ge 238 ]; then
-		base_ver="2.7.19"
-	else
-		base_ver="2.7.14"
-	fi
 else
 case ${v[6]} in
 	"1")
