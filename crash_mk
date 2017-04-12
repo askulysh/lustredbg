@@ -100,7 +100,7 @@ if [ ${v[5]} == "x3" ]; then
 	NEO_ver="NEO3.X"
 	X="8"
 	kernel_build=$kernel_build_full
-	if [ $base_ver -ge 238 ]; then
+	if [ $kernel_build -ge 238 ]; then
 		base_ver="2.7.19"
 	else
 		base_ver="2.7.14"
