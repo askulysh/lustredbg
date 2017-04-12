@@ -98,9 +98,13 @@ echo ${v[5]}
 if [ ${v[5]} == "x3" ]; then
 	NEO_rel="NEO3.X"
 	NEO_ver="NEO3.X"
-	base_ver="2.7.14"
 	X="8"
 	kernel_build=$kernel_build_full
+	if [ $base_ver -ge 238 ]; then
+		base_ver="2.7.19"
+	else
+		base_ver="2.7.14"
+	fi
 else
 case ${v[6]} in
 	"1")
