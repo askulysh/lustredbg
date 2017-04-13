@@ -11,7 +11,7 @@ _clstr_screen() {
 	fi
 }
 
-_crash_start() {
+_choose_vmcore() {
 	COMPREPLY=()
 	if [[ ${COMP_CWORD} == 1 ]] ; then
 		cur="${COMP_WORDS[COMP_CWORD]}"
@@ -24,4 +24,5 @@ _crash_start() {
 }
 
 complete -F _clstr_screen clstr_screen
-complete -F _crash_start crash_start
+complete -F _choose_vmcore crash_start
+complete -F _choose_vmcore crash_mk
