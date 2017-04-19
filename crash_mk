@@ -16,7 +16,7 @@ download_kernel_debuginfo() {
 	local url="$APPD/$NEO_ver/job/$NEO_kernel/$kernel_build/artifact/RPMBUILD/$kernel_rpm"
 	echo $url
 	wget -nc $url -O $rpmdir/$kernel_rpm
-	[ $? -ge 2 ] && exit 4
+	[ $? -ge 2 ] && rm -f $rpmdir/$kernel_rpm && exit 4
 	rpm2cpio $rpmdir/$kernel_rpm | cpio -idmv ./usr/lib/debug/lib/modules/$kernel_str/vmlinux
 	mv ./usr/lib/debug/lib/modules/$kernel_str/vmlinux $debuginfo_dir/vmlinux-$kernel_str
 	rm -rf ./usr
@@ -39,6 +39,16 @@ get_lustre_ver_from_core() {
 	build_str=${v[3]}
 }
 
+download_and_extract() {
+	wget -nc $1 -O $2
+	[ $? -ge 2 ] && rm -f $2 && exit 3
+	rpm2cpio $2 | cpio -idmv
+	rm -rf ./usr
+
+	echo "mod -S ./lib/modules/$kernel_str/updates/kernel/fs/lustre" > load_modules
+	echo "mod -S ./lib/modules/$kernel_str/updates/kernel/net/lustre" >> load_modules
+}
+
 download_lustre_1x() {
 	echo $build_str
 	IFS='-' read -a v <<<"$build_str"
@@ -50,13 +60,7 @@ download_lustre_1x() {
 	lustre_modules="lustre-modules-2.1.0.x$X-"$build"_"$kernel_ver"_$githash.x86_64.rpm"
 	url="$APPD/$NEO_ver/job/$lustre_ver/$build/artifact/rpmbuild/RPMS/$lustre_modules"
 	echo $url
-	wget -nc $url -O $rpmdir/$lustre_modules
-	[ $? -ge 2 ] && exit 3
-	rpm2cpio $rpmdir/$lustre_modules | cpio -idmv
-	rm -rf ./usr
-
-	echo "mod -S ./lib/modules/$kernel_str/updates/kernel/fs/lustre" > load_modules
-	echo "mod -S ./lib/modules/$kernel_str/updates/kernel/net/lustre" >> load_modules
+	download_and_extract $url $rpmdir/$lustre_modules
 }
 
 download_lustre() {
@@ -76,14 +80,7 @@ download_lustre() {
 
 	url="$APPD/$NEO_ver/job/$lustre_ver/$build/artifact/rpmbuild/RPMS/$lustre_modules"
 	echo $url
-	wget -nc $url -O $rpmdir/$lustre_modules
-	[ $? -ge 2 ] && exit 3
-	rpm2cpio $rpmdir/$lustre_modules | cpio -idmv
-	mv ./usr/lib/debug/lib .
-	rm -rf ./usr
-
-	echo "mod -S ./lib/modules/$kernel_str/extra/kernel/fs/lustre" > load_modules
-	echo "mod -S ./lib/modules/$kernel_str/extra/kernel/net/lustre" >> load_modules
+	download_and_extract $url $rpmdir/$lustre_modules
 }
 
 if [ -d ./lustre_kos ]; then
