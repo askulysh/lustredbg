@@ -65,7 +65,7 @@ download_lustre_1x() {
 
 download_lustre() {
 	IFS='-' read -a v <<<"$build_str"
-	githash=`expr match "$build_str" '.*-g\(.......\)-'`
+	githash=`expr match "$build_str" '.*-\(g.......\)-'`
 	[ -z $githash ] && githash=${v[4]}$extra_git
 	build=${v[3]}
 	echo "githash: $githash appdev build: $build"
