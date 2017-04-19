@@ -65,7 +65,8 @@ download_lustre_1x() {
 
 download_lustre() {
 	IFS='-' read -a v <<<"$build_str"
-	githash=${v[4]}$extra_git
+	githash=`expr match "$build_str" '.*-g\(.......\)-'`
+	[ -z $githash ] && githash=${v[4]}$extra_git
 	build=${v[3]}
 	echo "githash: $githash appdev build: $build"
 	if [ $NEO_ver = "NEO3.X" ]; then
@@ -172,9 +173,8 @@ NEO_kernel=$NEO_rel"_Kernel"
 wait
 bb=`grep "Build Version" dmesg_$vmcore`
 echo $bb
-IFS=' ' read -a v <<<"$bb"
-build_str=${v[6]}
-echo "Build : $build_str"
+build_str=${bb#*Version: }
+echo "Build from dmesg: $build_str"
 
 [ -z $build_str ] && get_lustre_ver_from_core
 
