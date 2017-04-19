@@ -2,13 +2,14 @@
 
 WDIR=${WDIR:-"$HOME/work"}
 
-clstr=$1
+CLSTR=$1
 
 mk_new() { 
-	mkdir -p $WDIR/clstr-$clstr
-	cd $WDIR/clstr-$clstr
-	screen -S clstr-$clstr
+	mkdir -p $WDIR/clstr-$CLSTR
+	cd $WDIR/clstr-$CLSTR
+	screen -S clstr-$CLSTR
 }
 
-screen -r clstr-$clstr || mk_new
+export CLSTR
+screen -r clstr-$CLSTR || mk_new
 
