@@ -43,10 +43,6 @@ download_and_extract() {
 	wget -nc $1 -O $2
 	[ $? -ge 2 ] && rm -f $2 && exit 3
 	rpm2cpio $2 | cpio -idmv
-	rm -rf ./usr
-
-	echo "mod -S ./lib/modules/$kernel_str/updates/kernel/fs/lustre" > load_modules
-	echo "mod -S ./lib/modules/$kernel_str/updates/kernel/net/lustre" >> load_modules
 }
 
 download_lustre_1x() {
@@ -61,6 +57,10 @@ download_lustre_1x() {
 	url="$APPD/$NEO_ver/job/$lustre_ver/$build/artifact/rpmbuild/RPMS/$lustre_modules"
 	echo $url
 	download_and_extract $url $rpmdir/$lustre_modules
+	rm -rf ./usr
+
+	echo "mod -S ./lib/modules/$kernel_str/updates/kernel/fs/lustre" > load_modules
+	echo "mod -S ./lib/modules/$kernel_str/updates/kernel/net/lustre" >> load_modules
 }
 
 download_lustre() {
@@ -82,6 +82,11 @@ download_lustre() {
 	url="$APPD/$NEO_ver/job/$lustre_ver/$build/artifact/rpmbuild/RPMS/$lustre_modules"
 	echo $url
 	download_and_extract $url $rpmdir/$lustre_modules
+	mv ./usr/lib/debug/lib .
+	rm -rf ./usr
+
+	echo "mod -S ./lib/modules/$kernel_str/extra/kernel/fs/lustre" > load_modules
+	echo "mod -S ./lib/modules/$kernel_str/extra/kernel/net/lustre" >> load_modules
 }
 
 if [ -d ./lustre_kos ]; then
