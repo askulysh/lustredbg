@@ -5,11 +5,21 @@ rpmdir=$WDIR/releases
 debuginfo_dir=$WDIR/debuginfo
 vmcore=$1
 
+die() {
+	if [[ -z $1 ]]; then
+		echo "crash_mk failed"
+	else
+		echo "$1"
+	fi
+	exit 1
+}
+
 mkdir -p $rpmdir
 mkdir -p $debuginfo_dir
 
-[ -z "$APPD" ] && echo "APPD is empty" && exit 1
-[ -z "$vmcore" ] && exit 1
+[ -z "$APPD" ] && die "APPD is empty"
+[ -z "$vmcore" ] && die "usage: crash_mk VMCORE"
+[ -r "$vmcore" ] || die "can't open file $vmcore"
 
 download_kernel_debuginfo() {
 	local kernel_rpm=kernel-debuginfo-$kernel_str.rpm
@@ -94,7 +104,7 @@ if [ -d ./lustre_kos ]; then
 	exit
 fi
 
-kernel_str=`crash --osrelease $1`
+kernel_str=$(crash --osrelease $vmcore)
 IFS='.' read -a v <<<"$kernel_str"
 rm -f vmlinux
 ln -s $debuginfo_dir/vmlinux-$kernel_str ./vmlinux
