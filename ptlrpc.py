@@ -48,24 +48,29 @@ def req_sent(req) :
     else :
         return "Waiting...                  "
 
+def show_ptlrpc_request(req) :
+    print("%x x%d %s %s %4d %s %s" %
+          (req, req.rq_xid,
+           req.rq_import.imp_obd.obd_name,req_sent(req), req.rq_status,
+           phase2str(req.rq_phase), print_req_flags(req)))
+
 def show_ptlrpc_set(s) :
     print("set %x new %d remaining %d" % (s,
         s.set_new_count.counter, s.set_remaining.counter))
-#    requests = readSUListFromHead(s.set_requests,
-#            "rq_cli.cr_set_chain", "struct ptlrpc_request")
-#    print(requests)
-
     i = 0
     head = s.set_requests
 
+    rq_info = getStructInfo('struct ptlrpc_request')
+    try:
+        offset = rq_info['rq_set_chain'].offset
+    except KeyError:
+        cli_rq_info = getStructInfo('struct ptlrpc_cli_req')
+        offset = rq_info['rq_cli'].offset + cli_rq_info['cr_set_chain'].offset
+
     while head.next != s.set_requests :
         head = head.next
-        a = int(head) - 224 # rq_cli.cr_set_chain
-        req = readSU("struct ptlrpc_request", a)
-        print("%x x%d %s %s %4d %s %s" %
-            (req, req.rq_xid,
-            req.rq_import.imp_obd.obd_name,req_sent(req), req.rq_status,
-            phase2str(req.rq_phase), print_req_flags(req)))
+        req = readSU("struct ptlrpc_request", int(head) - offset)
+        show_ptlrpc_request(req)
         i = i + 1
         if i == max_req :
             break
@@ -104,7 +109,8 @@ if ( __name__ == '__main__'):
     if args.n != 0 :
         max_req = n
     if args.req != 0 :
-        show_ptlrpc_request(args.req)
+        req = readSU("struct ptlrpc_request", int(args.req, 0))
+        show_ptlrpc_request(req)
     elif args.set != 0 :
         s = readSU("struct ptlrpc_request_set", int(args.set, 0))
         show_ptlrpc_set(s)
