@@ -56,8 +56,48 @@ __LDLM_flags_c = '''
 
 LDLM_flags = CDefine(__LDLM_flags_c)
 
+__MDS_INODELOCK_c = '''
+#define MDS_INODELOCK_LOOKUP 0x000001
+#define MDS_INODELOCK_UPDATE 0x000002
+#define MDS_INODELOCK_OPEN   0x000004
+#define MDS_INODELOCK_LAYOUT 0x000008
+#define MDS_INODELOCK_PERM   0x000010
+#define MDS_INODELOCK_XATTR  0x000020
+'''
+MDS_INODELOCK = CDefine(__MDS_INODELOCK_c)
+
+ldlm_type_c = '''
+enum ldlm_type {
+	LDLM_PLAIN	= 10,
+	LDLM_EXTENT	= 11,
+	LDLM_FLOCK	= 12,
+	LDLM_IBITS	= 13,
+	LDLM_MAX_TYPE
+};
+'''
+ldlm_types = CEnum(ldlm_type_c)
+
+ldlm_mode_c = '''
+enum ldlm_mode {
+	LCK_MINMODE	= 0,
+	LCK_EX		= 1,
+	LCK_PW		= 2,
+	LCK_PR		= 4,
+	LCK_CW		= 8,
+	LCK_CR		= 16,
+	LCK_NL		= 32,
+	LCK_GROUP	= 64,
+	LCK_COS		= 128,
+	LCK_MAXMODE
+};
+'''
+ldlm_modes = CEnum(ldlm_mode_c)
+
 def print_connection(conn) :
     print_nid(conn.c_peer.nid)
+
+def ldlm_mode2str(mode) :
+        return ldlm_modes.__getitem__(mode)
 
 def print_ldlm_lock(ldlm_lock, prefix) :
     if ldlm_lock.l_export != 0 :
@@ -81,8 +121,18 @@ def print_ldlm_lock(ldlm_lock, prefix) :
                 ldlm_lock.l_callback_timeout)
         print(prefix, "granted", timeout)
     else :
-        print("%s enqueued %us ago" % (prefix,
-                get_seconds() - ldlm_lock.l_last_activity))
+        print("%s req_mode: %s enqueued %us ago" % (prefix,
+              ldlm_mode2str(ldlm_lock.l_req_mode),
+              get_seconds() - ldlm_lock.l_last_activity))
+        if ldlm_lock.l_resource.lr_type == ldlm_types.LDLM_EXTENT :
+            print("%s [%d-%d]" % (prefix, ldlm_lock.l_req_extent.start,
+                ldlm_lock.l_req_extent.end))
+        elif ldlm_lock.l_resource.lr_type == ldlm_types.LDLM_IBITS :
+            print("%s %s" % (prefix,
+                dbits2str(ldlm_lock.l_policy_data.l_inodebits.bits,
+                          MDS_INODELOCK)))
+        else :
+            print("%s %s" % (prefix, ldlm_lock.l_policy_data))
 
 def hash_for_each(hs, func) :
     buckets = hs.hs_buckets
@@ -152,7 +202,7 @@ def find_conflicting_lock(lock) :
         return granted[0]
     else :
         print("TODO: granted > 1")
-        if lock.l_resource.lr_type == 13 :
+        if lock.l_resource.lr_type == ldlm_types.LDLM_IBITS :
             bits = lock.l_policy_data.l_inodebits.bits
             for gr in granted :
                 if bits & gr.l_policy_data.l_inodebits.bits != 0 :
