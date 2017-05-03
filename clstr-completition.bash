@@ -26,3 +26,5 @@ _choose_vmcore() {
 complete -F _clstr_screen clstr_screen
 complete -F _choose_vmcore crash_start
 complete -F _choose_vmcore crash_mk
+complete -F _choose_vmcore log_extr
+complete -F _choose_vmcore parse_vmcore
