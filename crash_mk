@@ -1,9 +1,11 @@
 #!/bin/bash
 
+DMESG_ONLY=${DMESG_ONLY:-0}
 WDIR=${WDIR:-"$HOME/work"}
 rpmdir=$WDIR/releases
 debuginfo_dir=$WDIR/debuginfo
 vmcore=$1
+client_build=0
 
 die() {
 	if [[ -z $1 ]]; then
@@ -19,7 +21,7 @@ mkdir -p $debuginfo_dir
 
 [ -z "$APPD" ] && die "APPD is empty"
 [ -z "$vmcore" ] && die "usage: crash_mk VMCORE"
-[ -r "$vmcore" ] || die "can't open file $vmcore"
+[ $DMESG_ONLY -eq 1 ] || [ -r "$vmcore" ] || die "can't open file $vmcore"
 
 download_kernel_debuginfo() {
 	local kernel_rpm=kernel-debuginfo-$kernel_str.rpm
@@ -47,6 +49,15 @@ get_lustre_ver_from_core() {
 	local b=$(echo "search -s $module_core  -c \"Build Version\"" | crash  -s ./vmlinux $vmcore | grep "Build")
 	IFS=' ' read -a v <<<"$b"
 	build_str=${v[3]}
+	echo "Build from vmcore: $build_str"
+}
+
+get_lustre_ver_from_dmesg() {
+	[ -f  dmesg_$vmcore ] || return
+	bb=$(grep -m 1 "Build Version" dmesg_$vmcore)
+	echo $bb
+	build_str=${bb#*Version: }
+	echo "Build from dmesg: $build_str"
 }
 
 download_and_extract() {
@@ -61,9 +72,10 @@ download_lustre_1x() {
 	githash=${v[2]}
 	build=${v[1]}
 	echo "githash: $githash appdev build: $build"
-	touch 2.1.0.x$X-"$build"_"$kernel_ver"_$githash
+	build_id=$base_ver.x$X-"$build"_"$kernel_ver"_$githash
+	touch $build_id
 
-	lustre_modules="lustre-modules-2.1.0.x$X-"$build"_"$kernel_ver"_$githash.x86_64.rpm"
+	lustre_modules=$lustre_mod_prefix-$build_id".x86_64.rpm"
 	url="$APPD/$NEO_ver/job/$lustre_ver/$build/artifact/rpmbuild/RPMS/$lustre_modules"
 	echo $url
 	download_and_extract $url $rpmdir/$lustre_modules
@@ -75,9 +87,8 @@ download_lustre_1x() {
 
 download_lustre() {
 	IFS='-' read -a v <<<"$build_str"
-	githash=`expr match "$build_str" '.*-\(g.......\)-'`
 	[ -z $githash ] && githash=${v[4]}$extra_git
-	build=${v[3]}
+	build=${v[2]}
 	echo "githash: $githash appdev build: $build"
 	if [ $NEO_ver = "NEO3.X" ]; then
 		if [ $build -ge 238 ]; then
@@ -85,9 +96,14 @@ download_lustre() {
 		fi
 	fi
 
-	build_id=$base_ver.x$X-"$build"_"$kernel_ver"_$githash
+	m=$(expr match "$build" '\(^[0-9]*$\)')
+	if [ -z $m ]; then
+		build_id=$base_ver-"$kernel_ver"_$githash
+	else
+		build_id=$base_ver.x$X-"$build"_"$kernel_ver"_$githash
+	fi
 	touch $build_id
-	lustre_modules="lustre-debuginfo-$build_id.x86_64.rpm"
+	lustre_modules=$lustre_mod_prefix-$build_id".x86_64.rpm"
 
 	url="$APPD/$NEO_ver/job/$lustre_ver/$build/artifact/rpmbuild/RPMS/$lustre_modules"
 	echo $url
@@ -95,105 +111,253 @@ download_lustre() {
 	mv ./usr/lib/debug/lib .
 	rm -rf ./usr
 
-	echo "mod -S ./lib/modules/$kernel_str/extra/kernel/fs/lustre" > load_modules
-	echo "mod -S ./lib/modules/$kernel_str/extra/kernel/net/lustre" >> load_modules
+	if [ $client_build -eq 1 ]; then
+		echo "mod -S ./lib/modules/$kernel_str/extra/lustre-client/fs" > load_modules
+		echo "mod -S ./lib/modules/$kernel_str/extra/lustre-client/net" >> load_modules
+	else
+		echo "mod -S ./lib/modules/$kernel_str/extra/kernel/fs/lustre" > load_modules
+		echo "mod -S ./lib/modules/$kernel_str/extra/kernel/net/lustre" >> load_modules
+	fi
+}
+
+set_release() {
+	echo $NEO_rel
+	kernel_ver=${kernel_str/-/_}
+	echo "kernel: $kernel_ver"
+
+	case $NEO_rel in
+		"NEO1.3")
+			NEO_ver="NEO1.3"
+			base_ver="2.1.0"
+			X="3"
+			lustre_mod_prefix="lustre-modules"
+			;;
+		"Antares")
+			NEO_ver="NEO_Antares"
+			base_ver="2.1.0"
+			X="4"
+			lustre_mod_prefix="lustre-modules"
+			;;
+		"Betazoid")
+			NEO_ver="NEO_Betazoid"
+			base_ver="2.1.0"
+			X="5"
+			lustre_mod_prefix="lustre-modules"
+			;;
+		"Changeling")
+			NEO_ver="NEO_Changeling"
+			;;
+		"Aero")
+			NEO_ver="NEO_Aero"
+			base_ver="2.5.1"
+			X="7"
+			kernel_build=$kernel_build_full
+			lustre_mod_prefix="lustre-debuginfo"
+			;;
+		"NEO3.X")
+			NEO_ver="NEO3.X"
+			X="8"
+			kernel_build=$kernel_build_full
+			base_ver="2.7.14"
+			lustre_mod_prefix="lustre-debuginfo"
+			;;
+		"CSL3.0")
+			NEO_ver="CSL3.0"
+			X="8"
+			kernel_build=$kernel_build_full
+			base_ver="2.7.19.8"
+			lustre_mod_prefix="lustre_ib-debuginfo"
+			;;
+	esac
+
+	lustre_ver=$NEO_rel"_Lustre"
+	NEO_kernel=$NEO_rel"_Kernel"
+}
+
+set_kernel() {
+	if [ -z $kernel_str ]; then
+		kernel_str=$1
+		set_release
+		IFS='.' read -a v <<< $kernel_str
+		case ${v[5]} in
+			"el6" | "el7")
+				echo "clent build"
+				lustre_mod_prefix="lustre-client-debuginfo"
+				client_build=1
+			;;
+		esac
+	elif [ $kernel_str != $1 ]; then
+		echo "new kernel differs !!! $kernel_str $1"
+	fi
+}
+
+parse() {
+	[ $DMESG_ONLY -eq 1 ] && exit
+
+	parse_vmcore $vmcore
+	exit
+}
+
+guess_release_from_kernel() {
+	IFS='.' read -a v <<<"$kernel_str"
+	kernel_build_full=${v[7]}
+	echo "full:" $kernel_build_full
+	echo ${v[5]}
+	if [ ${v[5]} == "x3" ]; then
+		NEO_rel="NEO3.X"
+	else
+		case ${v[6]} in
+			"1")
+				NEO_rel="Aero"
+				;;
+			*)
+				kernel_build=${kernel_build_full:2:2}
+
+				case ${kernel_build_full:0:2} in
+					"40")
+						NEO_rel="NEO1.3"
+						client_build=0
+						;;
+					"41")
+						NEO_rel="Antares"
+						client_build=0
+						;;
+					"42")
+						NEO_rel="Betazoid"
+						client_build=0
+						;;
+					"43")
+						NEO_rel="Changeling"
+						base_ver="2.1.0"
+						X="5"
+						kernel_build="43"
+						;;
+					"52")
+						NEO_rel="Changeling"
+						base_ver="2.5.1"
+						lustre_mod_prefix="lustre-debuginfo"
+						X="5"
+						kernel_build="52"
+						;;
+					*)
+						NEO_rel="Changeling"
+						base_ver="2.5.1"
+						X="6"
+						lustre_mod_prefix="lustre-debuginfo"
+						extra_git="f"
+						kernel_build=${kernel_build_full:0:2}
+						;;
+				esac
+		esac
+	fi
+
+	set_release
 }
 
 if [ -d ./lustre_kos ]; then
 	echo "mod -S ./lustre_kos" > load_modules
-	exit
+	parse
 fi
 
-kernel_str=$(crash --osrelease $vmcore)
-IFS='.' read -a v <<<"$kernel_str"
-rm -f vmlinux
-ln -s $debuginfo_dir/vmlinux-$kernel_str ./vmlinux
-kernel_ver=${kernel_str/-/_}
-echo $kernel_ver
+if [ $DMESG_ONLY -eq 0 ]; then
+	kernel_str=$(crash --osrelease $vmcore)
+	rm -f vmlinux
+	ln -s $debuginfo_dir/vmlinux-$kernel_str ./vmlinux
 
-kernel_build_full=${v[7]}
-echo "full:" $kernel_build_full
-echo ${v[5]}
-if [ ${v[5]} == "x3" ]; then
-	NEO_rel="NEO3.X"
-	NEO_ver="NEO3.X"
-	X="8"
-	kernel_build=$kernel_build_full
-	base_ver="2.7.14"
-else
-case ${v[6]} in
-	"1")
-		NEO_rel="Aero"
-		NEO_ver="NEO_Aero"
-		base_ver="2.5.1"
-		X="7"
-		kernel_build=$kernel_build_full
-		;;
-	*)
-		kernel_build=${kernel_build_full:2:2}
+	kernel_ver=${kernel_str/-/_}
+	echo $kernel_ver
 
-		case ${kernel_build_full:0:2} in
-			"40")
-				NEO_rel="NEO1.3"
-				NEO_ver="NEO1.3"
-				base_ver="2.1.0"
-				X="3"
-				;;
-			"41")
-				NEO_rel="Antares"
-				NEO_ver="NEO_Antares"
-				base_ver="2.1.0"
-				X="4"
-				;;
-			"42")
-				NEO_rel="Betazoid"
-				NEO_ver="NEO_Betazoid"
-				base_ver="2.1.0"
-				X="5"
-				;;
-			"43")
-				NEO_rel="Changeling"
-				NEO_ver="NEO_Changeling"
-				base_ver="2.1.0"
-				X="5"
-				kernel_build="43"
-				;;
-			"52")
-				NEO_rel="Changeling"
-				NEO_ver="NEO_Changeling"
-				base_ver="2.5.1"
-				X="5"
-				kernel_build="52"
-				;;
-			*)
-				NEO_rel="Changeling"
-				NEO_ver="NEO_Changeling"
-				base_ver="2.5.1"
-				X="6"
-				extra_git="f"
-				kernel_build=${kernel_build_full:0:2}
-				;;
-		esac
-	esac
+	guess_release_from_kernel
 fi
-echo $NEO_rel
 
-dump_dmesg $vmcore &
+[ -z $build_str ] && get_lustre_ver_from_dmesg
 
-lustre_ver=$NEO_rel"_Lustre"
-NEO_kernel=$NEO_rel"_Kernel"
+[ $DMESG_ONLY -eq 1 ] && [ -z $build_str ] &&
+	echo "Can't find lustre version from dmesg." && exit 0
 
-[ -e vmlinux ] || download_kernel_debuginfo
+[ $DMESG_ONLY -eq 1 ] || [ -e vmlinux ] || download_kernel_debuginfo
 
-wait
-bb=`grep "Build Version" dmesg_$vmcore`
-echo $bb
-build_str=${bb#*Version: }
-echo "Build from dmesg: $build_str"
-
+[ -z $build_str ] && dump_dmesg $vmcore
+[ -z $build_str ] && get_lustre_ver_from_dmesg
 [ -z $build_str ] && get_lustre_ver_from_core
 
 echo $build_str
+
+githash=`expr match "$build_str" '.*-\(g.......\)-'`
+IFS='-' read -a v <<<"$build_str"
+
+echo ${v[1]}
+case ${v[1]} in
+	[0-9][0-9][0-9])
+		set_kernel ${v[4]}-${v[5]}
+		if [ $DMESG_ONLY -eq 1 ]; then
+			guess_release_from_kernel
+		fi
+		;;
+	"Aero_Lustre")
+		NEO_rel="Aero"
+		base_ver="2.5.1"
+		X="7"
+		lustre_mod_prefix="lustre-debuginfo"
+		set_kernel ${v[6]}-${v[7]}
+		;;
+	"Changeling_Lustre")
+		NEO_rel="Changeling"
+		base_ver="2.5.1"
+		X="6"
+		lustre_mod_prefix="lustre-debuginfo"
+		set_kernel ${v[6]}-${v[7]}
+		;;
+	"CS_2.0")
+		NEO_rel="Changeling"
+		base_ver="2.5.1"
+		lustre_mod_prefix="lustre-debuginfo"
+		X="6"
+		if [ -z ${v[6]} ]; then
+			set_kernel ${v[4]}-${v[5]}
+		else
+			set_kernel ${v[5]}-${v[6]}
+		fi
+		;;
+	"CS_2.0.0")
+		NEO_rel="Changeling"
+		base_ver="2.5.1"
+		lustre_mod_prefix="lustre-debuginfo"
+		set_kernel ${v[5]}-${v[6]}
+		;;
+	"CS_2.1.0")
+		NEO_rel="Aero"
+		base_ver="2.5.1"
+		lustre_mod_prefix="lustre-debuginfo"
+		set_kernel ${v[5]}-${v[6]}
+		;;
+	"CSL_3.0.0")
+		base_ver="2.7.19.8"
+		set_kernel ${v[5]}-${v[6]}
+		;;
+	"CSL3.0_Lustre")
+		NEO_rel="CSL3.0"
+		set_kernel ${v[6]}-${v[7]}
+		set_release
+		;;
+	"NEO3.X_Lustre")
+		NEO_rel="NEO3.X"
+		set_kernel ${v[6]}-${v[7]}
+		;;
+esac
+
+case ${v[0]} in
+	"v2_7_0_0")
+		base_ver="2.7.14"
+		lustre_mod_prefix="lustre-debuginfo"
+		set_kernel ${v[3]}-${v[4]}
+		;;
+esac
+
+[ -z $kernel_str ] && die "kernel_str isn't found !"
+[ -z $base_ver ] && die "base_ver isn't found !"
+
+echo "client_build=$client_build"
 echo "base_ver=$base_ver"
 
 if [ $base_ver = "2.1.0" ]; then
@@ -202,4 +366,4 @@ else
 	download_lustre
 fi
 
-parse_vmcore $vmcore
+parse
