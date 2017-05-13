@@ -122,9 +122,6 @@ download_lustre() {
 
 set_release() {
 	echo $NEO_rel
-	kernel_ver=${kernel_str/-/_}
-	echo "kernel: $kernel_ver"
-
 	case $NEO_rel in
 		"NEO1.3")
 			NEO_ver="NEO1.3"
@@ -177,18 +174,19 @@ set_release() {
 set_kernel() {
 	if [ -z $kernel_str ]; then
 		kernel_str=$1
+		kernel_ver=${kernel_str/-/_}
+		echo "kernel: $kernel_ver"
 		set_release
-		IFS='.' read -a v <<< $kernel_str
-		case ${v[5]} in
-			"el6" | "el7")
-				echo "clent build"
-				lustre_mod_prefix="lustre-client-debuginfo"
-				client_build=1
-			;;
-		esac
-	elif [ $kernel_str != $1 ]; then
-		echo "new kernel differs !!! $kernel_str $1"
+	elif [ $guess_release_from_kernel_str != $1 ]; then
+		die "new kernel differs !!! $kernel_str $1"
 	fi
+	IFS='.' read -a v <<< $kernel_str
+	case ${v[5]} in
+		"el6" | "el7")
+			lustre_mod_prefix="lustre-client-debuginfo"
+			client_build=1
+			;;
+	esac
 }
 
 parse() {
@@ -260,12 +258,9 @@ if [ -d ./lustre_kos ]; then
 fi
 
 if [ $DMESG_ONLY -eq 0 ]; then
-	kernel_str=$(crash --osrelease $vmcore)
+	set_kernel $(crash --osrelease $vmcore)
 	rm -f vmlinux
 	ln -s $debuginfo_dir/vmlinux-$kernel_str ./vmlinux
-
-	kernel_ver=${kernel_str/-/_}
-	echo $kernel_ver
 
 	guess_release_from_kernel
 fi
