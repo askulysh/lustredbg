@@ -175,6 +175,9 @@ set_release() {
 }
 
 set_kernel() {
+	[ -z $1 ] && return
+        [ $1 == "-" ] && return
+
 	if [ -z $kernel_str ]; then
 		kernel_str=$1
 		kernel_ver=${kernel_str/-/_}
