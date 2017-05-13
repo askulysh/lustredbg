@@ -177,7 +177,7 @@ set_kernel() {
 		kernel_ver=${kernel_str/-/_}
 		echo "kernel: $kernel_ver"
 		set_release
-	elif [ $guess_release_from_kernel_str != $1 ]; then
+	elif [ $kernel_str != $1 ]; then
 		die "new kernel differs !!! $kernel_str $1"
 	fi
 	IFS='.' read -a v <<< $kernel_str
