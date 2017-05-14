@@ -42,7 +42,7 @@ def show_io() :
         lu_env = readSU("struct lu_env", addr)
         oti = osd_oti_get(lu_env)
         print(oti)
-        iobuf = oti.iobuf
+        iobuf = oti.oti_iobuf
         print(iobuf)
         if iobuf.dr_numreqs.counter != 0 :
             print("PID %d is waiting for %ss" %
