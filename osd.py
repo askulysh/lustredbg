@@ -40,8 +40,7 @@ def show_io() :
         print(pid)
         addr = search_for_reg("RDI", pid, "osd_read_prep")
         lu_env = readSU("struct lu_env", addr)
-        oti = osd_oti_get(lu_env)
-        print(oti)
+        oti = readSU("struct osd_thread_info", osd_oti_get(lu_env))
         iobuf = oti.oti_iobuf
         print(iobuf)
         if iobuf.dr_numreqs.counter != 0 :
