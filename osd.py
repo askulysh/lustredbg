@@ -45,14 +45,14 @@ def show_io() :
         print(iobuf)
         if iobuf.dr_numreqs.counter != 0 :
             print("PID %d is waiting for %ss" %
-                    (pid, j_delay(jiffies, iobuf.dr_start_time)))
+                    (pid, j_delay(iobuf.dr_start_time, jiffies)))
             sum_wait = sum_wait + iobuf.dr_start_time
             count = count + 1
             if iobuf.dr_start_time < min_start :
                 min_start = iobuf.dr_start_time
     print("--------------")
     print("%d threads are waiting for I/O max: %s avg: %s" %
-            (count, j_delay(jiffies, min_start), j_delay(jiffies, sum_wait)))
+            (count, j_delay(min_start, jiffies), j_delay(sum_wait, jiffies)))
 
 if ( __name__ == '__main__'):
     import argparse
