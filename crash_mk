@@ -184,7 +184,11 @@ set_kernel() {
 		echo "kernel: $kernel_ver"
 		set_release
 	elif [ $kernel_str != $1 ]; then
-		die "new kernel differs !!! $kernel_str $1"
+		if expr match $kernel_str "^$1" ; then
+			echo "partial new kernel : $kernel_str $1"
+		else
+			die "new kernel differs !!! $kernel_str $1"
+		fi
 	fi
 	IFS='.' read -a v <<< $kernel_str
 	case ${v[5]} in
