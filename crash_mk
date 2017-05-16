@@ -357,6 +357,11 @@ case ${v[0]} in
 		lustre_mod_prefix="lustre-debuginfo"
 		set_kernel ${v[3]}-${v[4]}
 		;;
+	"2.7.0")
+		base_ver="2.7.18.4"
+		lustre_mod_prefix="lustre-debuginfo"
+		set_kernel ${v[3]}-${v[4]}
+		;;
 esac
 
 [ -z $kernel_str ] && die "kernel_str isn't found !"
