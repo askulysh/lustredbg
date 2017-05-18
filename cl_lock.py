@@ -8,6 +8,28 @@ from LinuxDump.BTstack import *
 import fregsapi
 import ldlm_lock as ldlm
 
+cl_lock_state_c = '''
+enum cl_lock_state {
+        CLS_NEW,
+        CLS_QUEUING,
+        CLS_ENQUEUED,
+        CLS_HELD,
+        CLS_INTRANSIT,
+        CLS_CACHED,
+        CLS_FREEING,
+        CLS_NR
+};
+'''
+cl_lock_state = CEnum(cl_lock_state_c)
+
+cl_lock_flags_c = '''
+#define CLF_CANCELLED   1
+#define CLF_CANCELPEND  2
+#define CLF_DOOMED      4
+#define CLF_FROM_UPCALL 8
+'''
+cl_lock_flags = CDefine(cl_lock_flags_c)
+
 vvp_lock_ops = readSymbol("vvp_lock_ops")
 lov_lock_ops = readSymbol("lov_lock_ops")
 lovsub_lock_ops = readSymbol("lovsub_lock_ops")
@@ -35,7 +57,9 @@ def print_lov_lock(lov_lock, prefix):
         print_lov_lock_sub(lov_lock.lls_sub[i], prefix)
 
 def print_cl_lock(cl, prefix):
-    print(prefix, cl)
+    print(prefix, cl, "state: ", cl_lock_state.__getitem__(cl.cll_state),
+           "flags:", dbits2str(cl.cll_flags, cl_lock_flags))
+
     for layer in readSUListFromHead(cl.cll_layers, "cls_linkage",
             "struct cl_lock_slice") :
         if layer.cls_ops == vvp_lock_ops :
