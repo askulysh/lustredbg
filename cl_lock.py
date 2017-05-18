@@ -30,14 +30,28 @@ cl_lock_flags_c = '''
 '''
 cl_lock_flags = CDefine(cl_lock_flags_c)
 
+osc_lock_state_c = '''
+enum osc_lock_state {
+        OLS_NEW,
+        OLS_ENQUEUED,
+        OLS_UPCALL_RECEIVED,
+        OLS_GRANTED,
+        OLS_RELEASED,
+        OLS_BLOCKED,
+        OLS_CANCELLED
+};
+'''
+osc_lock_state = CEnum(osc_lock_state_c)
+
 vvp_lock_ops = readSymbol("vvp_lock_ops")
 lov_lock_ops = readSymbol("lov_lock_ops")
 lovsub_lock_ops = readSymbol("lovsub_lock_ops")
 osc_lock_ops = readSymbol("osc_lock_ops")
 
 def print_osc_lock(osc_lock, prefix) :
-    print(prefix, "state: ", osc_lock.ols_state, "holds: ", osc_lock.ols_hold,
-            "\n", prefix, "flags:", dbits2str(osc_lock.ols_flags, ldlm.LDLM_flags))
+    print(prefix, "state:", osc_lock_state.__getitem__(osc_lock.ols_state),
+          "holds:", osc_lock.ols_hold, "\n", prefix,
+          "flags:", dbits2str(osc_lock.ols_flags, ldlm.LDLM_flags))
     try:
         ldlm_lock = osc_lock.ols_dlmlock
     except KeyError:
