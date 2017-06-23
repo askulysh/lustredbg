@@ -94,11 +94,25 @@ def show_ptlrpc_set(s) :
 
 def show_import(prefix, imp) :
     jiffies = readSymbol("jiffies")
-    print("%simport %s inflight %d state %s cur conn: %s next ping in %s" %
+    print("%simport %s inflight %d %s cur conn: %s next ping in %s" %
           (prefix, imp.imp_obd.obd_name, imp.imp_inflight.counter,
            lustre_imp_state.__getitem__(imp.imp_state),
            nid2str(imp.imp_conn_current.oic_conn.c_peer.nid),
            j_delay(jiffies, imp.imp_next_ping)))
+    if imp.imp_state != lustre_imp_state.LUSTRE_IMP_FULL :
+        idx = imp.imp_state_hist_idx
+        size = 16
+        time = 0
+        for i in xrange(0, size) :
+            if (imp.imp_state_hist[(idx - i -1) % size].ish_state ==
+                    lustre_imp_state.LUSTRE_IMP_FULL) :
+                time = imp.imp_state_hist[(idx - i -1) % size].ish_time
+                break
+
+        if time != 0 :
+            print("%slast FULL was %ss ago" % (prefix, get_seconds() - time))
+        else :
+            print("%slast FULL was never" % prefix)
 
 def show_ptlrpcd_ctl(ctl) :
     pc_set = ctl.pc_set
