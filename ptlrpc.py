@@ -4,8 +4,25 @@ from __future__ import print_function
 
 from pykdump.API import *
 from ktime import *
+from lnet import *
 
 max_req = 10
+
+lustre_imp_state_c = '''
+enum lustre_imp_state {
+        LUSTRE_IMP_CLOSED     = 1,
+        LUSTRE_IMP_NEW        = 2,
+        LUSTRE_IMP_DISCON     = 3,
+        LUSTRE_IMP_CONNECTING = 4,
+        LUSTRE_IMP_REPLAY     = 5,
+        LUSTRE_IMP_REPLAY_LOCKS = 6,
+        LUSTRE_IMP_REPLAY_WAIT  = 7,
+        LUSTRE_IMP_RECOVER    = 8,
+        LUSTRE_IMP_FULL       = 9,
+        LUSTRE_IMP_EVICTED    = 10
+};
+'''
+lustre_imp_state = CEnum(lustre_imp_state_c)
 
 def print_req_flags(req) :
     s  = ""
@@ -49,10 +66,10 @@ def req_sent(req) :
         return "Waiting...                  "
 
 def show_ptlrpc_request(req) :
-    print("%x x%d %s %s %4d %s %s" %
-          (req, req.rq_xid,
-           req.rq_import.imp_obd.obd_name,req_sent(req), req.rq_status,
+    print("%x x%d %s %4d %s %s" %
+          (req, req.rq_xid, req_sent(req), req.rq_status,
            phase2str(req.rq_phase), print_req_flags(req)))
+    show_import("  ", req.rq_import)
 
 def show_ptlrpc_set(s) :
     print("set %x new %d remaining %d" % (s,
@@ -74,6 +91,14 @@ def show_ptlrpc_set(s) :
         i = i + 1
         if i == max_req :
             break
+
+def show_import(prefix, imp) :
+    jiffies = readSymbol("jiffies")
+    print("%simport %s inflight %d state %s cur conn: %s next ping in %s" %
+          (prefix, imp.imp_obd.obd_name, imp.imp_inflight.counter,
+           lustre_imp_state.__getitem__(imp.imp_state),
+           nid2str(imp.imp_conn_current.oic_conn.c_peer.nid),
+           j_delay(jiffies, imp.imp_next_ping)))
 
 def show_ptlrpcd_ctl(ctl) :
     pc_set = ctl.pc_set
