@@ -190,6 +190,17 @@ set_kernel() {
 			die "new kernel differs !!! $kernel_str $1"
 		fi
 	fi
+	case $NEO_rel in
+		"NEO1.3")
+			return
+			;;
+		"Antares")
+			return
+			;;
+		"Betazoid")
+			return
+			;;
+	esac
 	IFS='.' read -a v <<< $kernel_str
 	case ${v[5]} in
 		"el6" | "el7")
@@ -361,6 +372,12 @@ case ${v[0]} in
 		base_ver="2.7.18.4"
 		lustre_mod_prefix="lustre-debuginfo"
 		set_kernel ${v[3]}-${v[4]}
+		;;
+	2.9.*)
+		base_ver=${v[0]}
+		lustre_mod_prefix="lustre-client-debuginfo"
+		NEO_ver="master"
+		githash=`expr match "$base_ver" '.*_\(g.......\)'`
 		;;
 esac
 
