@@ -116,7 +116,7 @@ def show_import(prefix, imp) :
         connections = readSUListFromHead(imp.imp_conn_list, "oic_item", "struct obd_import_conn")
         for conn in connections :
             print("%s%s tried %s ago" % (prefix, nid2str(conn.oic_conn.c_peer.nid),
-                    j_delay(jiffies, conn.oic_last_attempt)))
+                    j_delay(conn.oic_last_attempt, jiffies)))
 
 def show_ptlrpcd_ctl(ctl) :
     pc_set = ctl.pc_set
