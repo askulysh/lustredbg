@@ -154,6 +154,13 @@ set_release() {
 			kernel_build=$kernel_build_full
 			lustre_mod_prefix="lustre-debuginfo"
 			;;
+		"NEO2.X")
+			NEO_ver="NEO2.X"
+			base_ver="2.5.1"
+			X="8"
+			kernel_build=$kernel_build_full
+			lustre_mod_prefix="lustre-debuginfo"
+			;;
 		"NEO3.X")
 			NEO_ver="NEO3.X"
 			X="8"
@@ -228,6 +235,9 @@ guess_release_from_kernel() {
 		case ${v[6]} in
 			"1")
 				NEO_rel="Aero"
+				;;
+			"2")
+				NEO_rel="NEO2.X"
 				;;
 			*)
 				kernel_build=${kernel_build_full:2:2}
