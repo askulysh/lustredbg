@@ -94,10 +94,13 @@ def show_ptlrpc_set(s) :
 
 def show_import(prefix, imp) :
     jiffies = readSymbol("jiffies")
-    print("%simport %s inflight %d %s cur conn: %s next ping in %s" %
-          (prefix, imp.imp_obd.obd_name, imp.imp_inflight.counter,
-           lustre_imp_state.__getitem__(imp.imp_state),
-           nid2str(imp.imp_conn_current.oic_conn.c_peer.nid),
+    if imp.imp_conn_current != 0 :
+        cur_nid = nid2str(imp.imp_conn_current.oic_conn.c_peer.nid)
+    else :
+        cur_nid = "null"
+    print("%simport %x %s inflight %d %s cur conn: %s next ping in %s" %
+          (prefix, imp, imp.imp_obd.obd_name, imp.imp_inflight.counter,
+           lustre_imp_state.__getitem__(imp.imp_state), cur_nid,
            j_delay(jiffies, imp.imp_next_ping)))
     if imp.imp_state != lustre_imp_state.LUSTRE_IMP_FULL :
         idx = imp.imp_state_hist_idx
