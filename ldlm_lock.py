@@ -108,9 +108,11 @@ def print_ldlm_lock(ldlm_lock, prefix) :
     else :
         remote = "local lock"
 
-    print("%s 0x%x/0x%x refc %u %s %s" % (prefix, ldlm_lock.l_handle.h_cookie,
+    print("%s 0x%x/0x%x lrc %u/%d,%d %s %s" % (prefix,
+                            ldlm_lock.l_handle.h_cookie,
                             ldlm_lock.l_remote_handle.cookie,
-                            ldlm_lock.l_refc.counter, remote,
+                            ldlm_lock.l_refc.counter, ldlm_lock.l_readers,
+                            ldlm_lock.l_writers, remote,
                             ldlm_lock.l_resource.lr_name.name))
     print(prefix, "flags:", dbits2str(ldlm_lock.l_flags, LDLM_flags))
     if ldlm_lock.l_req_mode == ldlm_lock.l_granted_mode :
@@ -152,8 +154,12 @@ def walk_res_hash2(hlist) :
     while head != 0 :
         a = int(head) - 8 # lr_hash
         res = readSU("struct ldlm_resource", a)
-        print("res %x %s refc %d %d" % (res, res.lr_name.name,
-            res.lr_refcount.counter, res.lr_most_restr))
+        try:
+            recent = "recent lock " + ldlm_mode2str(res.lr_most_restr)
+        except:
+            recent = ""
+        print("res %x %s refc %d %s" % (res, res.lr_name.name,
+            res.lr_refcount.counter, recent))
         head = head.next
 
 def show_ns_locks(ns) :
