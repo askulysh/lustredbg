@@ -158,7 +158,8 @@ def walk_res_hash2(hlist) :
             recent = "recent lock " + ldlm_mode2str(res.lr_most_restr)
         except:
             recent = ""
-        print("res %x %s refc %d %s" % (res, res.lr_name.name,
+        print("res %x %s %s refc %d %s" %
+              (res, ldlm_types.__getitem__(res.lr_type), res.lr_name.name,
             res.lr_refcount.counter, recent))
         head = head.next
 
