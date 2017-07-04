@@ -77,9 +77,18 @@ def lu_object_find(dev, fid) :
                               hs.hs_cur_bits, fid))
     dep = readSU("cfs_hash_head_dep_t", bd_bucket.hsb_head + 16*bd_offset)
     print(dep)
-    hlist_head = dep.hd_head
-    mdt_object = readSU("struct mdt_object", hlist_head.first - 0x20)
+    head = dep.hd_head.first
+    while head != 0 :
+        print(head)
+        mdt_object = readSU("struct mdt_object", head - 0x20)
+        if mdt_object.mot_header.loh_fid.f_seq == fid.f_seq and mdt_object.mot_header.loh_fid.f_oid == fid.f_oid and mdt_object.mot_header.loh_fid.f_ver == fid.f_ver :
+               break
+        head = head.next
+    if head == 0 :
+        print("Can't find fid !")
+        return 0
     print(mdt_object)
+    return mdt_object.mot_obj
 
 if ( __name__ == '__main__'):
     import argparse
