@@ -100,7 +100,7 @@ download_lustre() {
 	fi
 
 	m=$(expr match "$build" '\(^[0-9]*$\)')
-	if [ -z $m ]; then
+	if [ $client_build -eq 1 ] || [ -z $m ]; then
 		build_id=$base_ver-"$kernel_ver"_$githash
 	else
 		build_id=$base_ver.x$X-"$build"_"$kernel_ver"_$githash
