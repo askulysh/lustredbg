@@ -351,6 +351,14 @@ case ${v[1]} in
 		lustre_mod_prefix="lustre-debuginfo"
 		set_kernel ${v[5]}-${v[6]}
 		;;
+	"CS_2.1")
+		NEO_rel="Aero"
+		base_ver="2.5.1"
+		lustre_mod_prefix="lustre-client-debuginfo"
+		client_build=1
+#		set_kernel ${v[5]}-${v[6]}
+		lustre_ver="Aero_Lustre-client"
+		;;
 	"CS_2.1.0")
 		NEO_rel="Aero"
 		base_ver="2.5.1"
