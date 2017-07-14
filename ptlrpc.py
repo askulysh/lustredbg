@@ -120,6 +120,8 @@ def show_import(prefix, imp) :
         for conn in connections :
             print("%s%s tried %s ago" % (prefix, nid2str(conn.oic_conn.c_peer.nid),
                     j_delay(conn.oic_last_attempt, jiffies)))
+        if imp.imp_no_pinger_recover == 1 :
+            print("imp_no_pinger_recover == 1 !!!!")
 
 def show_ptlrpcd_ctl(ctl) :
     pc_set = ctl.pc_set
