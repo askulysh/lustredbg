@@ -9,6 +9,8 @@ def nid2str(nid) :
     if lnd == 5 :
         return ("%d.%d.%d.%d" % ((nid >>24) & 0xff, (nid >> 16) & 0xff,
                                 (nid >> 8) & 0xff, nid & 0xff))
+    elif lnd == 9 :
+        return "lo"
     elif lnd == 13 :
         return ("%d@gni" % (nid & 0xffffffff))
 
