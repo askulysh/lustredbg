@@ -126,15 +126,15 @@ def print_ldlm_lock(ldlm_lock, prefix) :
         print("%s req_mode: %s enqueued %us ago" % (prefix,
               ldlm_mode2str(ldlm_lock.l_req_mode),
               get_seconds() - ldlm_lock.l_last_activity))
-        if ldlm_lock.l_resource.lr_type == ldlm_types.LDLM_EXTENT :
-            print("%s [%d-%d]" % (prefix, ldlm_lock.l_req_extent.start,
-                ldlm_lock.l_req_extent.end))
-        elif ldlm_lock.l_resource.lr_type == ldlm_types.LDLM_IBITS :
-            print("%s %s" % (prefix,
-                dbits2str(ldlm_lock.l_policy_data.l_inodebits.bits,
-                          MDS_INODELOCK)))
-        else :
-            print("%s %s" % (prefix, ldlm_lock.l_policy_data))
+    if ldlm_lock.l_resource.lr_type == ldlm_types.LDLM_EXTENT :
+        print("%s [%d-%d]" % (prefix, ldlm_lock.l_req_extent.start,
+            ldlm_lock.l_req_extent.end))
+    elif ldlm_lock.l_resource.lr_type == ldlm_types.LDLM_IBITS :
+        print("%s %s" % (prefix,
+            dbits2str(ldlm_lock.l_policy_data.l_inodebits.bits,
+                MDS_INODELOCK)))
+    else :
+        print("%s %s" % (prefix, ldlm_lock.l_policy_data))
 
 def hash_for_each(hs, func) :
     buckets = hs.hs_buckets
@@ -208,12 +208,14 @@ def find_conflicting_lock(lock) :
     if len(granted) == 1 :
         return granted[0]
     else :
-        print("TODO: granted > 1")
         if lock.l_resource.lr_type == ldlm_types.LDLM_IBITS :
             bits = lock.l_policy_data.l_inodebits.bits
             for gr in granted :
                 if bits & gr.l_policy_data.l_inodebits.bits != 0 :
                    return gr
+            return nil
+        else :
+            print("TODO: granted > 1")
 
         return nil
 
