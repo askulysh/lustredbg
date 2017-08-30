@@ -3,4 +3,8 @@
 core=`basename $1`
 WDIR=${WDIR:-"$HOME/work"}
 
-crash_cmd $1 "extend $WDIR/crash_ext/fp.so \n fp >> ./analysis_$core \n bt -FF >>./analysis_$core"
+crash_cmd $1 "extend $WDIR/crash_ext/fp.so \n
+	      fp >> ./analysis_$core \n
+	      bt -FF >>./analysis_$core \n
+	      extend $WDIR/crash_ext/mpykdump64.so \n
+	      fregs -a >>./analysis_$core"
