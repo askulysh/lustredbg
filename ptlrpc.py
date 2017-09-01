@@ -69,7 +69,8 @@ def show_ptlrpc_request(req) :
     print("%x x%d %s %4d %s %s" %
           (req, req.rq_xid, req_sent(req), req.rq_status,
            phase2str(req.rq_phase), print_req_flags(req)))
-    show_import("  ", req.rq_import)
+    if req.rq_import != 0:
+        show_import("  ", req.rq_import)
 
 def show_ptlrpc_set(s) :
     print("set %x new %d remaining %d" % (s,
