@@ -107,7 +107,7 @@ def show_import(prefix, imp) :
         idx = imp.imp_state_hist_idx
         size = 16
         time = 0
-        for i in xrange(0, size) :
+        for i in range(0, size) :
             if (imp.imp_state_hist[(idx - i -1) % size].ish_state ==
                     lustre_imp_state.LUSTRE_IMP_FULL) :
                 time = imp.imp_state_hist[(idx - i -1) % size].ish_time
@@ -134,10 +134,10 @@ def show_ptlrpcds() :
     except TypeError:
         ptlrpcds_num = 1
     ptlrpcds = readSymbol("ptlrpcds")
-    for i in xrange(0, ptlrpcds_num) :
+    for i in range(0, ptlrpcds_num) :
         print("cpt %d" % i)
         ptlrpcd = ptlrpcds[i]
-        for t in xrange(0, ptlrpcd.pd_nthreads) :
+        for t in range(0, ptlrpcd.pd_nthreads) :
             show_ptlrpcd_ctl(ptlrpcd.pd_threads[t])
 
     print("recovery:");

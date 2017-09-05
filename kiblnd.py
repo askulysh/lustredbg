@@ -10,7 +10,7 @@ max_req = 10
 
 def show_peers() :
     kiblnd_data = readSymbol("kiblnd_data")
-    for i in xrange(0, kiblnd_data.kib_peer_hash_size) :
+    for i in range(0, kiblnd_data.kib_peer_hash_size) :
         peers = readSUListFromHead(kiblnd_data.kib_peers[i],
                 "ibp_list", "struct kib_peer")
         if peers :
@@ -21,7 +21,7 @@ def show_peers() :
 
 def find_tx(req) :
     kiblnd_data = readSymbol("kiblnd_data")
-    for i in xrange(0, kiblnd_data.kib_peer_hash_size) :
+    for i in range(0, kiblnd_data.kib_peer_hash_size) :
         peers = readSUListFromHead(kiblnd_data.kib_peers[i],
                 "ibp_list", "struct kib_peer")
         if peers :
