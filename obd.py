@@ -90,6 +90,19 @@ def lu_object_find(dev, fid) :
     print(mdt_object)
     return mdt_object.mot_obj
 
+def show_obd(dev) :
+    print("0x%x %s lu_dev 0x%x inactive %d starting %d attached %d set_up %d "
+          "stopping %d force %d fail %d" %
+          (dev, dev.obd_name, dev.obd_lu_dev, dev.obd_inactive,
+           dev.obd_starting, dev.obd_attached, dev.obd_set_up,
+           dev.obd_stopping, dev.obd_force, dev.obd_fail))
+
+def show_obds() :
+    obd_devs = readSymbol("obd_devs")
+    for i in range(0, 8192) :
+        if obd_devs[i] != 0 :
+            show_obd(obd_devs[i])
+
 if ( __name__ == '__main__'):
     import argparse
 
@@ -103,4 +116,6 @@ if ( __name__ == '__main__'):
         lu_dev = readSU("struct lu_device", int(args.device, 0))
         fid = readSU("struct lu_fid", int(args.fid, 0))
         lu_object_find(lu_dev, fid)
+    else :
+        show_obds()
 
