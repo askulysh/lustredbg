@@ -77,6 +77,10 @@ def print_osc_page(osc_page, prefix) :
           "idx:", osc_page.ops_cl.cpl_index,
           "cmd:", dbits2str(oap.oap_cmd, obd_brw_flags),
           "off:", oap.oap_obj_off, oap.oap_brw_page.pg)
+    if oap.oap_request != 0 :
+       show_ptlrpc_request(oap.oap_request)
+    else :
+        print(prefix, oap.oap_request)
 
 def print_cl_page(cl, prefix):
     print(prefix, cl, "state: ", cl_page_state.__getitem__(cl.cp_state),
