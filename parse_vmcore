@@ -7,3 +7,7 @@ log_extr $1 &
 vmcore_stack $1 &
 vmcore_fp $1 &
 wait
+
+core=$(basename $1)
+pid=$(grep PID analysis_$core | cut -d' ' -f 2 |uniq)
+grep ":"$pid":" log.dk_$core | tail >> analysis_$core
