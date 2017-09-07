@@ -258,6 +258,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-g","--grep", dest="g", default = 0)
     parser.add_argument("-w","--compwait", dest="compl_waiting",
                         action='store_true')
+    parser.add_argument("-f","--flags", dest="flags", default = 0)
     args = parser.parse_args()
     if args.lock != 0 :
         l = readSU("struct ldlm_lock", int(args.lock, 0))
@@ -269,6 +270,8 @@ if ( __name__ == '__main__'):
         show_completition_waiting_locks()
     elif args.g != 0 :
         show_namespaces(args.g)
+    elif args.flags != 0 :
+        print("flags:", dbits2str(int(args.flags, 0), LDLM_flags))
     else :
         show_namespaces(r'.*')
 
