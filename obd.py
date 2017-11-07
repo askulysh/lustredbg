@@ -110,6 +110,21 @@ def show_obds() :
         if obd_devs[i] != 0 :
             show_obd(obd_devs[i])
 
+__re_search = re.compile(r'^([a-f0-9]+):')
+def ptr_search(ptr) :
+    res = exec_crash_command("search 0x%x" % ptr)
+    if len(res) == 0 :
+        print("no matches!")
+        return
+
+    for s in res.splitlines():
+        m = __re_search.match(s)
+        if (m) :
+            addr = int(m.group(1), 16)
+            print("addr: 0x%x" % addr)
+            res2 = exec_crash_command("kmem 0x%x" % addr)
+            print(res2)
+
 if ( __name__ == '__main__'):
     import argparse
 
@@ -118,11 +133,15 @@ if ( __name__ == '__main__'):
                         default=0)
     parser.add_argument("-f","--fid", dest="fid",
                         default=0)
+    parser.add_argument("-s","--search", dest="search_ptr",
+                        default=0)
     args = parser.parse_args()
     if args.fid != 0 :
         lu_dev = readSU("struct lu_device", int(args.device, 0))
         fid = readSU("struct lu_fid", int(args.fid, 0))
         lu_object_find(lu_dev, fid)
+    elif args.search_ptr != 0 :
+        ptr_search(int(args.search_ptr, 0))
     else :
         show_obds()
 
