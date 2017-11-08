@@ -111,6 +111,7 @@ def show_obds() :
             show_obd(obd_devs[i])
 
 __re_search = re.compile(r'^([a-f0-9]+):')
+__re_kmem = re.compile(r'^([a-f0-9]+)\s([a-z_0-9-]+)')
 def ptr_search(ptr) :
     res = exec_crash_command("search 0x%x" % ptr)
     if len(res) == 0 :
@@ -123,7 +124,14 @@ def ptr_search(ptr) :
             addr = int(m.group(1), 16)
             print("addr: 0x%x" % addr)
             res2 = exec_crash_command("kmem 0x%x" % addr)
-            print(res2)
+            lines = res2.splitlines()
+            m2 = __re_kmem.match(lines[1])
+            if (m2) :
+                print(m2.group(2), lines[5])
+            else :
+                print(res2)
+        else :
+            print(s)
 
 if ( __name__ == '__main__'):
     import argparse
