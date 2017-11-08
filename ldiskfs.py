@@ -16,7 +16,7 @@ def ldiskfs_get_group_desc(sbi, block_group) :
 
     print(sbi.s_group_desc[group_desc])
     return readSU("struct ldiskfs_group_desc",
-           sbi.s_group_desc[group_desc].b_data + offset * sbi.s_desc_size)
+           int(sbi.s_group_desc[group_desc].b_data) + offset * sbi.s_desc_size)
 
 def ldiskfs_inode_table(sbi, bg) :
     ret = bg.bg_inode_table_lo
