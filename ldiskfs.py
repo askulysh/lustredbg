@@ -60,7 +60,7 @@ def get_ldiskfs_inode(inode) :
     if bh :
         return readSU("struct ldiskfs_inode", bh_get_b_data_addr(bh) + offset)
     else :
-        print("can't find inode in bhlru"
+        print("can't find inode in bhlru")
         return 0
 
 if ( __name__ == '__main__'):
