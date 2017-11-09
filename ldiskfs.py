@@ -26,6 +26,13 @@ def ldiskfs_inode_table(sbi, bg) :
         ret = ret | (bg.bg_inode_table_hi << 32)
     return ret
 
+def lookup_bh_lru(bdev, block, size) :
+    bh_lrus = readSymbol("bh_lrus")
+    print(bh_lrus)
+
+def sb_getblk(sb, block) :
+    return lookup_bh_lru(sb.s_bdev, block, sb.s_blocksize)
+
 def get_ldiskfs_inode(inode) :
     ino = inode.i_ino
     sb = inode.i_sb
@@ -39,6 +46,7 @@ def get_ldiskfs_inode(inode) :
     block = ldiskfs_inode_table(sbi, gdp) + int(inode_offset / inodes_per_block)
     offset = (inode_offset % inodes_per_block) * sbi.s_inode_size
     print(block, offset)
+    sb_getblk(sb, block)
 
 if ( __name__ == '__main__'):
     import argparse
