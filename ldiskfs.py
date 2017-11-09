@@ -39,6 +39,18 @@ def lookup_bh_lru(bdev, block, size) :
                 return bh
     return 0
 
+def bh_for_each_lru() :
+    bh_lrus = percpu.get_cpu_var("bh_lrus")
+    for var in bh_lrus :
+        bh_lru = readSU("struct bh_lru", var)
+        for bh in bh_lru.bhs :
+            try:
+                header = readSU("struct lvar_leaf_header", bh_get_b_data_addr(bh))
+                if header.vlh_magic == 0x1973 :
+                    print(header)
+            except:
+                header = 0
+
 def sb_getblk(sb, block) :
     return lookup_bh_lru(sb.s_bdev, block, sb.s_blocksize)
 
@@ -72,4 +84,6 @@ if ( __name__ == '__main__'):
     if args.inode != 0 :
         inode = readSU("struct inode", int(args.inode, 16))
         print(get_ldiskfs_inode(inode))
+    else :
+        bh_for_each_lru()
 
