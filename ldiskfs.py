@@ -29,8 +29,13 @@ def ldiskfs_inode_table(sbi, bg) :
 
 def lookup_bh_lru(bdev, block, size) :
     bh_lrus = percpu.get_cpu_var("bh_lrus")
-    for lru in bh_lrus :
-        print lru
+    for var in bh_lrus :
+        bh_lru = readSU("struct bh_lru", var)
+        for bh in bh_lru.bhs :
+            print(bh)
+            if bh.b_bdev == bdev && bh.b_blocknr == block && bh.b_size == size:
+                return bh
+    return 0
 
 def sb_getblk(sb, block) :
     return lookup_bh_lru(sb.s_bdev, block, sb.s_blocksize)
@@ -48,7 +53,8 @@ def get_ldiskfs_inode(inode) :
     block = ldiskfs_inode_table(sbi, gdp) + int(inode_offset / inodes_per_block)
     offset = (inode_offset % inodes_per_block) * sbi.s_inode_size
     print(block, offset)
-    sb_getblk(sb, block)
+    bh = sb_getblk(sb, block)
+    print(bh)
 
 if ( __name__ == '__main__'):
     import argparse
