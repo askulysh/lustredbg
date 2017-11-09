@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 from pykdump.API import *
+from LinuxDump import percpu
 
 LDISKFS_MIN_DESC_SIZE_64BIT = 64
 
@@ -27,8 +28,9 @@ def ldiskfs_inode_table(sbi, bg) :
     return ret
 
 def lookup_bh_lru(bdev, block, size) :
-    bh_lrus = readSymbol("bh_lrus")
-    print(bh_lrus)
+    bh_lrus = percpu.get_cpu_var("bh_lrus")
+    for lru in bh_lrus :
+        print lru
 
 def sb_getblk(sb, block) :
     return lookup_bh_lru(sb.s_bdev, block, sb.s_blocksize)
