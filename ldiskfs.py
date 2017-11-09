@@ -39,17 +39,37 @@ def lookup_bh_lru(bdev, block, size) :
                 return bh
     return 0
 
+IAM_LVAR_ROOT_MAGIC = 0xb01dface
+IAM_LVAR_LEAF_MAGIC = 0x1973
+IAM_LFIX_ROOT_MAGIC = 0xbedabb1ed
+
 def bh_for_each_lru() :
     bh_lrus = percpu.get_cpu_var("bh_lrus")
     for var in bh_lrus :
         bh_lru = readSU("struct bh_lru", var)
         for bh in bh_lru.bhs :
-            try:
-                header = readSU("struct lvar_leaf_header", bh_get_b_data_addr(bh))
-                if header.vlh_magic == 0x1973 :
+            if bh == 0 :
+                continue
+            try :
+                addr = bh_get_b_data_addr(bh)
+                header = readSU("struct lvar_leaf_header", addr)
+                if header.vlh_magic == IAM_LVAR_LEAF_MAGIC :
                     print(header)
-            except:
+                else :
+                    header = readSU("struct lvar_root", addr)
+                    if header.vlh_magic == IAM_LVAR_ROOT_MAGIC :
+                        print(header)
+                    else :
+                        header = readSU("struct iam_lfix_root", addr)
+                        if header.vlh_magic == IAM_LFIX_ROOT_MAGIC :
+                            print(header)
+                        else :
+                            header = readSU("struct iam_lfix_root", addr)
+                            if header.vlh_magic == IAM_LFIX_ROOT_MAGIC :
+                                print(header)
+            except :
                 header = 0
+
 
 def sb_getblk(sb, block) :
     return lookup_bh_lru(sb.s_bdev, block, sb.s_blocksize)
