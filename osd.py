@@ -60,7 +60,11 @@ if ( __name__ == '__main__'):
     parser =  argparse.ArgumentParser()
     parser.add_argument("-w","--iowait", dest="iowait",
                         action='store_true')
+    parser.add_argument("-e","--env", dest="env", default = 0)
     args = parser.parse_args()
     if args.iowait != 0 :
         show_io()
+    elif args.env != 0 :
+        env = readSU("struct lu_env", int(args.env, 16))
+        print(osd_oti_get(env))
 
