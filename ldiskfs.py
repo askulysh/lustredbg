@@ -14,9 +14,11 @@ def ldiskfs_get_group_desc(sbi, block_group) :
     group_desc = block_group >> sbi.s_desc_per_block_bits;
     offset = block_group & (sbi.s_desc_per_block - 1);
 
-    print(sbi.s_group_desc[group_desc])
+    g = sbi.s_group_desc[group_desc]
+    b_data_crash = exec_crash_command("buffer_head.b_data %x" % g)
+    b_data = int(b_data_crash.split()[2], 16)
     return readSU("struct ldiskfs_group_desc",
-           int(sbi.s_group_desc[group_desc].b_data) + offset * sbi.s_desc_size)
+             b_data + offset * sbi.s_desc_size)
 
 def ldiskfs_inode_table(sbi, bg) :
     ret = bg.bg_inode_table_lo
@@ -32,17 +34,17 @@ def get_ldiskfs_inode(inode) :
     gdp = ldiskfs_get_group_desc(sbi, block_group)
 
     # Figure out the offset within the block group inode table
-    inodes_per_block = sb.s_blocksize / sbi.s_inode_size;
-    inode_offset = (ino - 1) % sbi.s_inodes_per_group;
-    block = ldiskfs_inode_table(sbi, gdp) + (inode_offset / inodes_per_block);
-    offset = (inode_offset % inodes_per_block) * sb.s_inode_size;
+    inodes_per_block = int(sb.s_blocksize / sbi.s_inode_size)
+    inode_offset = (ino - 1) % sbi.s_inodes_per_group
+    block = ldiskfs_inode_table(sbi, gdp) + int(inode_offset / inodes_per_block)
+    offset = (inode_offset % inodes_per_block) * sbi.s_inode_size
     print(block, offset)
 
 if ( __name__ == '__main__'):
     import argparse
 
     parser =  argparse.ArgumentParser()
-    parser.add_argument("-i","--inode", dest="inode", default = 0)
+    parser.add_argument("-i", "--inode", dest="inode", default = 0)
     args = parser.parse_args()
     if args.inode != 0 :
         inode = readSU("struct inode", int(args.inode, 16))
