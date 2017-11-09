@@ -10,8 +10,8 @@ from ktime import *
 def osd_oti_get(env) :
     osd_key = readSymbol("osd_key")
 
-    return env.le_ctx.lc_value[osd_key.lct_index]
-
+    return readSU("struct osd_thread_info",
+            env.le_ctx.lc_value[osd_key.lct_index])
 
 def search_for_reg(r, pid, func) :
     #     with DisasmFlavor('att'):
@@ -40,7 +40,7 @@ def show_io() :
         print(pid)
         addr = search_for_reg("RDI", pid, "osd_read_prep")
         lu_env = readSU("struct lu_env", addr)
-        oti = readSU("struct osd_thread_info", osd_oti_get(lu_env))
+        oti = osd_oti_get(lu_env)
         iobuf = oti.oti_iobuf
         print(iobuf)
         if iobuf.dr_numreqs.counter != 0 :
