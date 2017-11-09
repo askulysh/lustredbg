@@ -57,11 +57,11 @@ def get_ldiskfs_inode(inode) :
     print(block, offset)
     bh = sb_getblk(sb, block)
     print(bh)
-    if !bh :
+    if bh :
+        return readSU("struct ldiskfs_inode", bh_get_b_data_addr(bh) + offset)
+    else :
         print("can't find inode in bhlru"
         return 0
-    else :
-        return readSU("struct ldiskfs_inode", bh_get_b_data_addr(bh) + offset)
 
 if ( __name__ == '__main__'):
     import argparse
