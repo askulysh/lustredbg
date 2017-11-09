@@ -7,6 +7,10 @@ from LinuxDump import percpu
 
 LDISKFS_MIN_DESC_SIZE_64BIT = 64
 
+def bh_get_b_data_addr(bh) :
+    b_data_crash = exec_crash_command("buffer_head.b_data %x" % bh)
+    return int(b_data_crash.split()[2], 16)
+
 def ldiskfs_get_group_desc(sbi, block_group) :
     if block_group >= sbi.s_groups_count :
         print("wrong block_group", block_group)
@@ -16,8 +20,7 @@ def ldiskfs_get_group_desc(sbi, block_group) :
     offset = block_group & (sbi.s_desc_per_block - 1);
 
     g = sbi.s_group_desc[group_desc]
-    b_data_crash = exec_crash_command("buffer_head.b_data %x" % g)
-    b_data = int(b_data_crash.split()[2], 16)
+    b_data = bh_get_b_data_addr(g)
     return readSU("struct ldiskfs_group_desc",
              b_data + offset * sbi.s_desc_size)
 
@@ -32,7 +35,6 @@ def lookup_bh_lru(bdev, block, size) :
     for var in bh_lrus :
         bh_lru = readSU("struct bh_lru", var)
         for bh in bh_lru.bhs :
-            print(bh)
             if bh.b_bdev == bdev and bh.b_blocknr == block and bh.b_size == size:
                 return bh
     return 0
@@ -55,6 +57,11 @@ def get_ldiskfs_inode(inode) :
     print(block, offset)
     bh = sb_getblk(sb, block)
     print(bh)
+    if !bh :
+        print("can't find inode in bhlru"
+        return 0
+    else :
+        return readSU("struct ldiskfs_inode", bh_get_b_data_addr(bh) + offset)
 
 if ( __name__ == '__main__'):
     import argparse
@@ -64,5 +71,5 @@ if ( __name__ == '__main__'):
     args = parser.parse_args()
     if args.inode != 0 :
         inode = readSU("struct inode", int(args.inode, 16))
-        get_ldiskfs_inode(inode)
+        print(get_ldiskfs_inode(inode))
 
