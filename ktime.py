@@ -12,7 +12,11 @@ else :
         def get_seconds():
             return tk.xtime.tv_sec
     else:
-        tk = readSymbol("timekeeper")
+        if (symbol_exists("timekeeper")) :
+            tk = readSymbol("timekeeper")
+        else :
+            tk_core = readSymbol("tk_core")
+            tk = tk_core.timekeeper
         def get_seconds():
             try:
                 return tk.xtime_sec
