@@ -56,7 +56,12 @@ lov_raid0_page_ops = readSymbol("lov_raid0_page_ops")
 def vvp_env_io(env) :
     vvp_session_key = readSymbol("vvp_session_key")
     v = env.le_ses.lc_value[vvp_session_key.lct_index]
-    return readSU("struct vvp_session", v).vs_ios
+    return readSU("struct vvp_session", v).cs_ios
+
+def osc_env_io(env) :
+    session_key = readSymbol("osc_session_key")
+    v = env.le_ses.lc_value[session_key.lct_index]
+    return readSU("struct osc_session", v).os_io
 
 def ll_env_info(env) :
     ll_thread_key = readSymbol("ll_thread_key")
@@ -139,10 +144,11 @@ if ( __name__ == '__main__'):
         env = readSU("struct lu_env", int(args.env, 0))
         vio = vvp_env_io(env)
         print(vio)
-        print(ll_env_info(env))
-        queue = vio.u.write.vui_queue
-        print(queue)
-        page_list_sanity_check(0, queue)
+        print(osc_env_io(env))
+#        print(ll_env_info(env))
+#        queue = vio.u.write.vui_queue
+#        print(queue)
+#        page_list_sanity_check(0, queue)
     elif args.osc != 0 :
         osc_page = readSU("struct osc_page", int(args.osc, 0))
         print_osc_page(osc_page, "")
