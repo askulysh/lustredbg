@@ -374,6 +374,8 @@ def show_ptlrpc_request_buf(req) :
     elif body.pb_opc == opcodes.MDS_REINT :
         reint = readSU("struct mdt_rec_reint", get_req_buffer(req, 1))
         show_request_fmt(req, reint_fmts[reint.rr_opcode])
+    elif body.pb_opc == opcodes.OST_WRITE :
+        show_request_fmt(req, "OST_BRW_WRITE")
 
 def show_ptlrpc_request(req) :
     print("%x x%d %s %4d %s %s" %
