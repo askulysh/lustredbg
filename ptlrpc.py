@@ -309,6 +309,8 @@ def show_request_loc(req, req_format, location) :
             msg = req.rq_reqmsg
         else :
             msg = req.rq_repmsg
+            if msg == 0 :
+                print("no reply buffer");
 
         if location == 0:
             buf = get_msg_buffer(msg, i)
