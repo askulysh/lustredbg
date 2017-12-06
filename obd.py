@@ -75,7 +75,10 @@ def lu_object_find(dev, fid) :
 #    hash_for_each_hd(hs, walk_hash2)
     (bd_bucket, bd_offset) = (cfs_hash_bd_from_key(hs, hs.hs_buckets,
                               hs.hs_cur_bits, fid))
-    dep = readSU("cfs_hash_head_dep_t", bd_bucket.hsb_head + 16*bd_offset)
+    try :
+        dep = readSU("cfs_hash_head_dep_t", bd_bucket.hsb_head + 16*bd_offset)
+    except:
+        dep = readSU("cfs_hash_head_dep", bd_bucket.hsb_head + 16*bd_offset)
     print(dep)
     head = dep.hd_head.first
     while head != 0 :
