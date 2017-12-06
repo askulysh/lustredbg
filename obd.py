@@ -78,7 +78,7 @@ def lu_object_find(dev, fid) :
     try :
         dep = readSU("cfs_hash_head_dep_t", bd_bucket.hsb_head + 16*bd_offset)
     except:
-        dep = readSU("cfs_hash_head_dep", bd_bucket.hsb_head + 16*bd_offset)
+        dep = readSU("struct cfs_hash_head_dep", bd_bucket.hsb_head + 16*bd_offset)
     print(dep)
     head = dep.hd_head.first
     while head != 0 :
