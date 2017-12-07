@@ -91,7 +91,7 @@ def lu_object_find(dev, fid) :
         print("Can't find fid !")
         return 0
     print(mdt_object)
-    return mdt_object.mot_obj
+    return mdt_object
 
 def show_obd(dev) :
     print("0x%x %036s 0x%016x %01d   %01d   %01d   %01d   %01d   "

@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 from pykdump.API import *
+from obd import *
 
 mdd_lu_obj_ops = readSymbol("mdd_lu_obj_ops")
 lod_lu_obj_ops = readSymbol("lod_lu_obj_ops")
@@ -36,12 +37,32 @@ def print_mdt_obj(mdt, prefix):
             print(prefix, "osd", osd_obj)
             print_osd_object(osd_obj, prefix + "\t")
 
+def find_print_fid(lu_dev, fid, prefix) :
+    mdt_obj = lu_object_find(lu_dev, fid)
+    if mdt_obj :
+        print(mdt_obj)
+        print_mdt_obj(mdt_obj, prefix)
+
+def parse_mti(mti, prefix):
+    fid_prefix = prefix + "    "
+    print("mdt", mti.mti_mdt)
+    lu_dev = mti.mti_mdt.mdt_lu_dev
+    print("mti_tmp_fid1", mti.mti_tmp_fid1)
+    find_print_fid(lu_dev, mti.mti_tmp_fid1, fid_prefix)
+    print("mti_tmp_fid2", mti.mti_tmp_fid2)
+    find_print_fid(lu_dev, mti.mti_tmp_fid2, fid_prefix)
+    print("rr_fid1", mti.mti_rr.rr_fid1)
+    find_print_fid(lu_dev, mti.mti_rr.rr_fid1, fid_prefix)
+    print("rr_fid2", mti.mti_rr.rr_fid2)
+    find_print_fid(lu_dev, mti.mti_rr.rr_fid2, fid_prefix)
+
 if ( __name__ == '__main__'):
     import argparse
 
     parser =  argparse.ArgumentParser()
     parser.add_argument("-t","--mdt", dest="mdt", default = 0)
     parser.add_argument("-s","--osd", dest="osd", default = 0)
+    parser.add_argument("-i","--mti", dest="mti", default = 0)
     args = parser.parse_args()
     if args.mdt != 0 :
         mdt_obj = readSU("struct mdt_object", int(args.mdt, 0))
@@ -49,4 +70,7 @@ if ( __name__ == '__main__'):
     elif args.osd != 0 :
         osd_obj = readSU("struct osd_object", int(args.osd, 0))
         print_osd_object(osd_obj, "")
+    elif args.mti != 0 :
+        mti = readSU("struct mdt_thread_info", int(args.mti, 16))
+        parse_mti(mti, "")
 
