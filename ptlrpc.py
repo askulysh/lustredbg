@@ -142,7 +142,8 @@ enum {
 	REINT_RENAME   = 5,
 	REINT_OPEN     = 6,
 	REINT_SETXATTR = 7,
-	REINT_RMENTRY  = 8
+	REINT_RMENTRY  = 8,
+	REINT_MIGRATE  = 9
 };
 '''
 mds_reint = CEnum(mds_reint_c)
@@ -161,7 +162,7 @@ it_flags_c = '''
 it_flags = CDefine(it_flags_c)
 
 
-reint_fmts = [0 for i in range(9)]
+reint_fmts = [0 for i in range(10)]
 reint_fmts[mds_reint.REINT_SETATTR] = "RQF_MDS_REINT_SETATTR"
 reint_fmts[mds_reint.REINT_CREATE] = "RQF_MDS_REINT_CREATE"
 reint_fmts[mds_reint.REINT_LINK] = "RQF_MDS_REINT_LINK"
@@ -170,6 +171,7 @@ reint_fmts[mds_reint.REINT_RENAME] = "RQF_MDS_REINT_RENAME"
 reint_fmts[mds_reint.REINT_OPEN] = "RQF_MDS_REINT_OPEN"
 reint_fmts[mds_reint.REINT_SETXATTR] = "RQF_MDS_REINT_SETXATTR"
 reint_fmts[mds_reint.REINT_RMENTRY] = "RQF_MDS_REINT_UNLINK"
+reint_fmts[mds_reint.REINT_MIGRATE] = "RQF_MDS_REINT_MIGRATE"
 
 mds_open_flags_c = '''
 #define FMODE_READ               00000001
