@@ -290,17 +290,29 @@ def mtd_reint_show(reint) :
         print("%s %s %s" % (reint, mds_reint.__getitem__(reint.rr_opcode), fid2str(reint.rr_fid1)))
 
 def mdt_body_show(prefix, body) :
-    out = prefix
+    out = ""
+    try:
 #    out += "valid " + dbits2str(body.valid, obd_md_flags)
-    if body.valid & obd_md_flags.OBD_MD_FLID :
-        out += fid2str(body.fid1)
-    if body.valid & obd_md_flags.OBD_MD_FLSIZE :
-        out += " sz:%s" % body.size
-    if body.valid & obd_md_flags.OBD_MD_FLMODE :
-        out += " mode:%o" % (body.mode & (~(0xf000)))
-    if body.valid & obd_md_flags.OBD_MD_FLTYPE :
-        out += " type:%x" % (body.mode & 0xf000)
-    print(out)
+        if body.valid & obd_md_flags.OBD_MD_FLID :
+            out += fid2str(body.fid1)
+        if body.valid & obd_md_flags.OBD_MD_FLSIZE :
+            out += " sz:%s" % body.size
+        if body.valid & obd_md_flags.OBD_MD_FLMODE :
+            out += " mode:%o" % (body.mode & (~(0xf000)))
+        if body.valid & obd_md_flags.OBD_MD_FLTYPE :
+            out += " type:%x" % (body.mode & 0xf000)
+    except:
+        if body.mbo_valid & obd_md_flags.OBD_MD_FLID :
+            out += fid2str(body.mbo_fid1)
+        if body.mbo_valid & obd_md_flags.OBD_MD_FLSIZE :
+            out += " sz:%s" % body.mbo_size
+        if body.mbo_valid & obd_md_flags.OBD_MD_FLMODE :
+            out += " mode:%o" % (body.mbo_mode & (~(0xf000)))
+        if body.mbo_valid & obd_md_flags.OBD_MD_FLTYPE :
+            out += " type:%x" % (body.mbo_mode & 0xf000)
+
+    if len(out) > 1 :
+        print(prefix, out)
 
 def show_request_loc(req, req_format, location) :
     for i in range(0, req_format.rf_fields[location].nr) :
