@@ -38,7 +38,7 @@ def print_mdt_obj(mdt, prefix):
             print(prefix, "osd", osd_obj)
             print_osd_object(osd_obj, prefix + "\t")
         elif layer.lo_ops == osp_lu_obj_ops :
-            osp_obj = readSU("struct osp_object", layer)
+            osp_obj = readSU("struct osp_object", layer - 0x50)
             print(prefix, "osp", osp_obj)
         else :
             print(prefix, "unknown", layer)
