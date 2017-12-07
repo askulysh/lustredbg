@@ -40,20 +40,19 @@ def print_mdt_obj(mdt, prefix):
 def find_print_fid(lu_dev, fid, prefix) :
     mdt_obj = lu_object_find(lu_dev, fid)
     if mdt_obj :
-        print(mdt_obj)
         print_mdt_obj(mdt_obj, prefix)
 
 def parse_mti(mti, prefix):
     fid_prefix = prefix + "    "
     print("mdt", mti.mti_mdt)
     lu_dev = mti.mti_mdt.mdt_lu_dev
-    print("mti_tmp_fid1", mti.mti_tmp_fid1)
+    print("mti_tmp_fid1", mti.mti_tmp_fid1, fid2str(mti.mti_tmp_fid1))
     find_print_fid(lu_dev, mti.mti_tmp_fid1, fid_prefix)
-    print("mti_tmp_fid2", mti.mti_tmp_fid2)
+    print("mti_tmp_fid2", mti.mti_tmp_fid2, fid2str(mti.mti_tmp_fid2))
     find_print_fid(lu_dev, mti.mti_tmp_fid2, fid_prefix)
-    print("rr_fid1", mti.mti_rr.rr_fid1)
+    print("rr_fid1", mti.mti_rr.rr_fid1, fid2str( mti.mti_rr.rr_fid1))
     find_print_fid(lu_dev, mti.mti_rr.rr_fid1, fid_prefix)
-    print("rr_fid2", mti.mti_rr.rr_fid2)
+    print("rr_fid2", mti.mti_rr.rr_fid2, fid2str( mti.mti_rr.rr_fid2))
     find_print_fid(lu_dev, mti.mti_rr.rr_fid2, fid_prefix)
 
 if ( __name__ == '__main__'):
