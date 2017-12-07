@@ -5,6 +5,8 @@ from __future__ import print_function
 from pykdump.API import *
 from ktime import *
 from lnet import *
+from LinuxDump.BTstack import *
+import fregsapi
 
 max_req = 10
 
@@ -483,6 +485,33 @@ def show_ptlrpcds() :
         ptlrpcd_rcv = ptlrpcds[0].pd_thread_rcv
     show_ptlrpcd_ctl(ptlrpcd_rcv)
 
+def search_for_reg(r, pid, func) :
+    #     with DisasmFlavor('att'):
+    try:
+        stacklist = exec_bt("bt %d" % pid, MEMOIZE=False)
+    except:
+        print("Unable to get stack trace")
+        return 0
+    for s in stacklist:
+        fregsapi.search_for_registers(s)
+        for f in s.frames:
+            if f.func == func :
+                return f.reg[r][0]
+    return 0
+
+def show_processing() :
+    res = dict()
+
+    (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
+    waiting_pids = funcsMatch(funcpids, "tgt_request_handle")
+    for pid in waiting_pids :
+        print(pid)
+        addr = search_for_reg("RDI", pid, "tgt_request_handle")
+        req = readSU("struct ptlrpc_request", addr)
+        show_ptlrpc_request(req)
+#        lu_env = readSU("struct lu_env", addr)
+#        oti = osd_oti_get(lu_env)
+
 if ( __name__ == '__main__'):
     import argparse
 
@@ -491,6 +520,8 @@ if ( __name__ == '__main__'):
     parser.add_argument("-s","--set", dest="set", default = 0)
     parser.add_argument("-n","--num", dest="n", default = 0)
     parser.add_argument("-i","--import", dest="imp", default = 0)
+    parser.add_argument("-p","--processing", dest="processing",
+                        action='store_true')
     args = parser.parse_args()
     if args.n != 0 :
         max_req = n
@@ -503,5 +534,7 @@ if ( __name__ == '__main__'):
     elif args.imp != 0 :
         imp = readSU("struct obd_import", int(args.imp, 0))
         imp_show_history(imp)
+    elif args.processing != 0 :
+        show_processing()
     else :
         show_ptlrpcds()
