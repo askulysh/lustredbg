@@ -40,8 +40,6 @@ def cfs_hash_bd_from_key(hs, bkts, bits, key) :
     index = lu_obj_hop_hash(hs, key, (1 << bits) - 1)
     bd_bucket = bkts[index & ((1 << (bits - hs.hs_bkt_bits)) - 1)]
     bd_offset = index >> (bits - hs.hs_bkt_bits)
-    print(bd_bucket)
-    print(bd_offset)
     return (bd_bucket, bd_offset)
 
 def hash_for_each_hd(hs, func) :
@@ -71,18 +69,14 @@ def walk_hash2(hlist) :
 
 def lu_object_find(dev, fid) :
     hs = dev.ld_site.ls_obj_hash
-    print(hs)
-#    hash_for_each_hd(hs, walk_hash2)
     (bd_bucket, bd_offset) = (cfs_hash_bd_from_key(hs, hs.hs_buckets,
                               hs.hs_cur_bits, fid))
     try :
         dep = readSU("cfs_hash_head_dep_t", bd_bucket.hsb_head + 16*bd_offset)
     except:
         dep = readSU("struct cfs_hash_head_dep", bd_bucket.hsb_head + 16*bd_offset)
-    print(dep)
     head = dep.hd_head.first
     while head != 0 :
-        print(head)
         mdt_object = readSU("struct mdt_object", head - 0x20)
         if mdt_object.mot_header.loh_fid.f_seq == fid.f_seq and mdt_object.mot_header.loh_fid.f_oid == fid.f_oid and mdt_object.mot_header.loh_fid.f_ver == fid.f_ver :
                break
@@ -90,7 +84,6 @@ def lu_object_find(dev, fid) :
     if head == 0 :
         print("Can't find fid !")
         return 0
-    print(mdt_object)
     return mdt_object
 
 def show_obd(dev) :
@@ -150,7 +143,8 @@ if ( __name__ == '__main__'):
     if args.fid != 0 :
         lu_dev = readSU("struct lu_device", int(args.device, 0))
         fid = readSU("struct lu_fid", int(args.fid, 0))
-        lu_object_find(lu_dev, fid)
+        mdt_obj = lu_object_find(lu_dev, fid)
+        print(mdt_obj)
     elif args.search_ptr != 0 :
         ptr_search(int(args.search_ptr, 0))
     else :
