@@ -8,6 +8,7 @@ from obd import *
 mdd_lu_obj_ops = readSymbol("mdd_lu_obj_ops")
 lod_lu_obj_ops = readSymbol("lod_lu_obj_ops")
 osd_lu_obj_ops = readSymbol("osd_lu_obj_ops")
+osp_lu_obj_ops = readSymbol("osp_lu_obj_ops")
 mdt_obj_ops = readSymbol("mdt_obj_ops")
 
 def fid2str(fid) :
@@ -36,6 +37,11 @@ def print_mdt_obj(mdt, prefix):
             osd_obj = readSU("struct osd_object", layer)
             print(prefix, "osd", osd_obj)
             print_osd_object(osd_obj, prefix + "\t")
+        elif layer.lo_ops == osp_lu_obj_ops :
+            osp_obj = readSU("struct osp_object", layer)
+            print(prefix, "osp", osp_obj)
+        else :
+            print(prefix, "unknown", layer)
 
 def find_print_fid(lu_dev, fid, prefix) :
     mdt_obj = lu_object_find(lu_dev, fid)
