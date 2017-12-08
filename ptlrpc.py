@@ -526,13 +526,13 @@ if ( __name__ == '__main__'):
     if args.n != 0 :
         max_req = n
     if args.req != 0 :
-        req = readSU("struct ptlrpc_request", int(args.req, 0))
+        req = readSU("struct ptlrpc_request", int(args.req, 16))
         show_ptlrpc_request(req)
     elif args.set != 0 :
-        s = readSU("struct ptlrpc_request_set", int(args.set, 0))
+        s = readSU("struct ptlrpc_request_set", int(args.set, 16))
         show_ptlrpc_set(s)
     elif args.imp != 0 :
-        imp = readSU("struct obd_import", int(args.imp, 0))
+        imp = readSU("struct obd_import", int(args.imp, 16))
         imp_show_history(imp)
     elif args.processing != 0 :
         show_processing()

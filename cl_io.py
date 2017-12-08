@@ -141,7 +141,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-p","--page", dest="cl_page", default = 0)
     args = parser.parse_args()
     if args.env != 0 :
-        env = readSU("struct lu_env", int(args.env, 0))
+        env = readSU("struct lu_env", int(args.env, 16))
         vio = vvp_env_io(env)
         print(vio)
         print(osc_env_io(env))
@@ -150,10 +150,10 @@ if ( __name__ == '__main__'):
 #        print(queue)
 #        page_list_sanity_check(0, queue)
     elif args.osc != 0 :
-        osc_page = readSU("struct osc_page", int(args.osc, 0))
+        osc_page = readSU("struct osc_page", int(args.osc, 16))
         print_osc_page(osc_page, "")
     elif args.cl_page != 0 :
-        cl_page = readSU("struct cl_page", int(args.cl_page, 0))
+        cl_page = readSU("struct cl_page", int(args.cl_page, 16))
         print_cl_page(cl_page, "")
     else :
         print_waiting_pages()

@@ -121,13 +121,13 @@ if ( __name__ == '__main__'):
     parser.add_argument("-s","--osc", dest="osc", default = 0)
     args = parser.parse_args()
     if args.cl != 0 :
-        cl_lock = readSU("struct cl_lock", int(args.cl, 0))
+        cl_lock = readSU("struct cl_lock", int(args.cl, 16))
         print_cl_lock(cl_lock, "")
     elif args.lov != 0 :
-        lov_lock = readSU("struct lov_lock", int(args.lov, 0))
+        lov_lock = readSU("struct lov_lock", int(args.lov, 16))
         print_lov_lock(lov_lock, "")
     elif args.osc != 0 :
-        osc_lock = readSU("struct osc_lock", int(args.osc, 0))
+        osc_lock = readSU("struct osc_lock", int(args.osc, 16))
         print_osc_lock(osc_lock, "")
     else :
         print_waiting_cl_locks()

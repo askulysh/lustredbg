@@ -70,10 +70,10 @@ if ( __name__ == '__main__'):
     parser.add_argument("-i","--mti", dest="mti", default = 0)
     args = parser.parse_args()
     if args.mdt != 0 :
-        mdt_obj = readSU("struct mdt_object", int(args.mdt, 0))
+        mdt_obj = readSU("struct mdt_object", int(args.mdt, 16))
         print_mdt_obj(mdt_obj, "")
     elif args.osd != 0 :
-        osd_obj = readSU("struct osd_object", int(args.osd, 0))
+        osd_obj = readSU("struct osd_object", int(args.osd, 16))
         print_osd_object(osd_obj, "")
     elif args.mti != 0 :
         mti = readSU("struct mdt_thread_info", int(args.mti, 16))

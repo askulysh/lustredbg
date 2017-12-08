@@ -141,12 +141,12 @@ if ( __name__ == '__main__'):
                         default=0)
     args = parser.parse_args()
     if args.fid != 0 :
-        lu_dev = readSU("struct lu_device", int(args.device, 0))
-        fid = readSU("struct lu_fid", int(args.fid, 0))
+        lu_dev = readSU("struct lu_device", int(args.device, 16))
+        fid = readSU("struct lu_fid", int(args.fid, 16))
         mdt_obj = lu_object_find(lu_dev, fid)
         print(mdt_obj)
     elif args.search_ptr != 0 :
-        ptr_search(int(args.search_ptr, 0))
+        ptr_search(int(args.search_ptr, 16))
     else :
         show_obds()
 

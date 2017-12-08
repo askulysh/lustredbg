@@ -261,10 +261,10 @@ if ( __name__ == '__main__'):
     parser.add_argument("-f","--flags", dest="flags", default = 0)
     args = parser.parse_args()
     if args.lock != 0 :
-        l = readSU("struct ldlm_lock", int(args.lock, 0))
+        l = readSU("struct ldlm_lock", int(args.lock, 16))
         print_ldlm_lock(l, "")
     elif args.ns != 0 :
-        ns = readSU("struct ldlm_namespace", int(args.ns, 0))
+        ns = readSU("struct ldlm_namespace", int(args.ns, 16))
         show_ns_locks(ns)
     elif args.compl_waiting != 0 :
         show_completition_waiting_locks()
