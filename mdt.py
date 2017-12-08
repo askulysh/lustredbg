@@ -14,7 +14,7 @@ mdt_obj_ops = readSymbol("mdt_obj_ops")
 lu_object_header_attr_c = '''
 enum lu_object_header_attr {
         LOHA_EXISTS   = 1,
-        LOHA_REMOTE   = 2
+        LOHA_REMOTE   = 3
 };
 '''
 lu_object_header_attr = CEnum(lu_object_header_attr_c)
