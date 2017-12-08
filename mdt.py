@@ -11,6 +11,30 @@ osd_lu_obj_ops = readSymbol("osd_lu_obj_ops")
 osp_lu_obj_ops = readSymbol("osp_lu_obj_ops")
 mdt_obj_ops = readSymbol("mdt_obj_ops")
 
+lu_object_header_attr_c = '''
+enum lu_object_header_attr {
+        LOHA_EXISTS   = 1,
+        LOHA_REMOTE   = 2
+};
+'''
+lu_object_header_attr = CEnum(lu_object_header_attr_c)
+
+def attr2str(attr) :
+    ret = lu_object_header_attr.__getitem__(attr & 3)
+    if attr & 0xf000 == 0x4000 :
+        ret = ret +"|S_IFDIR"
+    elif attr & 0xf000 == 0x2000 :
+        ret = ret +"|S_IFCHR"
+    elif attr & 0xf000 == 0x6000 :
+        ret = ret +"|S_IFBLK"
+    elif attr & 0xf000 == 0x8000 :
+        ret = ret +"|S_IFREG"
+    elif attr & 0xf000 == 0x1000 :
+        ret = ret +"|S_IFIFO"
+    elif attr & 0xf000 == 0xa000 :
+        ret = ret +"|S_IFLKN"
+    return ret
+
 def fid2str(fid) :
     return "[0x%x:0x%x:0x%x]" % (fid.f_seq, fid.f_oid, fid.f_ver)
 
@@ -20,8 +44,8 @@ def print_osd_object(osd_obj, prefix) :
 
 def print_mdt_obj(mdt, prefix):
     moh = mdt.mot_header
-    print(prefix, "%s %s flags: %x attr 0%o" % (mdt, fid2str(moh.loh_fid),
-           moh.loh_flags, moh.loh_attr))
+    print(prefix, "%s %s flags: %x attr 0%o %s" % (mdt, fid2str(moh.loh_fid),
+           moh.loh_flags, moh.loh_attr, attr2str(moh.loh_attr)))
 
     for layer in readSUListFromHead(mdt.mot_header.loh_layers, "lo_linkage",
             "struct lu_object") :
