@@ -94,6 +94,9 @@ download_lustre() {
 		if [ $build -ge 238 ]; then
 			base_ver="2.7.19.8"
 		fi
+		if [ $build -ge 315 ]; then
+			base_ver="2.7.21"
+		fi
 		if [ $build -ge 248 ]; then
 			lustre_mod_prefix="lustre_ib-debuginfo"
 		fi
