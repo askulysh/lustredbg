@@ -357,7 +357,7 @@ def show_request_loc(req, req_format, location) :
                 if s > 100 :
                     s = 100
                 ss = str(readmem(buf, s)
-            else
+            else :
                 ss = ""
             print("  offset %d %s size %d %s" % (offset, name, s, ss)))
             name = 0
