@@ -483,6 +483,11 @@ def show_ptlrpc_request(req) :
            phase2str(req.rq_phase), print_req_flags(req)))
     if req.rq_import != 0:
         show_import("  ", req.rq_import)
+    if req.rq_export != 0:
+        conn = req.rq_export.exp_imp_reverse.imp_connection
+        remote = ("%s@%s" % (conn.c_remote_uuid.uuid, nid2str(conn.c_peer.nid)))
+        print(remote)
+
     show_ptlrpc_request_buf(req)
 
 def show_ptlrpc_set(s) :
