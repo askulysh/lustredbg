@@ -99,7 +99,12 @@ def print_connection(conn) :
 def ldlm_mode2str(mode) :
         return ldlm_modes.__getitem__(mode)
 
+def res2str(res) :
+    return "[0x%x:0x%x:0x%x]" % (res.lr_name.name[0], res.lr_name.name[1],
+            res.lr_name.name[2])
+
 def print_ldlm_lock(ldlm_lock, prefix) :
+    pid = ""
     if ldlm_lock.l_export != 0 :
         conn = ldlm_lock.l_export.exp_imp_reverse.imp_connection
         remote = ("%s@%s" % (conn.c_remote_uuid.uuid, nid2str(conn.c_peer.nid)))
@@ -107,13 +112,14 @@ def print_ldlm_lock(ldlm_lock, prefix) :
         remote = ldlm_lock.l_conn_export.exp_obd.obd_name
     else :
         remote = "local lock"
+        pid = ldlm_lock.l_pid
 
-    print("%s 0x%x/0x%x lrc %u/%d,%d %s %s" % (prefix,
+    print("%s 0x%x/0x%x lrc %u/%d,%d %s %s %s" % (prefix,
                             ldlm_lock.l_handle.h_cookie,
                             ldlm_lock.l_remote_handle.cookie,
                             ldlm_lock.l_refc.counter, ldlm_lock.l_readers,
                             ldlm_lock.l_writers, remote,
-                            ldlm_lock.l_resource.lr_name.name))
+                            res2str(ldlm_lock.l_resource), pid))
     print(prefix, "flags:", dbits2str(ldlm_lock.l_flags, LDLM_flags))
     if ldlm_lock.l_req_mode == ldlm_lock.l_granted_mode :
         timeout = ""
