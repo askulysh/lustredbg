@@ -456,7 +456,7 @@ def show_ptlrpc_request_buf(req) :
     print("opc %s" % opcodes.__getitem__(body.pb_opc))
     if body.pb_opc == opcodes.LDLM_ENQUEUE :
         ldlm_req = readSU("struct ldlm_request", get_req_buffer(req, 1))
-        if ldlm_req & LDLM_flags.LDLM_FL_HAS_INTENT :
+        if ldlm_req.lock_flags & LDLM_flags.LDLM_FL_HAS_INTENT :
             intent = readSU("struct ldlm_intent", get_req_buffer(req, 2))
             it = mdt_intent_code(intent.opc)
             if it != -1 :
