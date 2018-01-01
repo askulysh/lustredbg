@@ -354,7 +354,12 @@ def show_request_loc(req, req_format, location) :
         elif name == "name":
             s = msg.lm_buflens[i+1]
             if s > 0 :
-                print("  offset %d %s %s" % (offset, name, str(readmem(buf, s))))
+                if s > 100 :
+                    s = 100
+                ss = str(readmem(buf, s)
+            else
+                ss = ""
+            print("  offset %d %s size %d %s" % (offset, name, s, ss)))
             name = 0
 
         if name :
