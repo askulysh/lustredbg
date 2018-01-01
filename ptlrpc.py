@@ -372,7 +372,8 @@ def show_request_loc(req, req_format, location) :
                 name = 0
 
         if name == 0 :
-            print("  offset %d %s %x" % (offset, req_msg_field.rmf_name, buf))
+            print("  offset %d %s size %d %x" %
+                  (offset, req_msg_field.rmf_name, msg.lm_buflens[i+1], buf))
 
         if name == "mdt_rec_reint":
             mtd_reint_show(field)
