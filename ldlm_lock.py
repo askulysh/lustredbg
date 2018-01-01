@@ -103,6 +103,12 @@ def res2str(res) :
     return "[0x%x:0x%x:0x%x]" % (res.lr_name.name[0], res.lr_name.name[1],
             res.lr_name.name[2])
 
+def print_ldlm_request(prefix, req) :
+    res = req.lock_desc.l_resource
+    print("%s %s %s %s " %
+          (prefix, ldlm_types.__getitem__(res.lr_type), res2str(res),
+           ldlm_mode2str(req.lock_desc.l_req_mode)))
+
 def print_ldlm_lock(ldlm_lock, prefix) :
     pid = ""
     if ldlm_lock.l_export != 0 :
