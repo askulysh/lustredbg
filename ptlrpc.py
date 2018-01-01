@@ -5,6 +5,7 @@ from __future__ import print_function
 from pykdump.API import *
 from ktime import *
 from lnet import *
+from ldlm_lock import *
 from LinuxDump.BTstack import *
 import fregsapi
 
@@ -157,12 +158,71 @@ it_flags_c = '''
 #define IT_GETATTR  0x0008
 #define IT_LOOKUP   0x0010
 #define IT_UNLINK   0x0020
-#define IT_GETXATTR 0x0040
-#define IT_EXEC     0x0080
-#define IT_PIN      0x0100
+#define IT_GETXATTR 0x0080
+#define IT_EXEC     0x0100
+#define IT_PIN      0x0200
+#define IT_LAYOUT   0x0400
+#define IT_QUOTA_DQACQ 0x0800
+#define IT_QUOTA_CONN  0x1000
+#define IT_SETXATTR 0x2000
 '''
 it_flags = CDefine(it_flags_c)
 
+mdt_it_code_c = '''
+enum {
+        MDT_IT_OPEN,
+        MDT_IT_OCREAT,
+        MDT_IT_CREATE,
+        MDT_IT_GETATTR,
+        MDT_IT_READDIR,
+        MDT_IT_LOOKUP,
+        MDT_IT_UNLINK,
+        MDT_IT_TRUNC,
+        MDT_IT_GETXATTR,
+        MDT_IT_LAYOUT,
+        MDT_IT_QUOTA,
+        MDT_IT_NR
+};
+'''
+mdt_it_code = CEnum(mdt_it_code_c)
+
+def mdt_intent_code(itcode) :
+    rc = -1
+    if itcode == it_flags.IT_OPEN:
+        rc = mdt_it_code.MDT_IT_OPEN
+    elif itcode == it_flags.IT_OPEN|it_flags.IT_CREAT:
+        rc = mdt_it_code.MDT_IT_OCREAT
+    elif itcode == it_flags.IT_CREAT:
+        rc = mdt_it_code.MDT_IT_CREATE
+    elif itcode == it_flags.IT_READDIR:
+        rc = mdt_it_code.MDT_IT_READDIR
+    elif itcode == it_flags.IT_GETATTR:
+        rc = mdt_it_code.MDT_IT_GETATTR
+    elif itcode == it_flags.IT_LOOKUP:
+        rc = mdt_it_code.MDT_IT_LOOKUP
+    elif itcode == it_flags.IT_UNLINK:
+        rc = mdt_it_code.MDT_IT_UNLINK
+    elif itcode == it_flags.IT_TRUNC:
+        rc = mdt_it_code.MDT_IT_TRUNC
+    elif itcode == it_flags.IT_GETXATTR:
+        rc = mdt_it_code.MDT_IT_GETXATTR
+    elif itcode == it_flags.IT_LAYOUT:
+        rc = mdt_it_code.MDT_IT_LAYOUT
+    elif itcode == it_flags.IT_QUOTA_DQACQ:
+        rc = mdt_it_code.MDT_IT_QUOTA
+    elif itcode == it_flags.IT_QUOTA_CONN:
+        rc = mdt_it_code.MDT_IT_QUOTA
+    return rc;
+
+intent_fmts = [0 for i in range(mdt_it_code.MDT_IT_NR)]
+intent_fmts[mdt_it_code.MDT_IT_OPEN] = "RQF_LDLM_INTENT_OPEN"
+intent_fmts[mdt_it_code.MDT_IT_OCREAT] = "RQF_LDLM_INTENT_OPEN"
+intent_fmts[mdt_it_code.MDT_IT_CREATE] = "RQF_LDLM_INTENT_CREATE"
+intent_fmts[mdt_it_code.MDT_IT_GETATTR] = "RQF_LDLM_INTENT_GETATTR"
+intent_fmts[mdt_it_code.MDT_IT_LOOKUP] = "RQF_LDLM_INTENT_GETATTR"
+intent_fmts[mdt_it_code.MDT_IT_UNLINK] = "RQF_LDLM_INTENT_UNLINK"
+intent_fmts[mdt_it_code.MDT_IT_GETXATTR] = "RQF_LDLM_INTENT_GETXATTR"
+intent_fmts[mdt_it_code.MDT_IT_LAYOUT] = "RQF_LDLM_INTENT_LAYOUT"
 
 reint_fmts = [0 for i in range(10)]
 reint_fmts[mds_reint.REINT_SETATTR] = "RQF_MDS_REINT_SETATTR"
@@ -393,15 +453,18 @@ def show_ptlrpc_request_buf(req) :
     body = readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
     print("opc %s" % opcodes.__getitem__(body.pb_opc))
     if body.pb_opc == opcodes.LDLM_ENQUEUE :
-        reint = readSU("struct mdt_rec_reint", get_req_buffer(req, 3))
-        if reint.rr_opcode == mds_reint.REINT_CREATE :
-            show_request_fmt(req, "RQF_LDLM_INTENT_CREATE")
-        elif reint.rr_opcode == mds_reint.REINT_OPEN :
-            show_request_fmt(req, "RQF_LDLM_INTENT_OPEN")
+        ldlm_req = readSU("struct ldlm_request", get_req_buffer(req, 1))
+        if ldlm_req & LDLM_flags.LDLM_FL_HAS_INTENT :
+            intent = readSU("struct ldlm_intent", get_req_buffer(req, 2))
+            it = mdt_intent_code(intent.opc)
+            if it != -1 :
+                show_request_fmt(req, intent_fmts[it])
+            else :
+                print(body)
+                print(ldlm_req)
+                print(intent)
         else:
             print(body)
-            print(reint.rr_opcode)
-            ldlm_req = readSU("struct ldlm_request", get_req_buffer(req, 1))
             print(ldlm_req)
     elif body.pb_opc == opcodes.MDS_REINT :
         reint = readSU("struct mdt_rec_reint", get_req_buffer(req, 1))
