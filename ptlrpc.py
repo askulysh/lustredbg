@@ -468,6 +468,7 @@ def show_ptlrpc_request_buf(req) :
         else:
             print(body)
             print(ldlm_req)
+            print_ldlm_request("   ", ldlm_req)
     elif body.pb_opc == opcodes.MDS_REINT :
         reint = readSU("struct mdt_rec_reint", get_req_buffer(req, 1))
         show_request_fmt(req, reint_fmts[reint.rr_opcode])
