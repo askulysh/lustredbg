@@ -619,6 +619,7 @@ if ( __name__ == '__main__'):
         show_ptlrpc_set(s)
     elif args.imp != 0 :
         imp = readSU("struct obd_import", int(args.imp, 16))
+        show_import("", imp)
         imp_show_history(imp)
     elif args.processing != 0 :
         show_processing()
