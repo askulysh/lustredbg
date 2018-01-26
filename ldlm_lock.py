@@ -133,7 +133,8 @@ def print_ldlm_lock(ldlm_lock, prefix) :
             jiffies = readSymbol("jiffies")
             timeout = "will timeout in " + j_delay(jiffies,
                 ldlm_lock.l_callback_timeout)
-        print(prefix, "granted", timeout)
+        print(prefix, "granted", ldlm_mode2str(ldlm_lock.l_granted_mode),
+                timeout)
     else :
         print("%s req_mode: %s enqueued %us ago" % (prefix,
               ldlm_mode2str(ldlm_lock.l_req_mode),
