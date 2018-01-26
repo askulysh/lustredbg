@@ -172,7 +172,7 @@ def walk_res_hash2(hlist) :
         except:
             recent = ""
         print("res %x %s %s refc %d %s" %
-              (res, ldlm_types.__getitem__(res.lr_type), res.lr_name.name,
+              (res, ldlm_types.__getitem__(res.lr_type), res2str(res),
             res.lr_refcount.counter, recent))
         head = head.next
 
