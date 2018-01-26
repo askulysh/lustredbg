@@ -7,6 +7,7 @@ from LinuxDump.BTstack import *
 import fregsapi
 from ktime import *
 from lnet import *
+from ptlrpc import *
 import re
 
 __LDLM_flags_c = '''
@@ -105,9 +106,12 @@ def res2str(res) :
 
 def print_ldlm_request(prefix, req) :
     res = req.lock_desc.l_resource
-    print("%s %s %s %s " %
-          (prefix, ldlm_types.__getitem__(res.lr_type), res2str(res),
-           ldlm_mode2str(req.lock_desc.l_req_mode)))
+    try:
+        print("%s %s %s %s " %
+              (prefix, ldlm_types.__getitem__(res.lr_type), res2str(res),
+             ldlm_mode2str(req.lock_desc.l_req_mode)))
+    except:
+        print("err")
 
 def print_ldlm_lock(ldlm_lock, prefix) :
     pid = ""
@@ -201,20 +205,6 @@ def show_namespaces(regexp) :
 #    printf "Looking for SRV name spaces:\n"
 #    srv_namespaces $arg0
 
-def search_for_reg(r, pid, func) :
-    #     with DisasmFlavor('att'):
-    try:
-        stacklist = exec_bt("bt %d" % pid, MEMOIZE=False)
-    except:
-        print("Unable to get stack trace")
-        return 0
-    for s in stacklist:
-        fregsapi.search_for_registers(s)
-        for f in s.frames:
-            if f.func == func :
-                return f.reg[r][0]
-    return 0
-
 def find_conflicting_lock(lock) :
     granted = readSUListFromHead(lock.l_resource.lr_granted,
                 "l_res_link", "struct ldlm_lock")
@@ -232,18 +222,25 @@ def find_conflicting_lock(lock) :
 
         return nil
 
+def show_tgt(pid) :
+    print(pid)
+    addr = search_for_reg("RDI", pid, "tgt_request_handle")
+    req = readSU("struct ptlrpc_request", addr)
+    show_ptlrpc_request(req)
+    addr = search_for_reg("RBX", pid, "schedule_timeout")
+    if addr == 0 :
+        addr = search_for_reg("RBX", pid, "__schedule")
+    lock = readSU("struct ldlm_lock", addr)
+    print(lock)
+    print_ldlm_lock(lock, "")
+    return lock
+
 def show_completition_waiting_locks() :
     res = dict()
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
     waiting_pids = funcsMatch(funcpids, "ldlm_completion_ast")
     for pid in waiting_pids :
-        print(pid)
-        addr = search_for_reg("RBX", pid, "schedule_timeout")
-        if addr == 0 :
-            addr = search_for_reg("RBX", pid, "schedule")
-        lock = readSU("struct ldlm_lock", addr)
-        print(lock)
-        print_ldlm_lock(lock, "")
+        lock = show_tgt(pid)
         conflict = find_conflicting_lock(lock)
         try :
             count = res[conflict][0]
@@ -271,6 +268,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-g","--grep", dest="g", default = 0)
     parser.add_argument("-w","--compwait", dest="compl_waiting",
                         action='store_true')
+    parser.add_argument("-p","--pid", dest="pid", default = 0)
     parser.add_argument("-f","--flags", dest="flags", default = 0)
     args = parser.parse_args()
     if args.lock != 0 :
@@ -281,6 +279,8 @@ if ( __name__ == '__main__'):
         show_ns_locks(ns)
     elif args.compl_waiting != 0 :
         show_completition_waiting_locks()
+    elif args.pid != 0 :
+        show_tgt(int(args.pid))
     elif args.g != 0 :
         show_namespaces(args.g)
     elif args.flags != 0 :
