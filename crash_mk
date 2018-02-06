@@ -413,6 +413,15 @@ esac
 echo "client_build=$client_build"
 echo "base_ver=$base_ver"
 
+if [[ -n $2 ]]; then
+	echo "Lustre rpm: $2"
+	echo "mod -S ./lib/" > load_modules
+	rpm2cpio $2 | cpio -idmv
+	mv ./usr/lib/debug/lib .
+	rm -rf ./usr
+	parse
+fi
+
 if [ $base_ver = "2.1.0" ]; then
 	download_lustre_1x
 else
