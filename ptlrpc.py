@@ -589,8 +589,6 @@ def search_for_reg(r, pid, func) :
     return 0
 
 def show_processing() :
-    res = dict()
-
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
     waiting_pids = funcsMatch(funcpids, "tgt_request_handle")
     for pid in waiting_pids :
@@ -600,6 +598,30 @@ def show_processing() :
         show_ptlrpc_request(req)
 #        lu_env = readSU("struct lu_env", addr)
 #        oti = osd_oti_get(lu_env)
+
+def show_policy(policy) :
+    if (policy == 0) :
+        return
+    print(policy, policy.pol_desc.pd_name)
+    fifo_head = readSU("struct nrs_fifo_head", policy.pol_private)
+    print(fifo_head)
+    rq_info = getStructInfo('struct ptlrpc_request')
+    srv_rq_info = getStructInfo('struct ptlrpc_srv_req')
+    nrs_rq_info = getStructInfo('struct ptlrpc_nrs_request')
+    offset = rq_info['rq_srv'].offset + srv_rq_info['sr_nrq'].offset + nrs_rq_info['nr_u'].offset
+    head = fifo_head.fh_list
+    while head.next != fifo_head.fh_list :
+        head = head.next
+        req = readSU("struct ptlrpc_request", int(head) - offset)
+        show_ptlrpc_request(req)
+        show_ptlrpc_request_buf(req)
+
+def show_waiting(service) :
+    for i in range(service.srv_ncpts) :
+        srv_part = service.srv_parts[i]
+        print(srv_part)
+        show_policy(srv_part.scp_nrs_reg.nrs_policy_primary)
+        show_policy(srv_part.scp_nrs_reg.nrs_policy_fallback)
 
 if ( __name__ == '__main__'):
     import argparse
@@ -611,6 +633,8 @@ if ( __name__ == '__main__'):
     parser.add_argument("-i","--import", dest="imp", default = 0)
     parser.add_argument("-p","--processing", dest="processing",
                         action='store_true')
+    parser.add_argument("-w","--waiting", dest="waiting",
+                       default = 0)
     args = parser.parse_args()
     if args.n != 0 :
         max_req = n
@@ -626,5 +650,8 @@ if ( __name__ == '__main__'):
         imp_show_history(imp)
     elif args.processing != 0 :
         show_processing()
+    elif args.waiting != 0 :
+        service = readSU("struct ptlrpc_service", int(args.waiting, 16))
+        show_waiting(service)
     else :
         show_ptlrpcds()
