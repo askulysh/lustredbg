@@ -159,6 +159,7 @@ it_flags_c = '''
 #define IT_GETATTR  0x0008
 #define IT_LOOKUP   0x0010
 #define IT_UNLINK   0x0020
+#define IT_TRUNC    0x0040
 #define IT_GETXATTR 0x0080
 #define IT_EXEC     0x0100
 #define IT_PIN      0x0200
