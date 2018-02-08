@@ -131,7 +131,8 @@ enum {
         LDLM_BL_CALLBACK = 104,
         LDLM_CP_CALLBACK = 105,
         LDLM_GL_CALLBACK = 106,
-        LDLM_SET_INFO    = 107
+        LDLM_SET_INFO    = 107,
+	OUT_UPDATE	 = 1000
 };
 '''
 opcodes = CEnum(opcodes_c)
@@ -476,6 +477,8 @@ def show_ptlrpc_request_buf(req) :
         show_request_fmt(req, "RQF_MDS_GETXATTR")
     elif body.pb_opc == opcodes.OST_WRITE :
         show_request_fmt(req, "RQF_OST_BRW_WRITE")
+    elif body.pb_opc == opcodes.OUT_UPDATE :
+        show_request_fmt(req, "RQF_OUT_UPDATE")
 
 def show_ptlrpc_request(req) :
     print("%x x%d %s %4d %s %s" %
