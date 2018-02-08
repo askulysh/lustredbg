@@ -132,6 +132,7 @@ enum {
         LDLM_CP_CALLBACK = 105,
         LDLM_GL_CALLBACK = 106,
         LDLM_SET_INFO    = 107,
+	OBD_PING	 = 400,
 	OUT_UPDATE	 = 1000
 };
 '''
