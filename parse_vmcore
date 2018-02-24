@@ -3,7 +3,7 @@
 [ -f load_modules ] || exit
 
 dump_dmesg $1 &
-log_extr $1 &
+log_extr_py $1 &
 vmcore_stack $1 &
 vmcore_fp $1 &
 wait
