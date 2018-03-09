@@ -183,6 +183,16 @@ set_release() {
 			base_ver="2.7.19.8"
 			lustre_mod_prefix="lustre_ib-debuginfo"
 			;;
+		"CSL3.0_Lustre_opa")
+			NEO_ver="CSL3.0"
+			X="8"
+			kernel_build=$kernel_build_full
+			base_ver="2.7.19.12"
+			lustre_mod_prefix="lustre_opa-debuginfo"
+			NEO_kernel=$NEO_rel"_Kernel"
+			lustre_ver="CSL3.0_Lustre_opa"
+			return
+			;;
 	esac
 
 	lustre_ver=$NEO_rel"_Lustre"
@@ -320,7 +330,7 @@ echo $build_str
 githash=`expr match "$build_str" '.*-\(g.......\)-'`
 IFS='-' read -a v <<<"$build_str"
 
-echo ${v[1]}
+echo v1=${v[1]}
 case ${v[1]} in
 	[0-9][0-9][0-9])
 		set_kernel ${v[4]}-${v[5]}
@@ -382,12 +392,18 @@ case ${v[1]} in
 		set_kernel ${v[6]}-${v[7]}
 		set_release
 		;;
+	"CSL3.0_Lustre_opa")
+		NEO_rel="CSL3.0_Lustre_opa"
+		set_kernel ${v[6]}-${v[7]}
+		set_release
+		;;
 	"NEO3.X_Lustre")
 		NEO_rel="NEO3.X"
 		set_kernel ${v[6]}-${v[7]}
 		;;
 esac
 
+echo v0=${v[0]}
 case ${v[0]} in
 	"v2_7_0_0")
 		base_ver="2.7.14"
