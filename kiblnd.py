@@ -19,7 +19,7 @@ def show_peers() :
                 print(peer)
                 print_nid(peer.ibp_nid)
 
-def find_tx(req) :
+def find_tx(addr) :
     kiblnd_data = readSymbol("kiblnd_data")
     for i in range(0, kiblnd_data.kib_peer_hash_size) :
         peers = readSUListFromHead(kiblnd_data.kib_peers[i],
@@ -31,7 +31,7 @@ def find_tx(req) :
                 "tx_list", "struct kib_tx")
                 for tx in txs :
                     md = tx.tx_lntmsg[0].msg_md
-                    if md.md_iov.iov[0].iov_base == req.rq_reqbuf :
+                    if md.md_iov.iov[0].iov_base == addr :
                         print(tx)
                         return
 
@@ -40,12 +40,16 @@ if ( __name__ == '__main__'):
 
     parser =  argparse.ArgumentParser()
     parser.add_argument("-r","--request", dest="req", default = 0)
+    parser.add_argument("-b", "--bulk", dest="bulk", default = 0)
     parser.add_argument("-n","--num", dest="n", default = 0)
     args = parser.parse_args()
     if args.n != 0 :
         max_req = n
     if args.req != 0 :
-        req = readSU("struct ptlrpc_request", int(args.req, 0))
-        find_tx(req)
+        req = readSU("struct ptlrpc_request", int(args.req, 16))
+        find_tx(req.rq_reqbuf)
+    elif args.bulk != 0 :
+        desc = readSU("struct ptlrpc_bulk_desc", int(args.bulk, 16))
+        find_tx(desc.bd_u.bd_kvec.bd_kvec)
     else :
         show_peers()
