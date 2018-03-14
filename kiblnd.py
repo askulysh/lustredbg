@@ -46,7 +46,7 @@ def find_tx_in_list(handle, txs) :
 def find_tx_in_conn(handle, member) :
     txs = readSUListFromHead("conn." + member,
             "tx_list", "struct kib_tx")
-    tx = find_tx_by_handle(handle, txs)
+    tx = find_tx_in_list(handle, txs)
     if tx != 0 :
         print("found ", tx, " in ", member)
     return tx
