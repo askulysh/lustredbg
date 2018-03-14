@@ -68,19 +68,19 @@ def find_tx_by_handle(handle) :
                 conns = readSUListFromHead(peer.ibp_conns,
                     "ibc_list", "struct kib_conn")
                 for conn in conns :
-                    tx = find_tx_in_conn(handle, ibc_tx_noops)
+                    tx = find_tx_in_conn(handle, "ibc_tx_noops")
                     if tx != 0 :
                         return tx
-                    tx = find_tx_in_conn(handle, ibc_tx_queue_nocred)
+                    tx = find_tx_in_conn(handle, "ibc_tx_queue_nocred")
                     if tx != 0 :
                         return tx
-                    tx = find_tx_in_conn(handle, ibc_tx_queue_rsrvd)
+                    tx = find_tx_in_conn(handle, "ibc_tx_queue_rsrvd")
                     if tx != 0 :
                         return tx
-                    tx = find_tx_in_conn(handle, ibc_tx_queue)
+                    tx = find_tx_in_conn(handle, "ibc_tx_queue")
                     if tx != 0 :
                         return tx
-                    tx = find_tx_in_conn(handle, ibc_active_txs)
+                    tx = find_tx_in_conn(handle, "ibc_active_txs")
                     if tx != 0 :
                         return tx
     return 0
