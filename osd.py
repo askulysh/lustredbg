@@ -61,10 +61,17 @@ if ( __name__ == '__main__'):
     parser.add_argument("-w","--iowait", dest="iowait",
                         action='store_true')
     parser.add_argument("-e","--env", dest="env", default = 0)
+    parser.add_argument("-k","--key", dest="key", default = "")
     args = parser.parse_args()
     if args.iowait != 0 :
         show_io()
-    elif args.env != 0 :
+    elif args.env != 0 and args.key != "":
         env = readSU("struct lu_env", int(args.env, 16))
-        print(osd_oti_get(env))
+        key = readSymbol(args.key)
+        print(key)
+        if key.lct_tags == 256 :
+            val = env.le_ses.lc_value[key.lct_index]
+        else :
+            val = env.le_ctx.lc_value[key.lct_index]
+        print("%x" % val)
 
