@@ -35,6 +35,22 @@ def find_tx(addr) :
                         print(tx)
                         return
 
+def find_tx_in_list(handle, txs) :
+    for tx in txs :
+        for j in range(2) :
+            md = tx.tx_lntmsg[j].msg_md
+            if md.md_lh.lh_cookie == handle :
+                return tx
+    return 0
+
+def find_tx_in_conn(handle, member) :
+    txs = readSUListFromHead("conn." + member,
+            "tx_list", "struct kib_tx")
+    tx = find_tx_by_handle(handle, txs)
+    if tx != 0 :
+        print("found ", tx, " in ", member)
+    return tx
+
 def find_tx_by_handle(handle) :
     kiblnd_data = readSymbol("kiblnd_data")
     for i in range(0, kiblnd_data.kib_peer_hash_size) :
@@ -44,14 +60,30 @@ def find_tx_by_handle(handle) :
             for peer in peers :
                 print_nid(peer.ibp_nid)
                 txs = readSUListFromHead(peer.ibp_tx_queue,
-                "tx_list", "struct kib_tx")
-                for tx in txs :
-                    for j in range(2) :
-                        md = tx.tx_lntmsg[j].msg_md
-                        if md.md_lh.lh_cookie == handle :
-                            print(tx)
-                            return
-
+                    "tx_list", "struct kib_tx")
+                tx = find_tx_by_handle(handle, txs)
+                if tx != 0 :
+                    print("found ", tx, " in ", ibp_tx_queue)
+                    return tx
+                conns = readSUListFromHead(peer.ibp_conns,
+                    "ibc_list", "struct kib_conn")
+                for conn in conns :
+                    tx = find_tx_in_conn(handle, ibc_tx_noops)
+                    if tx != 0 :
+                        return tx
+                    tx = find_tx_in_conn(handle, ibc_tx_queue_nocred)
+                    if tx != 0 :
+                        return tx
+                    tx = find_tx_in_conn(handle, ibc_tx_queue_rsrvd)
+                    if tx != 0 :
+                        return tx
+                    tx = find_tx_in_conn(handle, ibc_tx_queue)
+                    if tx != 0 :
+                        return tx
+                    tx = find_tx_in_conn(handle, ibc_active_txs)
+                    if tx != 0 :
+                        return tx
+    return 0
 
 if ( __name__ == '__main__'):
     import argparse
