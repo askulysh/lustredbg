@@ -61,7 +61,7 @@ def find_tx_by_handle(handle) :
                 print_nid(peer.ibp_nid)
                 txs = readSUListFromHead(peer.ibp_tx_queue,
                     "tx_list", "struct kib_tx")
-                tx = find_tx_by_handle(handle, txs)
+                tx = find_tx_in_list(handle, txs)
                 if tx != 0 :
                     print("found ", tx, " in ", ibp_tx_queue)
                     return tx
