@@ -35,6 +35,24 @@ def find_tx(addr) :
                         print(tx)
                         return
 
+def find_tx_by_handle(handle) :
+    kiblnd_data = readSymbol("kiblnd_data")
+    for i in range(0, kiblnd_data.kib_peer_hash_size) :
+        peers = readSUListFromHead(kiblnd_data.kib_peers[i],
+                "ibp_list", "struct kib_peer")
+        if peers :
+            for peer in peers :
+                print_nid(peer.ibp_nid)
+                txs = readSUListFromHead(peer.ibp_tx_queue,
+                "tx_list", "struct kib_tx")
+                for tx in txs :
+                    for j in range(2) :
+                        md = tx.tx_lntmsg[j].msg_md
+                        if md.md_lh.lh_cookie == handle :
+                            print(tx)
+                            return
+
+
 if ( __name__ == '__main__'):
     import argparse
 
@@ -50,6 +68,6 @@ if ( __name__ == '__main__'):
         find_tx(req.rq_reqbuf)
     elif args.bulk != 0 :
         desc = readSU("struct ptlrpc_bulk_desc", int(args.bulk, 16))
-        find_tx(desc.bd_u.bd_kvec.bd_kvec)
+        find_tx_by_handle(desc.bd_mds[0].cookie)
     else :
         show_peers()
