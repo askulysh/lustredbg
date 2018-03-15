@@ -125,6 +125,7 @@ if ( __name__ == '__main__'):
         find_tx(req.rq_reqbuf)
     elif args.bulk != 0 :
         desc = readSU("struct ptlrpc_bulk_desc", int(args.bulk, 16))
-        find_tx_by_handle(desc.bd_mds[0].cookie)
+        tx = find_tx_by_handle(desc.bd_mds[0].cookie)
+        print(tx)
     else :
         show_peers()
