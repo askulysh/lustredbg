@@ -43,30 +43,29 @@ def find_tx_in_list(handle, txs) :
                 return tx
     return 0
 
-def find_tx_in_conn_queue(handle, conn, member) :
-    txs = readSUListFromHead("conn." + member,
+def find_tx_in_conn_queue(handle, head) :
+    txs = readSUListFromHead(head,
             "tx_list", "struct kib_tx")
     tx = find_tx_in_list(handle, txs)
     if tx != 0 :
-        print("found ", tx, " in ", member)
+        print("found ", tx, " in ", head)
     return tx
 
 def find_tx_in_conn(handle, conn) :
-    tx = find_tx_in_conn_queue(handle, conn, "ibc_tx_noops")
+    tx = find_tx_in_conn_queue(handle, conn.ibc_tx_noops)
     if tx != 0 :
         return tx
-    tx = find_tx_in_conn_queue(handle, conn, "ibc_tx_queue_nocred")
+    tx = find_tx_in_conn_queue(handle, conn.ibc_tx_queue_nocred)
     if tx != 0 :
         return tx
-    tx = find_tx_in_conn_queue(handle, conn, "ibc_tx_queue_rsrvd")
+    tx = find_tx_in_conn_queue(handle, conn.ibc_tx_queue_rsrvd)
     if tx != 0 :
         return tx
-    tx = find_tx_in_conn_queue(handle, conn, "ibc_tx_queue")
+    tx = find_tx_in_conn_queue(handle, conn.ibc_tx_queue)
     if tx != 0 :
         return tx
-    tx = find_tx_in_conn_queue(handle, conn, "ibc_active_txs")
-    if tx != 0 :
-        return tx
+    tx = find_tx_in_conn_queue(handle, conn.ibc_active_txs)
+    return tx
 
 def find_tx_in_conn_list(handle, conns) :
     for conn in conns :
@@ -105,10 +104,8 @@ def find_tx_by_handle(handle) :
     conns = readSUListFromHead(kiblnd_data.kib_connd_conns,
             "ibc_list", "struct kib_conn")
     tx = find_tx_in_conn_list(handle, conns)
-    if tx != 0 :
-        return tx
 
-    return 0
+    return tx
 
 if ( __name__ == '__main__'):
     import argparse
