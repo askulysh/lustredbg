@@ -38,6 +38,8 @@ def find_tx(addr) :
 def find_tx_in_list(handle, txs) :
     for tx in txs :
         for j in range(2) :
+            if tx.tx_lntmsg[j] == 0 :
+                continue
             md = tx.tx_lntmsg[j].msg_md
             if md.md_lh.lh_cookie == handle :
                 return tx
