@@ -230,6 +230,8 @@ def show_tgt(pid) :
     addr = search_for_reg("RBX", pid, "schedule_timeout")
     if addr == 0 :
         addr = search_for_reg("RBX", pid, "__schedule")
+    if addr == 0 :
+        addr = search_for_reg("RBX", pid, "schedule")
     lock = readSU("struct ldlm_lock", addr)
     print(lock)
     print_ldlm_lock(lock, "")
