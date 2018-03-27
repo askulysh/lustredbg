@@ -625,7 +625,6 @@ def show_policy(policy) :
         head = head.next
         req = readSU("struct ptlrpc_request", int(head) - offset)
         show_ptlrpc_request(req)
-        show_ptlrpc_request_buf(req)
 
 def show_waiting(service) :
     for i in range(service.srv_ncpts) :
