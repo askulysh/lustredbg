@@ -94,6 +94,26 @@ enum ldlm_mode {
 '''
 ldlm_modes = CEnum(ldlm_mode_c)
 
+LCK_COMPAT_EX = ldlm_modes.LCK_NL
+LCK_COMPAT_PW = LCK_COMPAT_EX | ldlm_modes.LCK_CR
+LCK_COMPAT_PR = LCK_COMPAT_PW | ldlm_modes.LCK_PR
+LCK_COMPAT_CW = LCK_COMPAT_PW | ldlm_modes.LCK_CW
+LCK_COMPAT_CR = LCK_COMPAT_CW | ldlm_modes.LCK_PR | ldlm_modes.LCK_PW
+LCK_COMPAT_NL = LCK_COMPAT_CR | ldlm_modes.LCK_EX | ldlm_modes.LCK_GROUP
+LCK_COMPAT_GROUP = ldlm_modes.LCK_GROUP | ldlm_modes.LCK_NL
+LCK_COMPAT_COS = ldlm_modes.LCK_COS
+
+lck_compat_array = {
+        ldlm_modes.LCK_EX : LCK_COMPAT_EX,
+        ldlm_modes.LCK_PW : LCK_COMPAT_PW,
+        ldlm_modes.LCK_PR : LCK_COMPAT_PR,
+        ldlm_modes.LCK_CW : LCK_COMPAT_CW,
+        ldlm_modes.LCK_CR : LCK_COMPAT_CR,
+        ldlm_modes.LCK_NL : LCK_COMPAT_NL,
+        ldlm_modes.LCK_GROUP : LCK_COMPAT_GROUP,
+        ldlm_modes.LCK_COS : LCK_COMPAT_COS
+}
+
 def print_connection(conn) :
     print_nid(conn.c_peer.nid)
 
@@ -211,15 +231,15 @@ def find_conflicting_lock(lock) :
     if len(granted) == 1 :
         return granted[0]
     else :
-        if lock.l_resource.lr_type == ldlm_types.LDLM_IBITS :
-            bits = lock.l_policy_data.l_inodebits.bits
-            for gr in granted :
-                if bits & gr.l_policy_data.l_inodebits.bits != 0 :
-                   return gr
-            return nil
-        else :
-            print("TODO: granted > 1")
-
+        for gr in granted :
+            if lck_compat_array[gr.l_granted_mode] & lock.l_req_mode == 0 :
+                if lock.l_resource.lr_type == ldlm_types.LDLM_IBITS :
+                    bits = lock.l_policy_data.l_inodebits.bits
+                    if bits & gr.l_policy_data.l_inodebits.bits != 0 :
+                        return gr
+                else :
+                    print("TODO: conflict found")
+                    return gr
         return nil
 
 def show_tgt(pid) :
