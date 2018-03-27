@@ -644,7 +644,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-s","--set", dest="set", default = 0)
     parser.add_argument("-n","--num", dest="n", default = 0)
     parser.add_argument("-i","--import", dest="imp", default = 0)
-    parser.add_argument("-r","--running", dest="running",
+    parser.add_argument("-u","--running", dest="running",
                         action='store_true')
     parser.add_argument("-w","--waiting", dest="waiting",
                        default = 0)
