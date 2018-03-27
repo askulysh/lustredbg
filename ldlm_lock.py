@@ -225,22 +225,30 @@ def show_namespaces(regexp) :
 #    printf "Looking for SRV name spaces:\n"
 #    srv_namespaces $arg0
 
+def lock_compatible(lock1, lock2) :
+    if lck_compat_array[lock1.l_req_mode] & lock2.l_granted_mode == 0 :
+        if lock1.l_resource.lr_type == ldlm_types.LDLM_IBITS :
+            bits = lock1.l_policy_data.l_inodebits.bits
+            if bits & lock2.l_policy_data.l_inodebits.bits != 0 :
+                return False
+            else :
+                print("TODO: conflict found")
+                return False
+    return True
+
 def find_conflicting_lock(lock) :
     granted = readSUListFromHead(lock.l_resource.lr_granted,
                 "l_res_link", "struct ldlm_lock")
-    if len(granted) == 1 :
-        return granted[0]
-    else :
-        for gr in granted :
-            if lck_compat_array[gr.l_granted_mode] & lock.l_req_mode == 0 :
-                if lock.l_resource.lr_type == ldlm_types.LDLM_IBITS :
-                    bits = lock.l_policy_data.l_inodebits.bits
-                    if bits & gr.l_policy_data.l_inodebits.bits != 0 :
-                        return gr
-                else :
-                    print("TODO: conflict found")
-                    return gr
-        return nil
+    for gr in granted :
+        if lock_compatible(lock, gr) == False :
+            return gr
+
+    waiting = readSUListFromHead(lock.l_resource.lr_waiting,
+                "l_res_link", "struct ldlm_lock")
+    for w in waiting :
+        if lock_compatible(lock, w) == False :
+            return w
+    return None
 
 def show_tgt(pid) :
     print(pid)
