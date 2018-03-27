@@ -599,14 +599,17 @@ def search_for_reg(r, pid, func) :
                 return f.reg[r][0]
     return 0
 
+def show_pid(pid) :
+    addr = search_for_reg("RDI", pid, "tgt_request_handle")
+    req = readSU("struct ptlrpc_request", addr)
+    show_ptlrpc_request(req)
+
 def show_processing() :
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
     waiting_pids = funcsMatch(funcpids, "tgt_request_handle")
     for pid in waiting_pids :
         print(pid)
-        addr = search_for_reg("RDI", pid, "tgt_request_handle")
-        req = readSU("struct ptlrpc_request", addr)
-        show_ptlrpc_request(req)
+        show_pid(pid)
 #        lu_env = readSU("struct lu_env", addr)
 #        oti = osd_oti_get(lu_env)
 
@@ -641,9 +644,11 @@ if ( __name__ == '__main__'):
     parser.add_argument("-s","--set", dest="set", default = 0)
     parser.add_argument("-n","--num", dest="n", default = 0)
     parser.add_argument("-i","--import", dest="imp", default = 0)
-    parser.add_argument("-p","--processing", dest="processing",
+    parser.add_argument("-r","--running", dest="running",
                         action='store_true')
     parser.add_argument("-w","--waiting", dest="waiting",
+                       default = 0)
+    parser.add_argument("-p","--pid", dest="pid",
                        default = 0)
     args = parser.parse_args()
     if args.n != 0 :
@@ -658,10 +663,12 @@ if ( __name__ == '__main__'):
         imp = readSU("struct obd_import", int(args.imp, 16))
         show_import("", imp)
         imp_show_history(imp)
-    elif args.processing != 0 :
+    elif args.running != 0 :
         show_processing()
     elif args.waiting != 0 :
         service = readSU("struct ptlrpc_service", int(args.waiting, 16))
         show_waiting(service)
+    elif args.pid != 0 :
+        show_pid(pid)
     else :
         show_ptlrpcds()
