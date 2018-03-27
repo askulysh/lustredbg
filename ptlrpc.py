@@ -669,6 +669,6 @@ if ( __name__ == '__main__'):
         service = readSU("struct ptlrpc_service", int(args.waiting, 16))
         show_waiting(service)
     elif args.pid != 0 :
-        show_pid(args.pid)
+        show_pid(int(args.pid))
     else :
         show_ptlrpcds()
