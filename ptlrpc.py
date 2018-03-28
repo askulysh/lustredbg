@@ -611,6 +611,9 @@ def show_pid(pid) :
     addr = search_for_reg("RDI", pid, "tgt_request_handle")
     req = readSU("struct ptlrpc_request", addr)
     show_ptlrpc_request(req)
+    touched = req.rq_srv.sr_svc_thread.t_watchdog.lcw_last_touched
+    jiffies = readSymbol("jiffies")
+    print("watchdog touched", j_delay(touched, jiffies), "ago")
 
 def show_processing() :
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
