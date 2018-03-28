@@ -430,10 +430,16 @@ def show_request_loc(req, req_format, location) :
                     l = 256
                 else :
                     l = s
-                ss = str(readmem(buf, l))
+                ss = ""
+                mem = readmem(buf, l)
+                for i in range(0,l) :
+                    if mem[i] != 0:
+                        ss = ss +chr(mem[i])
+                    else :
+                        break
             else:
                 ss = ""
-            print("  offset %d %s size %d %s" % (offset, name, s, ss))
+            print("  offset %d %s size %d \"%s\"" % (offset, name, s, ss))
             name = 0
 
         if name :
