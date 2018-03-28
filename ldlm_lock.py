@@ -168,6 +168,9 @@ def print_ldlm_lock(ldlm_lock, prefix) :
                 ldlm_lock.l_callback_timeout)
         print(prefix, "granted", ldlm_mode2str(ldlm_lock.l_granted_mode),
                 timeout)
+        if ldlm_lock.l_flags & LDLM_flags.LDLM_FL_WAITED :
+            print(prefix, "BL AST sent",
+                    get_seconds() - ldlm_lock.l_last_activity, "sec ago")
     else :
         print("%s req_mode: %s enqueued %us ago" % (prefix,
               ldlm_mode2str(ldlm_lock.l_req_mode),
@@ -298,6 +301,13 @@ def show_completition_waiting_locks() :
         print(l)
         print_ldlm_lock(l, "")
 
+def show_BL_AST_locks() :
+    waiting_locks_list = readSymbol("waiting_locks_list")
+    waiting = readSUListFromHead(waiting_locks_list,
+                "l_pending_chain", "struct ldlm_lock")
+    for lock in waiting :
+        print_ldlm_lock(lock, "")
+
 if ( __name__ == '__main__'):
     import argparse
 
@@ -306,6 +316,8 @@ if ( __name__ == '__main__'):
     parser.add_argument("-n","--ns", dest="ns", default = 0)
     parser.add_argument("-g","--grep", dest="g", default = 0)
     parser.add_argument("-w","--compwait", dest="compl_waiting",
+                        action='store_true')
+    parser.add_argument("-b","--blocking", dest="blocking",
                         action='store_true')
     parser.add_argument("-p","--pid", dest="pid", default = 0)
     parser.add_argument("-f","--flags", dest="flags", default = 0)
@@ -318,6 +330,8 @@ if ( __name__ == '__main__'):
         show_ns_locks(ns)
     elif args.compl_waiting != 0 :
         show_completition_waiting_locks()
+    elif args.blocking != 0 :
+        show_BL_AST_locks()
     elif args.pid != 0 :
         show_tgt(int(args.pid))
     elif args.g != 0 :
