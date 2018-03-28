@@ -306,7 +306,8 @@ def show_BL_AST_locks() :
     waiting = readSUListFromHead(waiting_locks_list,
                 "l_pending_chain", "struct ldlm_lock")
     for lock in waiting :
-        print_ldlm_lock(lock, "")
+        print(lock)
+        print_ldlm_lock(lock, "    ")
 
 if ( __name__ == '__main__'):
     import argparse
