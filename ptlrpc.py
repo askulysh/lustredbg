@@ -453,8 +453,8 @@ def show_request_loc(req, req_format, location) :
             mdt_body_show("   ", field)
         elif name == "ldlm_intent":
             print("  offset %d %s %s" % (offset,    field, dbits2str(field.opc, it_flags)))
-#        elif name == "ldlm_request":
-#            print_ldlm_request("   ", field)
+        elif name == "ldlm_request":
+            print_ldlm_request("   ", field)
 
 def show_request_fmt(req, fmt) :
     req_format = readSymbol(fmt)

@@ -124,12 +124,21 @@ def res2str(res) :
     return "[0x%x:0x%x:0x%x]" % (res.lr_name.name[0], res.lr_name.name[1],
             res.lr_name.name[2])
 
+def policy_data2str(lr_type, data) :
+    if lr_type == ldlm_types.LDLM_IBITS :
+        return "%s" % dbits2str(data.l_inodebits.bits, MDS_INODELOCK)
+    elif lr_type == ldlm_types.LDLM_EXTENT :
+        return "[%d-%d]" % (data.l_extent.start, data.l_extent.end)
+
+    return "%s" % data
+
 def print_ldlm_request(prefix, req) :
     res = req.lock_desc.l_resource
     try:
-        print("%s %s %s %s " %
-              (prefix, ldlm_types.__getitem__(res.lr_type), res2str(res),
-             ldlm_mode2str(req.lock_desc.l_req_mode)))
+        print("%s %s %s %s %s" %
+                (prefix, ldlm_types.__getitem__(res.lr_type), res2str(res),
+                ldlm_mode2str(req.lock_desc.l_req_mode),
+                policy_data2str(res.lr_type, req.lock_desc.l_policy_data)))
     except:
         print("err")
 
