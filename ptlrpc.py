@@ -507,6 +507,8 @@ def show_ptlrpc_request(req) :
         conn = req.rq_export.exp_imp_reverse.imp_connection
         remote = ("%s@%s" % (conn.c_remote_uuid.uuid, nid2str(conn.c_peer.nid)))
         print(remote)
+        print("arrived",
+              get_seconds() - req.rq_srv.sr_arrival_time.tv_sec, "sec ago")
 
     show_ptlrpc_request_buf(req)
 
