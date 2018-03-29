@@ -8,6 +8,7 @@ from lnet import *
 from ldlm_lock import *
 from LinuxDump.BTstack import *
 import fregsapi
+import re
 
 max_req = 10
 
@@ -497,6 +498,12 @@ def show_ptlrpc_request_buf(req) :
     elif body.pb_opc == opcodes.OUT_UPDATE :
         show_request_fmt(req, "RQF_OUT_UPDATE")
 
+def req_client(req) :
+    if req.rq_export != 0:
+        conn = req.rq_export.exp_imp_reverse.imp_connection
+        return "%s@%s" % (conn.c_remote_uuid.uuid, nid2str(conn.c_peer.nid))
+    return ""
+
 def show_ptlrpc_request(req) :
     print("%x x%d %s %4d %s %s" %
           (req, req.rq_xid, req_sent(req), req.rq_status,
@@ -504,9 +511,7 @@ def show_ptlrpc_request(req) :
     if req.rq_import != 0:
         show_import("  ", req.rq_import)
     if req.rq_export != 0:
-        conn = req.rq_export.exp_imp_reverse.imp_connection
-        remote = ("%s@%s" % (conn.c_remote_uuid.uuid, nid2str(conn.c_peer.nid)))
-        print(remote)
+        print(req_client(req))
         print("arrived",
               get_seconds() - req.rq_srv.sr_arrival_time.tv_sec, "sec ago")
 
@@ -607,24 +612,23 @@ def search_for_reg(r, pid, func) :
                 return f.reg[r][0]
     return 0
 
-def show_pid(pid) :
+def show_pid(pid, pattern) :
     addr = search_for_reg("RDI", pid, "tgt_request_handle")
     req = readSU("struct ptlrpc_request", addr)
-    show_ptlrpc_request(req)
-    touched = req.rq_srv.sr_svc_thread.t_watchdog.lcw_last_touched
-    jiffies = readSymbol("jiffies")
-    print("watchdog touched", j_delay(touched, jiffies), "ago")
+    if pattern == None or pattern.match(req_client(req)) :
+        print("PID", pid)
+        show_ptlrpc_request(req)
+        touched = req.rq_srv.sr_svc_thread.t_watchdog.lcw_last_touched
+        jiffies = readSymbol("jiffies")
+        print("watchdog touched", j_delay(touched, jiffies), "ago")
 
-def show_processing() :
+def show_processing(pattern) :
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
     waiting_pids = funcsMatch(funcpids, "tgt_request_handle")
     for pid in waiting_pids :
-        print(pid)
-        show_pid(pid)
-#        lu_env = readSU("struct lu_env", addr)
-#        oti = osd_oti_get(lu_env)
+        show_pid(pid, pattern)
 
-def show_policy(policy) :
+def show_policy(policy, pattern) :
     if (policy == 0) :
         return
     print(policy, policy.pol_desc.pd_name)
@@ -638,14 +642,15 @@ def show_policy(policy) :
     while head.next != fifo_head.fh_list :
         head = head.next
         req = readSU("struct ptlrpc_request", int(head) - offset)
-        show_ptlrpc_request(req)
+        if pattern == None or pattern.match(req_client(req)) :
+            show_ptlrpc_request(req)
 
-def show_waiting(service) :
+def show_waiting(service, pattern) :
     for i in range(service.srv_ncpts) :
         srv_part = service.srv_parts[i]
         print(srv_part)
-        show_policy(srv_part.scp_nrs_reg.nrs_policy_primary)
-        show_policy(srv_part.scp_nrs_reg.nrs_policy_fallback)
+        show_policy(srv_part.scp_nrs_reg.nrs_policy_primary, pattern)
+        show_policy(srv_part.scp_nrs_reg.nrs_policy_fallback, pattern)
 
 if ( __name__ == '__main__'):
     import argparse
@@ -659,11 +664,18 @@ if ( __name__ == '__main__'):
                         action='store_true')
     parser.add_argument("-w","--waiting", dest="waiting",
                        default = 0)
+    parser.add_argument("-c","--client", dest="client", default = "")
     parser.add_argument("-p","--pid", dest="pid",
                        default = 0)
     args = parser.parse_args()
+
     if args.n != 0 :
-        max_req = n
+        max_req = args.n
+
+    pattern = None
+    if args.client != "" :
+        pattern = re.compile(args.client)
+
     if args.req != 0 :
         req = readSU("struct ptlrpc_request", int(args.req, 16))
         show_ptlrpc_request(req)
@@ -675,11 +687,11 @@ if ( __name__ == '__main__'):
         show_import("", imp)
         imp_show_history(imp)
     elif args.running != 0 :
-        show_processing()
+        show_processing(pattern)
     elif args.waiting != 0 :
         service = readSU("struct ptlrpc_service", int(args.waiting, 16))
-        show_waiting(service)
+        show_waiting(service, pattern)
     elif args.pid != 0 :
-        show_pid(int(args.pid))
+        show_pid(int(args.pid), None)
     else :
         show_ptlrpcds()
