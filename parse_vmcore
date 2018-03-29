@@ -2,12 +2,19 @@
 
 [ -f load_modules ] || exit
 
-dump_dmesg $1 &
 log_extr_py $1 &
 vmcore_stack $1 &
-vmcore_fp $1 &
-wait
+dump_dmesg $1
+if grep "SysRq : Trigger a crash" dmesg_$1
+then
+	vmcore_sysrq $1 &
+	wait
+else
+	vmcore_fp $1 &
+	wait
 
-core=$(basename $1)
-pid=$(grep PID analysis_$core | cut -d' ' -f 2 |uniq)
-grep ":"$pid":" log.dk_$core | tail >> analysis_$core
+	core=$(basename $1)
+	pid=$(grep PID analysis_$core | cut -d' ' -f 2 |uniq)
+	grep ":"$pid":" log.dk_$core | tail >> analysis_$core
+fi
+
