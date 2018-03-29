@@ -631,9 +631,9 @@ def show_processing(pattern) :
 def show_policy(policy, pattern) :
     if (policy == 0) :
         return
-    print(policy, policy.pol_desc.pd_name)
+#    print(policy, policy.pol_desc.pd_name)
     fifo_head = readSU("struct nrs_fifo_head", policy.pol_private)
-    print(fifo_head)
+#    print(fifo_head)
     rq_info = getStructInfo('struct ptlrpc_request')
     srv_rq_info = getStructInfo('struct ptlrpc_srv_req')
     nrs_rq_info = getStructInfo('struct ptlrpc_nrs_request')
@@ -648,7 +648,7 @@ def show_policy(policy, pattern) :
 def show_waiting(service, pattern) :
     for i in range(service.srv_ncpts) :
         srv_part = service.srv_parts[i]
-        print(srv_part)
+#        print(srv_part)
         show_policy(srv_part.scp_nrs_reg.nrs_policy_primary, pattern)
         show_policy(srv_part.scp_nrs_reg.nrs_policy_fallback, pattern)
 

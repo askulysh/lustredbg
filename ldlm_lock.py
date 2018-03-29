@@ -142,15 +142,20 @@ def print_ldlm_request(prefix, req) :
     except:
         print("err")
 
-def print_ldlm_lock(ldlm_lock, prefix) :
-    pid = ""
-    if ldlm_lock.l_export != 0 :
-        conn = ldlm_lock.l_export.exp_imp_reverse.imp_connection
+def lock_client(lock) :
+    if lock.l_export != 0 :
+        conn = lock.l_export.exp_imp_reverse.imp_connection
         remote = ("%s@%s" % (conn.c_remote_uuid.uuid, nid2str(conn.c_peer.nid)))
-    elif ldlm_lock.l_conn_export != 0 :
-        remote = ldlm_lock.l_conn_export.exp_obd.obd_name
+    elif lock.l_conn_export != 0 :
+        remote = lock.l_conn_export.exp_obd.obd_name
     else :
         remote = "local lock"
+    return remote
+
+def print_ldlm_lock(ldlm_lock, prefix) :
+    pid = ""
+    remote = lock_client(ldlm_lock)
+    if remote == "local lock" :
         pid = ldlm_lock.l_pid
 
     print("%s 0x%x/0x%x lrc %u/%d,%d %s %s %s" % (prefix,
@@ -302,12 +307,20 @@ def show_completition_waiting_locks() :
         print_ldlm_lock(l, "")
 
 def show_BL_AST_locks() :
+    ptlrpc_all_services = readSymbol("ptlrpc_all_services")
+    services = readSUListFromHead(ptlrpc_all_services,
+                "srv_list", "struct ptlrpc_service")
     waiting_locks_list = readSymbol("waiting_locks_list")
     waiting = readSUListFromHead(waiting_locks_list,
                 "l_pending_chain", "struct ldlm_lock")
     for lock in waiting :
         print(lock)
         print_ldlm_lock(lock, "    ")
+        remote = lock_client(lock)
+        pattern = re.compile(remote)
+        show_processing(pattern)
+        for srv in services :
+            show_waiting(srv, pattern)
 
 if ( __name__ == '__main__'):
     import argparse
