@@ -214,7 +214,16 @@ def walk_res_hash2(hlist) :
             recent = ""
         print("res %x %s %s refc %d %s" %
               (res, ldlm_types.__getitem__(res.lr_type), res2str(res),
-            res.lr_refcount.counter, recent))
+                  res.lr_refcount.counter, recent))
+        granted = readSUListFromHead(res.lr_granted,
+                "l_res_link", "struct ldlm_lock")
+        for lock in granted :
+            if args.active :
+                if lock.l_readers != 0 or lock.l_writers != 0:
+                    print_ldlm_lock(lock, "    ")
+            else :
+                print_ldlm_lock(lock, "    ")
+
         head = head.next
 
 def show_ns_locks(ns) :
@@ -333,9 +342,12 @@ if ( __name__ == '__main__'):
                         action='store_true')
     parser.add_argument("-b","--blocking", dest="blocking",
                         action='store_true')
+    parser.add_argument("-a","--active", dest="active",
+                        action='store_true')
     parser.add_argument("-p","--pid", dest="pid", default = 0)
     parser.add_argument("-f","--flags", dest="flags", default = 0)
     args = parser.parse_args()
+
     if args.lock != 0 :
         l = readSU("struct ldlm_lock", int(args.lock, 16))
         print_ldlm_lock(l, "")
