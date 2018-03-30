@@ -4,6 +4,13 @@ from __future__ import print_function
 
 from pykdump.API import *
 
+class Fid:
+    def __init__(self, desc):
+        a = desc.split(':')
+        self.f_seq = int(a[0], 16)
+        self.f_oid = int(a[1], 16)
+        self.f_ver = int(a[2], 16)
+
 def fid_flatten32(fid) :
     FID_SEQ_START = 0x200000000
     seq = fid.f_seq - FID_SEQ_START
@@ -137,12 +144,21 @@ if ( __name__ == '__main__'):
                         default=0)
     parser.add_argument("-f","--fid", dest="fid",
                         default=0)
+    parser.add_argument("-F","--fid_str", dest="fid_str",
+                        default="")
     parser.add_argument("-s","--search", dest="search_ptr",
                         default=0)
     args = parser.parse_args()
-    if args.fid != 0 :
+
+    if args.device != 0 :
         lu_dev = readSU("struct lu_device", int(args.device, 16))
+
+    if args.fid != 0 :
         fid = readSU("struct lu_fid", int(args.fid, 16))
+        mdt_obj = lu_object_find(lu_dev, fid)
+        print(mdt_obj)
+    elif args.fid_str != 0 :
+        fid = Fid(args.fid_str)
         mdt_obj = lu_object_find(lu_dev, fid)
         print(mdt_obj)
     elif args.search_ptr != 0 :
