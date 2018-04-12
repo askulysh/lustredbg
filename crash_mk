@@ -102,7 +102,9 @@ download_lustre() {
 		fi
 	fi
 	if [ $NEO_ver = "CSL3.0" ]; then
-		if [ $build -ge 48 ]; then
+		if [ $build -ge 65 ]; then
+			base_ver="2.7.22.1"
+		elif [ $build -ge 48 ]; then
 			base_ver="2.7.19.12"
 		fi
 	fi
