@@ -13,9 +13,9 @@ mdt_obj_ops = readSymbol("mdt_obj_ops")
 
 
 lu_object_header_attr_c = '''
-#define LOHA_EXISTS   = 1
-#define LOHA_REMOTE   = 2
-#define LOHA_HAS_AGENT_ENTRY	= 4
+#define LOHA_EXISTS             1
+#define LOHA_REMOTE             2
+#define LOHA_HAS_AGENT_ENTRY    4
 '''
 lu_object_header_attr = CDefine(lu_object_header_attr_c)
 
