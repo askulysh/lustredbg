@@ -11,17 +11,16 @@ osd_lu_obj_ops = readSymbol("osd_lu_obj_ops")
 osp_lu_obj_ops = readSymbol("osp_lu_obj_ops")
 mdt_obj_ops = readSymbol("mdt_obj_ops")
 
+
 lu_object_header_attr_c = '''
-enum lu_object_header_attr {
-        LOHA_EXISTS   = 1,
-        LOHA_REMOTE   = 2,
-        LOHA_HAS_AGENT_ENTRY	= 4
-};
+#define LOHA_EXISTS   = 1
+#define LOHA_REMOTE   = 2
+#define LOHA_HAS_AGENT_ENTRY	= 4
 '''
-lu_object_header_attr = CEnum(lu_object_header_attr_c)
+lu_object_header_attr = CDefine(lu_object_header_attr_c)
 
 def attr2str(attr) :
-    ret = lu_object_header_attr.__getitem__(attr & 7)
+    ret = dbits2str(attr & 7, lu_object_header_attr)
     if attr & 0xf000 == 0x4000 :
         ret = ret +"|S_IFDIR"
     elif attr & 0xf000 == 0x2000 :
