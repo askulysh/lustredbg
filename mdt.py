@@ -14,13 +14,14 @@ mdt_obj_ops = readSymbol("mdt_obj_ops")
 lu_object_header_attr_c = '''
 enum lu_object_header_attr {
         LOHA_EXISTS   = 1,
-        LOHA_REMOTE   = 3
+        LOHA_REMOTE   = 2,
+        LOHA_HAS_AGENT_ENTRY	= 4
 };
 '''
 lu_object_header_attr = CEnum(lu_object_header_attr_c)
 
 def attr2str(attr) :
-    ret = lu_object_header_attr.__getitem__(attr & 3)
+    ret = lu_object_header_attr.__getitem__(attr & 7)
     if attr & 0xf000 == 0x4000 :
         ret = ret +"|S_IFDIR"
     elif attr & 0xf000 == 0x2000 :
