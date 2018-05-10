@@ -93,6 +93,13 @@ def lu_object_find(dev, fid) :
         return 0
     return mdt_object
 
+def fld_lookup(fld, seq) :
+    fld_cache_entries = readSUListFromHead(fld.lsf_cache.fci_entries_head,
+                "fce_list", "struct fld_cache_entry")
+    for flde in fld_cache_entries :
+        print("0x%x-0x%x %d" % (flde.fce_range.lsr_start,
+                flde.fce_range.lsr_end, flde.fce_range.lsr_flags))
+
 def show_obd(dev) :
     print("0x%x %036s 0x%016x %01d   %01d   %01d   %01d   %01d   "
           "%01d   %01d  %02d/%02d %02d/%02d %d %d" %
@@ -148,6 +155,8 @@ if ( __name__ == '__main__'):
                         default="")
     parser.add_argument("-s","--search", dest="search_ptr",
                         default=0)
+    parser.add_argument("-l","--fld_lookup", dest="seq",
+                        default=0)
     args = parser.parse_args()
 
     if args.device != 0 :
@@ -157,10 +166,12 @@ if ( __name__ == '__main__'):
         fid = readSU("struct lu_fid", int(args.fid, 16))
         mdt_obj = lu_object_find(lu_dev, fid)
         print(mdt_obj)
-    elif args.fid_str != 0 :
+    elif args.fid_str != "" :
         fid = Fid(args.fid_str)
         mdt_obj = lu_object_find(lu_dev, fid)
         print(mdt_obj)
+    elif args.seq != 0 :
+        fld_lookup(lu_dev.ld_site.ld_seq_site.ss_server_fld, int(args.seq, 16))
     elif args.search_ptr != 0 :
         ptr_search(int(args.search_ptr, 16))
     else :
