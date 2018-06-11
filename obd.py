@@ -57,22 +57,18 @@ def hash_for_each_hd(hs, func) :
         if bd != 0 :
             if bd.hsb_count == 0 :
                 continue
-            print(bd, bd.hsb_count)
+            print(bd, "count", bd.hsb_count)
             a = int(bd.hsb_head)
             for offset in range(0, 1 << hs.hs_bkt_bits) :
                 dep = readSU("cfs_hash_head_dep_t", a + 16*offset)
                 hlist = dep.hd_head
                 if hlist.first != 0 :
-                    print(offset)
-                    func(hlist)
+                    print("off", offset, hlist)
+                    head = hlist.first
 
-def walk_hash2(hlist) :
-    print(hlist)
-    head = hlist.first
-
-    while head != 0 :
-        print(head)
-        head = head.next
+                    while head != 0 :
+                        func(head)
+                        head = head.next
 
 def lu_object_find(dev, fid) :
     hs = dev.ld_site.ls_obj_hash
@@ -157,6 +153,7 @@ if ( __name__ == '__main__'):
                         default=0)
     parser.add_argument("-l","--fld_lookup", dest="seq",
                         default=0)
+    parser.add_argument("-H","--hash", dest="hash", default=0)
     args = parser.parse_args()
 
     if args.device != 0 :
@@ -174,6 +171,9 @@ if ( __name__ == '__main__'):
         fld_lookup(lu_dev.ld_site.ld_seq_site.ss_server_fld, int(args.seq, 16))
     elif args.search_ptr != 0 :
         ptr_search(int(args.search_ptr, 16))
+    elif args.hash != 0 :
+        hs = readSU("struct cfs_hash", int(args.hash, 16))
+        hash_for_each_hd(hs, print)
     else :
         show_obds()
 
