@@ -52,6 +52,7 @@ def cfs_hash_bd_from_key(hs, bkts, bits, key) :
 def hash_for_each_hd(hs, func) :
     buckets = hs.hs_buckets
     bucket_num = 1 << (hs.hs_cur_bits - hs.hs_bkt_bits)
+    hhead_size = 8
     for ix in range(0, bucket_num) :
         bd = buckets[ix]
         if bd != 0 :
@@ -60,8 +61,7 @@ def hash_for_each_hd(hs, func) :
             print(bd, "count", bd.hsb_count)
             a = int(bd.hsb_head)
             for offset in range(0, 1 << hs.hs_bkt_bits) :
-                dep = readSU("cfs_hash_head_dep_t", a + 16*offset)
-                hlist = dep.hd_head
+                hlist = readSU("struct hlist_head", a + hhead_size*offset)
                 if hlist.first != 0 :
                     print("off", offset, hlist)
                     head = hlist.first
