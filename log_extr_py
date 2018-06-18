@@ -1,0 +1,8 @@
+#!/bin/sh
+
+core=`basename $1`
+WDIR=${WDIR:-"$HOME/work"}
+
+crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n epython /local/bin/get_log.py -f log-py.dl"
+lctl df log-py.dl > log.dk_$core
+rm log-py.dl

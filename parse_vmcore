@@ -2,7 +2,7 @@
 
 [ -f load_modules ] || exit
 
-log_extr_py $1 &
+log_extr $1 &
 vmcore_stack $1 &
 dump_dmesg $1
 if grep "SysRq : Trigger a crash" dmesg_$1

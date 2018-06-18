@@ -3,6 +3,6 @@
 core=`basename $1`
 WDIR=${WDIR:-"$HOME/work"}
 
-crash_cmd $1 "extend $WDIR/crash_ext/lustre-2.so \n lustre -l log.dl"
-lctl df log.dl > log.dk_$core
-rm log.dl
+crash_cmd $1 "extend $WDIR/crash_ext/lustre-ext.so \n lustre -l log-ext.dl"
+lctl df log-ext.dl > log.dk_$core
+rm log-ext.dl
