@@ -628,7 +628,9 @@ def show_pid(pid, pattern) :
 def show_processing(pattern) :
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
     waiting_pids = funcsMatch(funcpids, "tgt_request_handle")
-    for pid in waiting_pids :
+    waiting_pids_sorted = sorted(waiting_pids, key = lambda pid :
+            readS64(search_for_reg("RBP", pid, "tgt_request_handle")-0x38))
+    for pid in waiting_pids_sorted :
         show_pid(pid, pattern)
 
 def show_policy(policy, pattern) :
