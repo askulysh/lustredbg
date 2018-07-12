@@ -617,6 +617,9 @@ def show_pid(pid, pattern) :
     req = readSU("struct ptlrpc_request", addr)
     if pattern == None or pattern.match(req_client(req)) :
         print("PID", pid)
+        addr = search_for_reg("RBP", pid, "tgt_request_handle")
+        print(readS64(addr - 0x30))
+        print(readS64(addr - 0x38))
         show_ptlrpc_request(req)
         touched = req.rq_srv.sr_svc_thread.t_watchdog.lcw_last_touched
         jiffies = readSymbol("jiffies")
