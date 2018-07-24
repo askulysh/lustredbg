@@ -472,7 +472,8 @@ def show_request_fmt(req, fmt) :
 
 def show_ptlrpc_request_buf(req) :
     body = readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
-    print("opc %s" % opcodes.__getitem__(body.pb_opc))
+    print("opc %s transno %d" %
+          (opcodes.__getitem__(body.pb_opc), body.pb_transno))
     if body.pb_opc == opcodes.LDLM_ENQUEUE :
         ldlm_req = readSU("struct ldlm_request", get_req_buffer(req, 1))
         if ldlm_req.lock_flags & LDLM_flags.LDLM_FL_HAS_INTENT :
