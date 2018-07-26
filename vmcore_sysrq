@@ -4,4 +4,7 @@ core=`basename $1`
 WDIR=${WDIR:-"$HOME/work"}
 
 crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
-	      epython ../../bin/ldlm_lock.py -b > analysis_$core"
+	      epython ../../bin/ptlrpc.py -u > analysis_$core"
+
+crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
+	      epython ../../bin/ldlm_lock.py -b >> analysis_$core"
