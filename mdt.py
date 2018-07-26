@@ -84,6 +84,13 @@ def parse_mti(mti, prefix):
     find_print_fid(lu_dev, mti.mti_rr.rr_fid1, fid_prefix)
     print("rr_fid2", mti.mti_rr.rr_fid2, fid2str( mti.mti_rr.rr_fid2))
     find_print_fid(lu_dev, mti.mti_rr.rr_fid2, fid_prefix)
+    if mti.mti_rr.rr_opcode == mds_reint.REINT_RENAME :
+        print("rename %s/%s -> %s/%s" % (
+              fid2str(mti.mti_rr.rr_fid1), mti.mti_rr.rr_name.ln_name,
+              fid2str(mti.mti_rr.rr_fid2), mti.mti_rr.rr_tgt_name.ln_name))
+    elif mti.mti_rr.rr_opcode == mds_reint.REINT_MIGRATE :
+        print("migrate %s/%s -> %s" % (fid2str(mti.mti_rr.rr_fid1),
+            mti.mti_rr.rr_name.ln_name, fid2str(mti.mti_rr.rr_fid2)))
 
 if ( __name__ == '__main__'):
     import argparse
