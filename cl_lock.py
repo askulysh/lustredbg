@@ -43,9 +43,15 @@ enum osc_lock_state {
 '''
 osc_lock_state = CEnum(osc_lock_state_c)
 
-vvp_lock_ops = readSymbol("vvp_lock_ops")
+try:
+    vvp_lock_ops = readSymbol("vvp_lock_ops")
+except TypeError:
+    vvp_lock_ops = 0
+try:
+    lovsub_lock_ops = readSymbol("lovsub_lock_ops")
+except TypeError:
+    lovsub_lock_ops = 0
 lov_lock_ops = readSymbol("lov_lock_ops")
-lovsub_lock_ops = readSymbol("lovsub_lock_ops")
 osc_lock_ops = readSymbol("osc_lock_ops")
 
 def print_osc_lock(osc_lock, prefix) :
