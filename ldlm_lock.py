@@ -181,8 +181,10 @@ def print_ldlm_lock(ldlm_lock, prefix) :
               ldlm_mode2str(ldlm_lock.l_req_mode),
               get_seconds() - ldlm_lock.l_last_activity))
     if ldlm_lock.l_resource.lr_type == ldlm_types.LDLM_EXTENT :
-        print("%s [%d-%d]" % (prefix, ldlm_lock.l_req_extent.start,
-            ldlm_lock.l_req_extent.end))
+        print("%s [%d-%d] requested [%d-%d]" % (prefix,
+            ldlm_lock.l_policy_data.l_extent.start,
+            ldlm_lock.l_policy_data.l_extent.end,
+            ldlm_lock.l_req_extent.start, ldlm_lock.l_req_extent.end))
     elif ldlm_lock.l_resource.lr_type == ldlm_types.LDLM_IBITS :
         print("%s %s" % (prefix,
             dbits2str(ldlm_lock.l_policy_data.l_inodebits.bits,
