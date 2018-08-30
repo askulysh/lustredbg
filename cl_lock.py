@@ -68,9 +68,15 @@ def print_osc_lock(osc_lock, prefix) :
 
 def print_lov_lock_sub(lov_lock_sub, prefix) :
     print(prefix, lov_lock_sub)
-    lovsub_lock = readSU("struct lovsub_lock", lov_lock_sub.sub_lock)
-    print(prefix, lovsub_lock.lss_cl)
-    print_cl_lock(lovsub_lock.lss_cl.cls_lock, prefix + "\t")
+    try:
+        lovsub_lock = readSU("struct lovsub_lock", lov_lock_sub.sub_lock)
+        print(prefix, lovsub_lock.lss_cl)
+        print_cl_lock(lovsub_lock.lss_cl.cls_lock, prefix + "\t")
+    except:
+        lov_lock_sub = readSU("struct lov_lock_sub", lov_lock_sub.sub_lock)
+        print(prefix, lov_lock_sub.sub_lock)
+        print_cl_lock(lov_lock_sub.sub_lock, prefix + "\t")
+
 
 def print_lov_lock(lov_lock, prefix):
     for i in range(0, lov_lock.lls_nr) :
