@@ -222,6 +222,7 @@ def walk_res_hash2(hlist) :
                 if lock.l_readers != 0 or lock.l_writers != 0:
                     print_ldlm_lock(lock, "    ")
             else :
+                print("    ", lock)
                 print_ldlm_lock(lock, "    ")
 
         head = head.next
