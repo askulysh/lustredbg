@@ -77,8 +77,11 @@ def print_lov_lock(lov_lock, prefix):
         print_lov_lock_sub(lov_lock.lls_sub[i], prefix)
 
 def print_cl_lock(cl, prefix):
-    print(prefix, cl, "state: ", cl_lock_state.__getitem__(cl.cll_state),
-           "flags:", dbits2str(cl.cll_flags, cl_lock_flags))
+    try:
+        print(prefix, cl, "state: ", cl_lock_state.__getitem__(cl.cll_state),
+              "flags:", dbits2str(cl.cll_flags, cl_lock_flags))
+    except KeyError:
+        pass
 
     for layer in readSUListFromHead(cl.cll_layers, "cls_linkage",
             "struct cl_lock_slice") :
