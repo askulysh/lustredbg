@@ -282,8 +282,9 @@ def find_conflicting_lock(lock) :
 def show_tgt(pid) :
     print(pid)
     addr = search_for_reg("RDI", pid, "tgt_request_handle")
-    req = readSU("struct ptlrpc_request", addr)
-    show_ptlrpc_request(req)
+    if addr != 0:
+        req = readSU("struct ptlrpc_request", addr)
+        show_ptlrpc_request(req)
     addr = search_for_reg("RBX", pid, "schedule_timeout")
     if addr == 0 :
         addr = search_for_reg("RBX", pid, "__schedule")
