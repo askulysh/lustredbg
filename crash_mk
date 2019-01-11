@@ -6,6 +6,11 @@ rpmdir=$WDIR/releases
 debuginfo_dir=$WDIR/debuginfo
 vmcore=$1
 client_build=0
+crash=crash
+
+if [ -f ./crash ]; then
+	crash=./crash
+fi
 
 die() {
 	if [[ -z $1 ]]; then
@@ -37,16 +42,16 @@ download_kernel_debuginfo() {
 get_lustre_ver_from_core() {
 	local addr
 	local v
-	local aa=$(echo "lsmod" | crash  -s ./vmlinux $vmcore | grep obdclass)
+	local aa=$(echo "lsmod" | $crash  -s ./vmlinux $vmcore | grep obdclass)
 	IFS=' ' read -a addr <<<"$aa"
 	echo "addr=$addr"
 	[ -z $addr ] && exit 2
-	aa=$(echo "module $addr" | crash  -s ./vmlinux $vmcore | grep module_core)
+	aa=$(echo "module $addr" | $crash  -s ./vmlinux $vmcore | grep module_core)
 	IFS=' ' read -a v <<<"$aa"
 	local m=${v[2]}
 	local module_core=${m:0:18}
 	echo "module_core=$module_core"
-	local b=$(echo "search -s $module_core  -c \"Build Version\"" | crash  -s ./vmlinux $vmcore | grep "Build")
+	local b=$(echo "search -s $module_core  -c \"Build Version\"" | $crash  -s ./vmlinux $vmcore | grep "Build")
 	IFS=' ' read -a v <<<"$b"
 	build_str=${v[3]}
 	echo "Build from vmcore: $build_str"
