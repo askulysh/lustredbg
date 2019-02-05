@@ -153,10 +153,8 @@ def lock_client(lock) :
     return remote
 
 def print_ldlm_lock(ldlm_lock, prefix) :
-    pid = ""
+    pid = ldlm_lock.l_pid
     remote = lock_client(ldlm_lock)
-    if remote == "local lock" :
-        pid = ldlm_lock.l_pid
 
     print("%s 0x%x/0x%x lrc %u/%d,%d %s %s %s" % (prefix,
                             ldlm_lock.l_handle.h_cookie,
