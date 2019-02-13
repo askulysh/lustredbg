@@ -153,6 +153,20 @@ def lock_client(lock) :
         remote = "local lock"
     return remote
 
+def get_bl_ast_seconds(lock) :
+    try :
+         sec = lock.l_blast_sent
+    except :
+         sec = lock.l_last_activity
+    return sec
+
+def get_last_activity_seconds(lock) :
+    try :
+         sec = lock.l_activity
+    except :
+         sec = lock.l_last_activity
+    return sec
+
 def print_ldlm_lock(ldlm_lock, prefix) :
     pid = ldlm_lock.l_pid
     remote = lock_client(ldlm_lock)
@@ -174,11 +188,11 @@ def print_ldlm_lock(ldlm_lock, prefix) :
                 timeout)
         if ldlm_lock.l_flags & LDLM_flags.LDLM_FL_WAITED :
             print(prefix, "BL AST sent",
-                    get_seconds() - ldlm_lock.l_last_activity, "sec ago")
+                    get_seconds() - get_bl_ast_seconds(ldlm_lock), "sec ago")
     else :
         print("%s req_mode: %s enqueued %us ago" % (prefix,
               ldlm_mode2str(ldlm_lock.l_req_mode),
-              get_seconds() - ldlm_lock.l_last_activity))
+              get_seconds() - get_last_activity_seconds(ldlm_lock)))
     if ldlm_lock.l_resource.lr_type == ldlm_types.LDLM_EXTENT :
         print("%s [%d-%d] requested [%d-%d]" % (prefix,
             ldlm_lock.l_policy_data.l_extent.start,
@@ -308,7 +322,7 @@ def show_completition_waiting_locks() :
             count = 0
             max_wait = 0
         count = count + 1
-        cur_wait = get_seconds() - lock.l_last_activity
+        cur_wait = get_seconds() - get_last_activity_seconds(lock)
         if max_wait < cur_wait :
             max_wait = cur_wait
         res[conflict] = [count, max_wait]
