@@ -493,9 +493,7 @@ def show_ptlrpc_request_buf(req) :
                 print(ldlm_req)
                 print(intent)
         else:
-            print(body)
-            print(ldlm_req)
-            print_ldlm_request("   ", ldlm_req)
+            show_request_fmt(req, "RQF_LDLM_ENQUEUE")
     elif body.pb_opc == opcodes.LDLM_CANCEL :
         show_request_fmt(req, "RQF_LDLM_CANCEL")
     elif body.pb_opc == opcodes.MDS_REINT :
