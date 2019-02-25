@@ -234,6 +234,12 @@ def show_resource(res) :
         else :
             print("    ", lock)
             print_ldlm_lock(lock, "    ")
+    print("waiting locks:")
+    waiting = readSUListFromHead(res.lr_waiting,
+                "l_res_link", "struct ldlm_lock")
+    for lock in waiting :
+        print("    ", lock)
+        print_ldlm_lock(lock, "    ")
 
 def walk_res_hash2(hlist) :
     head = hlist.first
