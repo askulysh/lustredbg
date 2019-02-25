@@ -217,28 +217,31 @@ def hash_for_each(hs, func) :
                 if hlist != 0 :
                     func(hlist)
 
+def show_resource(res) :
+    try:
+        recent = "recent lock " + ldlm_mode2str(res.lr_most_restr)
+    except:
+        recent = ""
+    print("res %x %s %s refc %d %s" %
+            (res, ldlm_types.__getitem__(res.lr_type), res2str(res),
+            res.lr_refcount.counter, recent))
+    granted = readSUListFromHead(res.lr_granted,
+                "l_res_link", "struct ldlm_lock")
+    for lock in granted :
+        if args.active :
+            if lock.l_readers != 0 or lock.l_writers != 0:
+                print_ldlm_lock(lock, "    ")
+        else :
+            print("    ", lock)
+            print_ldlm_lock(lock, "    ")
+
 def walk_res_hash2(hlist) :
     head = hlist.first
 
     while head != 0 :
         a = int(head) - 8 # lr_hash
         res = readSU("struct ldlm_resource", a)
-        try:
-            recent = "recent lock " + ldlm_mode2str(res.lr_most_restr)
-        except:
-            recent = ""
-        print("res %x %s %s refc %d %s" %
-              (res, ldlm_types.__getitem__(res.lr_type), res2str(res),
-                  res.lr_refcount.counter, recent))
-        granted = readSUListFromHead(res.lr_granted,
-                "l_res_link", "struct ldlm_lock")
-        for lock in granted :
-            if args.active :
-                if lock.l_readers != 0 or lock.l_writers != 0:
-                    print_ldlm_lock(lock, "    ")
-            else :
-                print("    ", lock)
-                print_ldlm_lock(lock, "    ")
+        show_resource(res)
 
         head = head.next
 
@@ -353,6 +356,7 @@ if ( __name__ == '__main__'):
 
     parser =  argparse.ArgumentParser()
     parser.add_argument("-l","--lock", dest="lock", default = 0)
+    parser.add_argument("-r","--res", dest="res", default = 0)
     parser.add_argument("-n","--ns", dest="ns", default = 0)
     parser.add_argument("-g","--grep", dest="g", default = 0)
     parser.add_argument("-w","--compwait", dest="compl_waiting",
@@ -368,6 +372,9 @@ if ( __name__ == '__main__'):
     if args.lock != 0 :
         l = readSU("struct ldlm_lock", int(args.lock, 16))
         print_ldlm_lock(l, "")
+    elif args.res != 0 :
+        res = readSU("struct ldlm_resource", int(args.res, 16))
+        show_resource(res)
     elif args.ns != 0 :
         ns = readSU("struct ldlm_namespace", int(args.ns, 16))
         show_ns_locks(ns)
