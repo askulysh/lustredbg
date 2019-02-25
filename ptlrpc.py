@@ -580,7 +580,7 @@ def show_import(prefix, imp) :
 def imp_show_history(imp) :
         replay_list = readSUListFromHead(imp.imp_replay_list, "rq_replay_list", "struct ptlrpc_request")
         for req in replay_list :
-            print(req)
+            print(req, req_sent(req))
             show_ptlrpc_request_buf(req)
 
 def show_ptlrpcd_ctl(ctl) :
