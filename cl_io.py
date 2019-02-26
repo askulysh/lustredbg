@@ -48,13 +48,16 @@ cl_page_type = CEnum(cl_page_type_c)
 
 vvp_page_ops = readSymbol("vvp_page_ops")
 vvp_transient_page_ops = readSymbol("vvp_transient_page_ops")
-#lov_comp_page_ops = readSymbol("lov_comp_page_ops")
 lovsub_page_ops = readSymbol("lovsub_page_ops")
 osc_page_ops = readSymbol("osc_page_ops")
 try:
     lov_raid0_page_ops = readSymbol("lov_raid0_page_ops")
 except:
     lov_raid0_page_ops = 0
+try:
+    lov_comp_page_ops = readSymbol("lov_comp_page_ops")
+except:
+    lov_comp_page_ops = 0
 
 def vvp_env_io(env) :
     vvp_session_key = readSymbol("vvp_session_key")
@@ -110,7 +113,7 @@ def print_cl_page(cl, prefix):
             osc_page = readSU("struct osc_page", layer)
             print(prefix + "  ", "osc", osc_page)
             print_osc_page(osc_page, prefix + "\t")
-        elif layer.cpl_ops == lov_raid0_page_ops :
+        elif layer.cpl_ops == lov_raid0_page_ops or layer.cpl_ops == lov_comp_page_ops :
             lov_page = readSU("struct lov_page", layer)
             print(prefix + "  ", "lov", lov_page)
         else :
