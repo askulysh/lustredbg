@@ -51,7 +51,10 @@ vvp_transient_page_ops = readSymbol("vvp_transient_page_ops")
 #lov_comp_page_ops = readSymbol("lov_comp_page_ops")
 lovsub_page_ops = readSymbol("lovsub_page_ops")
 osc_page_ops = readSymbol("osc_page_ops")
-lov_raid0_page_ops = readSymbol("lov_raid0_page_ops")
+try:
+    lov_raid0_page_ops = readSymbol("lov_raid0_page_ops")
+except:
+    lov_raid0_page_ops = 0
 
 def vvp_env_io(env) :
     vvp_session_key = readSymbol("vvp_session_key")
