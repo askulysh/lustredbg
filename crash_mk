@@ -152,7 +152,7 @@ download_lustre() {
 		echo "mod -S ./lib/modules/$kernel_str/extra/lustre-client/fs" > load_modules
 		echo "mod -S ./lib/modules/$kernel_str/extra/lustre-client/net" >> load_modules
 	else
-		if [ $NEO_ver = "CSL3.1" ]; then
+		if [ $NEO_ver = "CSL3.1" ] || [ $NEO_ver = "int" ]; then
 			echo "mod -S ./lib/modules/$kernel_str/extra/lustre_ib/fs" > load_modules
 			echo "mod -S ./lib/modules/$kernel_str/extra/lustre_ib/net" >> load_modules
 			echo "mod -S ./lib/modules/$kernel_str/extra/lustre_ib-osd-ldiskfs/fs" >> load_modules
