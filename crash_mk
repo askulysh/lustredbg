@@ -122,7 +122,9 @@ download_lustre() {
 		fi
 	fi
 
-	if [ $NEO_ver = "CSL3.1" ]; then
+	if [ $NEO_ver = "int" ]; then
+		build_id=$base_ver"_"$kernel_ver
+	elif [ $NEO_ver = "CSL3.1" ]; then
 		if [ $client_build -eq 1 ]; then
 			build_id=$base_ver"_"$kernel_ver
 		else
@@ -138,6 +140,7 @@ download_lustre() {
 	fi
 	touch $build_id
 	lustre_modules=$lustre_mod_prefix-$build_id".rpm"
+	echo "LMRPM $lustre_modules"
 
 	url="$APPD/$NEO_ver/job/$lustre_ver/$build/artifact/rpmbuild/RPMS/$lustre_modules"
 	echo $url
@@ -452,6 +455,12 @@ case ${v[0]} in
 		NEO_ver="master"
 		githash=`expr match "$base_ver" '.*_\(g.......\)'`
 		;;
+	2.11.0.0_cray*)
+		base_ver=${v[0]}
+		NEO_ver="int"
+		githash=`expr match "$base_ver" '.*_\(g.......\)'`
+		lustre_mod_prefix="lustre_ib-debuginfo"
+		;;
 	2.11.*)
 		base_ver=${v[0]}
 		NEO_ver="CSL3.1"
@@ -459,6 +468,12 @@ case ${v[0]} in
 		if [ $client_build -eq 0 ]; then
 			lustre_mod_prefix="lustre_ib-debuginfo"
 		fi
+		;;
+	2.12.0.0_cray*)
+		base_ver=${v[0]}
+		NEO_ver="int"
+		githash=`expr match "$base_ver" '.*_\(g.......\)'`
+		lustre_mod_prefix="lustre_ib-debuginfo"
 		;;
 	2.12.*)
 		base_ver=${v[0]}
