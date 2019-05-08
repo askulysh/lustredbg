@@ -455,7 +455,7 @@ case ${v[0]} in
 		NEO_ver="master"
 		githash=`expr match "$base_ver" '.*_\(g.......\)'`
 		;;
-	2.11.0.0_cray*)
+	2.11.0.*_cray*)
 		base_ver=${v[0]}
 		NEO_ver="int"
 		githash=`expr match "$base_ver" '.*_\(g.......\)'`
@@ -469,7 +469,7 @@ case ${v[0]} in
 			lustre_mod_prefix="lustre_ib-debuginfo"
 		fi
 		;;
-	2.12.0.0_cray*)
+	2.12.0.*_cray*)
 		base_ver=${v[0]}
 		NEO_ver="int"
 		githash=`expr match "$base_ver" '.*_\(g.......\)'`
