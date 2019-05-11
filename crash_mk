@@ -459,7 +459,11 @@ case ${v[0]} in
 		base_ver=${v[0]}
 		NEO_ver="int"
 		githash=`expr match "$base_ver" '.*_\(g.......\)'`
-		lustre_mod_prefix="lustre_ib-debuginfo"
+		if [ $client_build -eq 1 ]; then
+			lustre_mod_prefix="lustre-client-debuginfo"
+		else
+			lustre_mod_prefix="lustre_ib-debuginfo"
+		fi
 		;;
 	2.11.*)
 		base_ver=${v[0]}
@@ -473,7 +477,11 @@ case ${v[0]} in
 		base_ver=${v[0]}
 		NEO_ver="int"
 		githash=`expr match "$base_ver" '.*_\(g.......\)'`
-		lustre_mod_prefix="lustre_ib-debuginfo"
+		if [ $client_build -eq 1 ]; then
+			lustre_mod_prefix="lustre-client-debuginfo"
+		else
+			lustre_mod_prefix="lustre_ib-debuginfo"
+		fi
 		;;
 	2.12.*)
 		base_ver=${v[0]}
