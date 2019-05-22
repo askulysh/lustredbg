@@ -98,10 +98,10 @@ def fld_lookup(fld, seq) :
 
 def show_obd(dev) :
     print("0x%x %036s 0x%016x %01d   %01d   %01d   %01d   %01d   "
-          "%01d   %01d  %02d/%02d %02d/%02d %d %d" %
+          "%01d   %01d   %01d  %03d/%03d %03d/%03d %d %d" %
           (dev, dev.obd_name, dev.obd_lu_dev, dev.obd_inactive,
            dev.obd_starting, dev.obd_attached, dev.obd_set_up,
-           dev.obd_stopping, dev.obd_force, dev.obd_fail,
+           dev.obd_stopping, dev.obd_force, dev.obd_fail, dev.obd_recovering,
            dev.u.cli.cl_r_in_flight, dev.u.cli.cl_max_rpcs_in_flight,
            dev.u.cli.cl_w_in_flight, dev.u.cli.cl_max_rpcs_in_flight,
            dev.u.cli.cl_pending_r_pages.counter,
@@ -111,7 +111,7 @@ def show_obds() :
     obd_devs = readSymbol("obd_devs")
     print("        obd_device               name \t\t\t   lu_dev   \t  "
           "ina sta att set sto "
-          "for fai r_inf w_inf")
+          "for fai rec r_inf w_inf")
     for i in range(0, 8192) :
         if obd_devs[i] != 0 :
             show_obd(obd_devs[i])
