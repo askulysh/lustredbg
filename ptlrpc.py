@@ -364,6 +364,10 @@ def mtd_reint_show(reint) :
         rec = readSU("struct mdt_rec_unlink", int(reint))
         print("%s unlink %s/%s" % (rec, fid2str(rec.ul_fid1),
             fid2str(rec.ul_fid2)))
+    elif reint.rr_opcode == mds_reint.REINT_RENAME :
+        rec = readSU("struct mdt_rec_rename", int(reint))
+        print("%s rename %s/name -> %s/symtgt" % (rec, fid2str(rec.rn_fid1),
+            fid2str(rec.rn_fid2)))
     elif reint.rr_opcode == mds_reint.REINT_OPEN :
         rec = readSU("struct mdt_rec_create", int(reint))
         print("%s open   %s/%s %s" % (rec, fid2str(rec.cr_fid1),
@@ -431,7 +435,7 @@ def show_request_loc(req, req_format, location) :
             name  = "lustre_capa"
         elif name == "mdt_body":
             name  = "mdt_body"
-        elif name == "name":
+        elif name == "name" or name == "symtgt":
             s = msg.lm_buflens[i+1]
             if s > 0 :
                 if s > 256 :
