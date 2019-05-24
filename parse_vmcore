@@ -1,20 +1,24 @@
 #!/bin/sh
 
 [ -f load_modules ] || exit
+WDIR=${WDIR:-"$HOME/work"}
 
 log_extr $1 &
+log_pid=$!
 vmcore_stack $1 &
 dump_dmesg $1
 if grep "SysRq : Trigger a crash" dmesg_$1
 then
 	vmcore_sysrq $1 &
-	wait
 else
-	vmcore_fp $1 &
-	wait
-
+	vmcore_fp $1
 	core=$(basename $1)
 	pid=$(grep PID analysis_$core | cut -d' ' -f 2 |uniq)
+	req=$(grep struct\ ptlrpc_request analysis_$core | cut -d' ' -f 3)
+	wait $log_pid
 	grep ":"$pid":" log.dk_$core | tail >> analysis_$core
+	[ $req != 0 ] && crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
+		 epython ../../bin/ptlrpc.py -r $req >> analysis_$core"
 fi
+wait
 
