@@ -376,6 +376,10 @@ def mtd_reint_show(reint) :
         rec = readSU("struct mdt_rec_create", int(reint))
         print("%s create   %s/%s %s" % (rec, fid2str(rec.cr_fid1),
             fid2str(rec.cr_fid2), dbits2str(rec.cr_flags_l, mds_open_flags)))
+    elif reint.rr_opcode == mds_reint.REINT_MIGRATE :
+        rec = readSU("struct mdt_rec_rename", int(reint))
+        print("%s migrate %s/name -> %s" % (rec, fid2str(rec.rn_fid1),
+            fid2str(rec.rn_fid2)))
     else :
         print("%s %s %s" % (reint, mds_reint.__getitem__(reint.rr_opcode), fid2str(reint.rr_fid1)))
 
