@@ -641,9 +641,15 @@ def show_pid(pid, pattern) :
         print(readS64(addr - 0x30))
         print(readS64(addr - 0x38))
         show_ptlrpc_request(req)
-        touched = req.rq_srv.sr_svc_thread.t_watchdog.lcw_last_touched
-        jiffies = readSymbol("jiffies")
-        print("watchdog touched", j_delay(touched, jiffies), "ago")
+        thread = req.rq_srv.sr_svc_thread
+        try:
+            touched = thread.t_watchdog.lcw_last_touched
+            jiffies = readSymbol("jiffies")
+            print("watchdog touched", j_delay(touched, jiffies), "ago")
+        except KeyError:
+            touched = thread.t_touched
+            print("watchdog touched",
+                    (ktime_get() - touched.tv64)/1000000000, "s ago")
 
 def show_processing(pattern) :
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()

@@ -22,6 +22,9 @@ else :
                 return tk.xtime_sec
             except KeyError:
                 return tk.xtime.tv_sec
+        def ktime_get():
+                return (tk.xtime_sec +
+                        tk.wall_to_monotonic.tv_sec)*1000000000;
 
 def j_delay(ts, jiffies,maxhours = 20):
     v = (jiffies - ts) & INT_MASK
