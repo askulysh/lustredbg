@@ -19,6 +19,14 @@ lu_object_header_attr_c = '''
 '''
 lu_object_header_attr = CDefine(lu_object_header_attr_c)
 
+
+mod_flags_c = '''
+#define	DEAD_OBJ    1
+#define	ORPHAN_OBJ  2
+#define	VOLATILE_OBJ 16
+'''
+mod_flags = CDefine(mod_flags_c)
+
 def attr2str(attr) :
     ret = dbits2str(attr & 7, lu_object_header_attr)
     if attr & 0xf000 == 0x4000 :
@@ -53,7 +61,8 @@ def print_mdt_obj(mdt, prefix):
             print(prefix, "mdt", layer)
         elif layer.lo_ops == mdd_lu_obj_ops :
             mdd_obj = readSU("struct mdd_object", layer)
-            print(prefix, "mdd", mdd_obj)
+            print(prefix, "mdd", mdd_obj,
+                  dbits2str(mdd_obj.mod_flags, mod_flags))
         elif layer.lo_ops == lod_lu_obj_ops :
             lod_obj = readSU("struct lod_object", layer)
             print(prefix, "lod", lod_obj)
