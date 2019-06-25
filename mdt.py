@@ -105,7 +105,8 @@ if ( __name__ == '__main__'):
         print_mdt_obj(mdt_obj, "")
     elif args.osd != 0 :
         osd_obj = readSU("struct osd_object", int(args.osd, 16))
-        print_osd_object(osd_obj, "")
+        mdt_obj = readSU("struct mdt_object", osd_obj.oo_dt.do_lu.lo_header)
+        print_mdt_obj(mdt_obj, "")
     elif args.mti != 0 :
         mti = readSU("struct mdt_thread_info", int(args.mti, 16))
         parse_mti(mti, "")
