@@ -48,7 +48,8 @@ def fid2str(fid) :
 
 def print_osd_object(osd_obj, prefix) :
     inode = readSU("struct inode", osd_obj.oo_inode)
-    print(prefix, inode)
+    print(prefix, inode, "ino", osd_obj.oo_inode.i_ino,
+            "nlink", osd_obj.oo_inode.i_nlink)
 
 def print_mdt_obj(mdt, prefix):
     moh = mdt.mot_header
