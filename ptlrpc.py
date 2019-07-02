@@ -302,6 +302,31 @@ enum lustre_imp_state {
 '''
 lustre_imp_state = CEnum(lustre_imp_state_c)
 
+update_type_c = '''
+enum update_type {
+	OUT_START		= 0,
+	OUT_CREATE		= 1,
+	OUT_DESTROY		= 2,
+	OUT_REF_ADD		= 3,
+	OUT_REF_DEL		= 4,
+	OUT_ATTR_SET		= 5,
+	OUT_ATTR_GET		= 6,
+	OUT_XATTR_SET		= 7,
+	OUT_XATTR_GET		= 8,
+	OUT_INDEX_LOOKUP	= 9,
+	OUT_INDEX_INSERT	= 10,
+	OUT_INDEX_DELETE	= 11,
+	OUT_WRITE		= 12,
+	OUT_XATTR_DEL		= 13,
+	OUT_PUNCH		= 14,
+	OUT_READ		= 15,
+	OUT_NOOP		= 16,
+	OUT_XATTR_LIST		= 17,
+	OUT_LAST                = 18
+};
+'''
+update_type = CEnum(update_type_c)
+
 def print_req_flags(req) :
     s  = ""
     if req.rq_intr :
@@ -408,6 +433,16 @@ def mdt_body_show(prefix, body) :
     if len(out) > 1 :
         print(prefix, out)
 
+
+def print_update(fmt, ou) :
+    print(fmt, ou, update_type.__getitem__(ou.ou_type), fid2str(ou.ou_fid))
+
+def print_update_req(fmt, our) :
+    print(fmt, our)
+    ou = readSU("struct object_update", our.ourq_updates)
+    print_update(fmt, ou)
+#    for i in range(0, our.ourq_count) :
+
 def show_request_loc(req, req_format, location) :
     for i in range(0, req_format.rf_fields[location].nr) :
         req_msg_field = readSU("struct req_msg_field",
@@ -477,6 +512,10 @@ def show_request_loc(req, req_format, location) :
             print("  offset %d %s %s" % (offset,    field, dbits2str(field.opc, it_flags)))
         elif name == "ldlm_request":
             print_ldlm_request("   ", field)
+        elif name == "out_update_header" and field.ouh_inline_length > 0 :
+            our = readSU("struct object_update_request",
+                    field.ouh_inline_data)
+            print_update_req("   ", our)
 
 def show_request_fmt(req, fmt) :
     req_format = readSymbol(fmt)
