@@ -35,7 +35,7 @@ def lookup_bh_lru(bdev, block, size) :
     for var in bh_lrus :
         bh_lru = readSU("struct bh_lru", var)
         for bh in bh_lru.bhs :
-            if bh.b_bdev == bdev and bh.b_blocknr == block and bh.b_size == size:
+            if bh and bh.b_bdev == bdev and bh.b_blocknr == block and bh.b_size == size:
                 return bh
     return 0
 

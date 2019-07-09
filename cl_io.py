@@ -48,7 +48,10 @@ cl_page_type = CEnum(cl_page_type_c)
 
 vvp_page_ops = readSymbol("vvp_page_ops")
 vvp_transient_page_ops = readSymbol("vvp_transient_page_ops")
-lovsub_page_ops = readSymbol("lovsub_page_ops")
+try:
+    lovsub_page_ops = readSymbol("lovsub_page_ops")
+except:
+    lovsub_page_ops = 0
 osc_page_ops = readSymbol("osc_page_ops")
 try:
     lov_raid0_page_ops = readSymbol("lov_raid0_page_ops")
