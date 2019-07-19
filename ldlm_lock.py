@@ -185,7 +185,8 @@ def print_ldlm_lock(ldlm_lock, prefix) :
             timeout = "will timeout in " + j_delay(jiffies,
                 ldlm_lock.l_callback_timeout)
         print(prefix, "granted", ldlm_mode2str(ldlm_lock.l_granted_mode),
-                timeout)
+              (ktime_get() - ldlm_lock.l_last_used.tv64)/1000000000 , "sec ago",
+              timeout)
         if ldlm_lock.l_flags & LDLM_flags.LDLM_FL_WAITED :
             print(prefix, "BL AST sent",
                     get_seconds() - get_bl_ast_seconds(ldlm_lock), "sec ago")
