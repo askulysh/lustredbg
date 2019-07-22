@@ -46,10 +46,38 @@ def attr2str(attr) :
 def fid2str(fid) :
     return "[0x%x:0x%x:0x%x]" % (fid.f_seq, fid.f_oid, fid.f_ver)
 
+def fid_be2str(f) :
+    seq = (f[0]<<56)|(f[1]<<48)|(f[2]<<40)|(f[3]<<32)|(f[4]<<24)|(f[5]<<16)|(f[6]<<8)|f[7]
+    oid = (f[8]<<24)|(f[9]<<16)|(f[10]<<8)|f[11]
+    ver = (f[12]<<24)|(f[13]<<16)|(f[14]<<8)|f[15]
+    return "[0x%x:0x%x:0x%x]" % (seq, oid, ver)
+
 def print_osd_object(osd_obj, prefix) :
     inode = readSU("struct inode", osd_obj.oo_inode)
     print(prefix, inode, "ino", osd_obj.oo_inode.i_ino,
             "nlink", osd_obj.oo_inode.i_nlink)
+
+def print_link_ea(prefix, leh) :
+    if leh.leh_magic == 0x11EAF1DF :
+        addr = leh + 1
+        for i in range(0,leh.leh_reccount) :
+            lee = readSU("struct link_ea_entry", addr)
+            reclen = (lee.lee_reclen[0] << 8) + lee.lee_reclen[1]
+            name  = readmem(lee.lee_name,  reclen - 16 - 2)
+            print(prefix, lee, name, fid_be2str(lee.lee_parent_fid))
+            addr = addr + reclen 
+    else :
+        print("leh magic error !", leh.leh_magic)
+
+def print_osp_object(osp_obj, prefix) :
+    print(prefix, "osp", osp_obj)
+    for oxe in readSUListFromHead(osp_obj.opo_xattr_list, "oxe_list",
+            "struct osp_xattr_entry") :
+        name = readmem(oxe.oxe_buf, oxe.oxe_namelen)
+        print(prefix, name, oxe)
+        if name == b'trusted.link' :
+            ea_header = readSU("struct link_ea_header", oxe.oxe_value)
+            print_link_ea(prefix, ea_header)
 
 def print_mdt_obj(mdt, prefix):
     moh = mdt.mot_header
@@ -73,7 +101,7 @@ def print_mdt_obj(mdt, prefix):
             print_osd_object(osd_obj, prefix + "\t")
         elif layer.lo_ops == osp_lu_obj_ops :
             osp_obj = readSU("struct osp_object", layer - 0x50)
-            print(prefix, "osp", osp_obj)
+            print_osp_object(osp_obj, prefix + "\t")
         else :
             print(prefix, "unknown", layer)
 
