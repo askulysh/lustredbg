@@ -135,11 +135,16 @@ if ( __name__ == '__main__'):
 
     parser =  argparse.ArgumentParser()
     parser.add_argument("-t","--mdt", dest="mdt", default = 0)
+    parser.add_argument("-d","--mdd", dest="mdd", default = 0)
     parser.add_argument("-s","--osd", dest="osd", default = 0)
     parser.add_argument("-i","--mti", dest="mti", default = 0)
     args = parser.parse_args()
     if args.mdt != 0 :
         mdt_obj = readSU("struct mdt_object", int(args.mdt, 16))
+        print_mdt_obj(mdt_obj, "")
+    elif args.mdd != 0 :
+        mdd_obj = readSU("struct mdd_object", int(args.mdd, 16))
+        mdt_obj = readSU("struct mdt_object", mdd_obj.mod_obj.mo_lu.lo_header)
         print_mdt_obj(mdt_obj, "")
     elif args.osd != 0 :
         osd_obj = readSU("struct osd_object", int(args.osd, 16))
