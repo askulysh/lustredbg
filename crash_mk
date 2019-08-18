@@ -270,6 +270,9 @@ set_kernel() {
 parse() {
 	[ $DMESG_ONLY -eq 1 ] && exit
 
+	echo "epython ../pycrashext/regext.py" >> load_modules
+	echo "epython ../lustredbg/regext.py" >> load_modules
+
 	parse_vmcore $vmcore
 	exit
 }

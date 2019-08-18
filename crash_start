@@ -11,4 +11,7 @@ else
 	fi
 fi
 
-CRASH_EXTENSIONS=$WDIR/crash_ext $crash -x -i ./load_modules ./vmlinux $1
+export PYKDUMPPATH=$WDIR/pycrashext:$WDIR/lustredbg
+export CRASH_EXTENSIONS=$WDIR/crash_ext
+
+$crash -x -i ./load_modules ./vmlinux $1
