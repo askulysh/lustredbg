@@ -167,6 +167,13 @@ def get_last_activity_seconds(lock) :
          sec = lock.l_last_activity
     return sec
 
+def get_granted_time(lock) :
+    try :
+        sec = (ktime_get() - lock.l_last_used.tv64)/1000000000
+    except :
+        sec = get_seconds() - lock.l_last_used
+    return sec
+
 def print_ldlm_lock(ldlm_lock, prefix) :
     pid = ldlm_lock.l_pid
     remote = lock_client(ldlm_lock)
@@ -185,8 +192,7 @@ def print_ldlm_lock(ldlm_lock, prefix) :
             timeout = "will timeout in " + j_delay(jiffies,
                 ldlm_lock.l_callback_timeout)
         print(prefix, "granted", ldlm_mode2str(ldlm_lock.l_granted_mode),
-              (ktime_get() - ldlm_lock.l_last_used.tv64)/1000000000 , "sec ago",
-              timeout)
+              get_granted_time(ldlm_lock) , "sec ago", timeout)
         if ldlm_lock.l_flags & LDLM_flags.LDLM_FL_WAITED :
             print(prefix, "BL AST sent",
                     get_seconds() - get_bl_ast_seconds(ldlm_lock), "sec ago")
