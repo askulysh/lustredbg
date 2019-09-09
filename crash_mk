@@ -122,6 +122,12 @@ download_lustre() {
 		fi
 	fi
 
+	if [ $NEO_rel = "CSL3.0_Lustre_opa" ]; then
+		if [ $build -ge 27 ]; then
+			base_ver="2.7.22.1"
+		fi
+	fi
+
 	if [ $NEO_ver = "int" ]; then
 		build_id=$base_ver"_"$kernel_ver
 	elif [ $NEO_ver = "CSL3.1" ]; then
