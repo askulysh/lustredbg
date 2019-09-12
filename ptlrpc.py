@@ -628,11 +628,37 @@ def show_import(prefix, imp) :
         if imp.imp_no_pinger_recover == 1 :
             print("imp_no_pinger_recover == 1 !!!!")
 
+def imp_show_requests(imp) :
+    print("sending:")
+    l = readSUListFromHead(imp.imp_sending_list, "rq_list", "struct ptlrpc_request")
+    for req in l :
+        print(req, req_sent(req))
+        show_ptlrpc_request_buf(req)
+
+    print("delayed:")
+    l = readSUListFromHead(imp.imp_delayed_list, "rq_list", "struct ptlrpc_request")
+    for req in l :
+        print(req, req_sent(req))
+        show_ptlrpc_request_buf(req)
+
+    print("unreplied:")
+    head = imp.imp_unreplied_list
+    rq_info = getStructInfo('struct ptlrpc_request')
+    cli_rq_info = getStructInfo('struct ptlrpc_cli_req')
+    offset = rq_info['rq_cli'].offset + cli_rq_info['cr_unreplied_list'].offset
+
+    while head.next != imp.imp_unreplied_list :
+        head = head.next
+        req = readSU("struct ptlrpc_request", int(head) - offset)
+        print(req, req_sent(req))
+        show_ptlrpc_request(req)
+
 def imp_show_history(imp) :
-        replay_list = readSUListFromHead(imp.imp_replay_list, "rq_replay_list", "struct ptlrpc_request")
-        for req in replay_list :
-            print(req, req_sent(req))
-            show_ptlrpc_request_buf(req)
+    print("replay list:")
+    replay_list = readSUListFromHead(imp.imp_replay_list, "rq_replay_list", "struct ptlrpc_request")
+    for req in replay_list :
+        print(req, req_sent(req))
+        show_ptlrpc_request_buf(req)
 
 def show_ptlrpcd_ctl(ctl) :
     pc_set = ctl.pc_set
@@ -755,6 +781,7 @@ if ( __name__ == '__main__'):
     elif args.imp != 0 :
         imp = readSU("struct obd_import", int(args.imp, 16))
         show_import("", imp)
+        imp_show_requests(imp)
         imp_show_history(imp)
     elif args.running != 0 :
         show_processing(pattern)
