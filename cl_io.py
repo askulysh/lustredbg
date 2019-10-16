@@ -145,6 +145,16 @@ def print_waiting_pages() :
         cl_lock = readSU("struct cl_lock", addr)
         print_cl_lock(cl_lock, "")
 
+def lu2osc_dev(d) :
+    return readSU("struct osc_device", d)
+
+def osc_export(obj) :
+    return lu2osc_dev(obj.oo_cl.co_lu.lo_dev).od_exp;
+
+def osc_cli(obj) :
+    return osc_export(obj).exp_obd.u.cli;
+
+
 def get_osc_objects_fromslab():
     from LinuxDump.Slab import get_slab_addrs
     try:
@@ -156,7 +166,7 @@ def get_osc_objects_fromslab():
     for o in alloc:
         obj = readSU("struct osc_object", o)
         if obj.oo_npages != 0 :
-            print(obj, obj.oo_npages)
+            print(obj, obj.oo_npages, osc_cli(obj))
             npages += obj.oo_npages
     print("total", npages, "pages")
 
