@@ -154,7 +154,6 @@ def osc_export(obj) :
 def osc_cli(obj) :
     return osc_export(obj).exp_obd.u.cli;
 
-
 def get_osc_objects_fromslab():
     from LinuxDump.Slab import get_slab_addrs
     try:
@@ -166,8 +165,26 @@ def get_osc_objects_fromslab():
     for o in alloc:
         obj = readSU("struct osc_object", o)
         if obj.oo_npages != 0 :
-            print(obj, obj.oo_npages, osc_cli(obj))
+            print(obj, obj.oo_npages, osc_cli(obj),
+                  osc_cli(obj).cl_dirty_pages)
             npages += obj.oo_npages
+    print("total", npages, "pages")
+
+def get_osc_extents_fromslab():
+    from LinuxDump.Slab import get_slab_addrs
+    try:
+        (alloc, free) = get_slab_addrs("osc_extent_kmem")
+    except crash.error as val:
+        print (val)
+        return
+    npages = 0
+    for e in alloc:
+        ext = readSU("struct osc_extent", e)
+        if ext.oe_nr_pages > 0 and ext.oe_nr_pages < 1000000 :
+            obj = ext.oe_obj
+            print(ext, ext.oe_nr_pages, osc_cli(obj),
+                  osc_cli(obj).cl_dirty_pages)
+            npages += ext.oe_nr_pages
     print("total", npages, "pages")
 
 if ( __name__ == '__main__'):
@@ -180,6 +197,8 @@ if ( __name__ == '__main__'):
     parser.add_argument("-w","--waitpages", dest="waitpages",
                         action='store_true')
     parser.add_argument("-a","--fromslab", dest="fromslab",
+                        action='store_true')
+    parser.add_argument("-x","--extfromslab", dest="extentfromslab",
                         action='store_true')
     args = parser.parse_args()
     if args.env != 0 :
@@ -199,6 +218,8 @@ if ( __name__ == '__main__'):
         print_cl_page(cl_page, "")
     elif args.fromslab != 0 :
         get_osc_objects_fromslab()
+    elif args.extentfromslab != 0 :
+        get_osc_extents_fromslab()
     elif args.waitpages != 0 :
         print_waiting_pages()
 
