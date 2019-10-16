@@ -145,6 +145,21 @@ def print_waiting_pages() :
         cl_lock = readSU("struct cl_lock", addr)
         print_cl_lock(cl_lock, "")
 
+def get_osc_objects_fromslab():
+    from LinuxDump.Slab import get_slab_addrs
+    try:
+        (alloc, free) = get_slab_addrs("osc_object_kmem")
+    except crash.error as val:
+        print (val)
+        return
+    npages = 0
+    for o in alloc:
+        obj = readSU("struct osc_object", o)
+        if obj.oo_npages != 0 :
+            print(obj, obj.oo_npages)
+            npages += obj.oo_npages
+    print("total", npages, "pages")
+
 if ( __name__ == '__main__'):
     import argparse
 
@@ -152,6 +167,10 @@ if ( __name__ == '__main__'):
     parser.add_argument("-e","--env", dest="env", default = 0)
     parser.add_argument("-s","--osc", dest="osc", default = 0)
     parser.add_argument("-p","--page", dest="cl_page", default = 0)
+    parser.add_argument("-w","--waitpages", dest="waitpages",
+                        action='store_true')
+    parser.add_argument("-a","--fromslab", dest="fromslab",
+                        action='store_true')
     args = parser.parse_args()
     if args.env != 0 :
         env = readSU("struct lu_env", int(args.env, 16))
@@ -168,6 +187,8 @@ if ( __name__ == '__main__'):
     elif args.cl_page != 0 :
         cl_page = readSU("struct cl_page", int(args.cl_page, 16))
         print_cl_page(cl_page, "")
-    else :
+    elif args.fromslab != 0 :
+        get_osc_objects_fromslab()
+    elif args.waitpages != 0 :
         print_waiting_pages()
 
