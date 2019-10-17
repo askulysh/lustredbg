@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from pykdump.API import *
 from LinuxDump.BTstack import *
+from LinuxDump.trees import *
 import lustrelib as ll
 
 import fregsapi
@@ -252,7 +253,8 @@ if ( __name__ == '__main__'):
 
     parser =  argparse.ArgumentParser()
     parser.add_argument("-e","--env", dest="env", default = 0)
-    parser.add_argument("-s","--osc", dest="osc", default = 0)
+    parser.add_argument("-s","--osc_page", dest="osc", default = 0)
+    parser.add_argument("-S","--osc_object", dest="osc_object", default = 0)
     parser.add_argument("-p","--page", dest="cl_page", default = 0)
     parser.add_argument("-H","--hash", dest="hash", default = 0)
     parser.add_argument("-w","--waitpages", dest="waitpages",
@@ -277,6 +279,16 @@ if ( __name__ == '__main__'):
     elif args.cl_page != 0 :
         cl_page = readSU("struct cl_page", int(args.cl_page, 16))
         print_cl_page(cl_page, "")
+    elif args.osc_object != 0 :
+        osc_object = readSU("struct osc_object", int(args.osc_object, 16))
+        print_osc_obj("", osc_object)
+        if osc_object.oo_npages == 1 :
+            osc_page = readSU("struct osc_page", osc_object.oo_tree.rnode)
+            print_osc_page(osc_page, "    ")
+        else :
+            for p in walk_page_tree(osc_object.oo_tree) :
+                osc_page = readSU("struct osc_page", p)
+                print_osc_page(osc_page, "    ")
     elif args.hash != 0 :
         hs = readSU("struct cfs_hash", int(args.hash, 16))
         get_vvp_obj_from_hash(hs)
