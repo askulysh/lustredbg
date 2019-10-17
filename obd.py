@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 from pykdump.API import *
+import lustrelib as ll
 
 class Fid:
     def __init__(self, desc):
@@ -69,6 +70,10 @@ def hash_for_each_hd(hs, func) :
                     while head != 0 :
                         func(head)
                         head = head.next
+
+def hash_for_each_hd2(hs, func) :
+    for hn in ll.cfs_hash_get_nodes(hs) :
+        func(hn)
 
 def lu_object_find(dev, fid) :
     hs = dev.ld_site.ls_obj_hash
@@ -173,7 +178,7 @@ if ( __name__ == '__main__'):
         ptr_search(int(args.search_ptr, 16))
     elif args.hash != 0 :
         hs = readSU("struct cfs_hash", int(args.hash, 16))
-        hash_for_each_hd(hs, print)
+        hash_for_each_hd2(hs, print)
     else :
         show_obds()
 

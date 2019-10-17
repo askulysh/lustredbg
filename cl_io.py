@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from pykdump.API import *
 from LinuxDump.BTstack import *
+import lustrelib as ll
 
 import fregsapi
 
@@ -61,6 +62,9 @@ try:
     lov_comp_page_ops = readSymbol("lov_comp_page_ops")
 except:
     lov_comp_page_ops = 0
+
+lov_lu_obj_ops = readSymbol("lov_lu_obj_ops")
+osc_lu_obj_ops = readSymbol("osc_lu_obj_ops")
 
 def vvp_env_io(env) :
     vvp_session_key = readSymbol("vvp_session_key")
@@ -165,8 +169,7 @@ def get_osc_objects_fromslab():
     for o in alloc:
         obj = readSU("struct osc_object", o)
         if obj.oo_npages != 0 :
-            print(obj, obj.oo_npages, osc_cli(obj),
-                  osc_cli(obj).cl_dirty_pages)
+            print_osc_obj("", obj)
             npages += obj.oo_npages
     print("total", npages, "pages")
 
@@ -181,11 +184,66 @@ def get_osc_extents_fromslab():
     for e in alloc:
         ext = readSU("struct osc_extent", e)
         if ext.oe_nr_pages > 0 and ext.oe_nr_pages < 1000000 :
-            obj = ext.oe_obj
-            print(ext, ext.oe_nr_pages, osc_cli(obj),
-                  osc_cli(obj).cl_dirty_pages)
+            print_osc_obj("", ext.oe_obj)
             npages += ext.oe_nr_pages
     print("total", npages, "pages")
+
+
+lov_pattern_c = '''
+#define LOV_PATTERN_NONE	0x000
+#define LOV_PATTERN_RAID0	0x001
+#define LOV_PATTERN_RAID1	0x002
+#define LOV_PATTERN_MDT		0x100
+#define LOV_PATTERN_CMOBD	0x200
+'''
+lov_pattern = CDefine(lov_pattern_c)
+
+def print_layout_raid0(prefix, r0) :
+    print(prefix, "raid0", r0)
+    for i in range(r0.lo_nr) :
+        print(prefix + "    ", r0.lo_sub[i])
+        print_lu_obj_header(r0.lo_sub[i].lso_header.coh_lu)
+
+def print_lov_layout_entry(prefix, le) :
+    if le.lle_type == lov_pattern.LOV_PATTERN_RAID0 :
+        print_layout_raid0(prefix, le.lle_raid0)
+    elif le.lle_type == lov_pattern.LOV_PATTERN_MDT :
+        print(prefix, le.lle_dom)
+    else :
+        print(prefix, le)
+
+def print_lov_obj(prefix, lov) :
+    print(prefix, "lov", lov)
+    for i in range(lov.u.composite.lo_entry_count) :
+        print_lov_layout_entry(prefix + "    ", lov.u.composite.lo_entries[i])
+
+def print_osc_obj(prefix, osc) :
+    print(prefix, "osc", osc, "npages", osc.oo_npages, osc_cli(osc))
+
+def print_lu_obj(lu_obj) :
+    if lu_obj.lo_ops == lov_lu_obj_ops :
+        lov = readSU("struct lov_object", lu_obj)
+        print_lov_obj("    ", lov)
+    elif lu_obj.lo_ops == osc_lu_obj_ops :
+        osc = readSU("struct osc_object", lu_obj)
+        print_osc_obj("    ", osc)
+    else :
+        print(lu_obj)
+
+def print_lu_obj_header(loh) :
+    for lu_obj in readSUListFromHead(loh.loh_layers,
+                                    "lo_linkage", "struct lu_object") :
+        print_lu_obj(lu_obj)
+
+def print_vvp_object(vvp) :
+    print(vvp)
+    print_lu_obj_header(vvp.vob_header.coh_lu)
+
+def get_vvp_obj_from_hash(hs) :
+    off = member_offset('struct lu_object_header', 'loh_hash')
+    for hn in ll.cfs_hash_get_nodes(hs) :
+        vvp = readSU("struct vvp_object", hn - off)
+        print_vvp_object(vvp)
 
 if ( __name__ == '__main__'):
     import argparse
@@ -194,6 +252,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-e","--env", dest="env", default = 0)
     parser.add_argument("-s","--osc", dest="osc", default = 0)
     parser.add_argument("-p","--page", dest="cl_page", default = 0)
+    parser.add_argument("-H","--hash", dest="hash", default = 0)
     parser.add_argument("-w","--waitpages", dest="waitpages",
                         action='store_true')
     parser.add_argument("-a","--fromslab", dest="fromslab",
@@ -216,6 +275,9 @@ if ( __name__ == '__main__'):
     elif args.cl_page != 0 :
         cl_page = readSU("struct cl_page", int(args.cl_page, 16))
         print_cl_page(cl_page, "")
+    elif args.hash != 0 :
+        hs = readSU("struct cfs_hash", int(args.hash, 16))
+        get_vvp_obj_from_hash(hs)
     elif args.fromslab != 0 :
         get_osc_objects_fromslab()
     elif args.extentfromslab != 0 :
