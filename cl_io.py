@@ -235,13 +235,21 @@ def print_lu_obj(lu_obj) :
         print(lu_obj)
 
 def print_lu_obj_header(loh) :
+    print(fid2str(loh.loh_fid))
     for lu_obj in readSUListFromHead(loh.loh_layers,
                                     "lo_linkage", "struct lu_object") :
         print_lu_obj(lu_obj)
 
-def print_vvp_object(vvp) :
-    print(vvp)
+def print_vvp_object(prefix, vvp) :
+    print(vvp, "inode", vvp.vob_inode)
     print_lu_obj_header(vvp.vob_header.coh_lu)
+
+def print_inode(prefix, inode) :
+    lli = readSU("struct ll_inode_info", inode -
+            member_offset('struct ll_inode_info', 'lli_vfs_inode'))
+    print(inode, lli, lli.lli_clob.co_lu.lo_header)
+    vvp_object = readSU("struct vvp_object", lli.lli_clob.co_lu.lo_header)
+    print_vvp_object(prefix, vvp_object)
 
 def get_vvp_obj_from_hash(hs) :
     off = member_offset('struct lu_object_header', 'loh_hash')
@@ -255,7 +263,10 @@ if ( __name__ == '__main__'):
     parser =  argparse.ArgumentParser()
     parser.add_argument("-e","--env", dest="env", default = 0)
     parser.add_argument("-s","--osc_page", dest="osc", default = 0)
+    parser.add_argument("-V","--vvp_object", dest="vvp_object", default = 0)
     parser.add_argument("-S","--osc_object", dest="osc_object", default = 0)
+    parser.add_argument("-f","--file", dest="file", default = 0)
+    parser.add_argument("-i","--inode", dest="inode", default = 0)
     parser.add_argument("-p","--page", dest="cl_page", default = 0)
     parser.add_argument("-H","--hash", dest="hash", default = 0)
     parser.add_argument("-w","--waitpages", dest="waitpages",
@@ -280,6 +291,15 @@ if ( __name__ == '__main__'):
     elif args.cl_page != 0 :
         cl_page = readSU("struct cl_page", int(args.cl_page, 16))
         print_cl_page(cl_page, "")
+    elif args.file != 0 :
+        f = readSU("struct file", int(args.file, 16))
+        print_inode("", f.f_inode)
+    elif args.inode != 0 :
+        inode = readSU("struct inode", int(args.inode, 16))
+        print_inode("", inode)
+    elif args.vvp_object != 0 :
+        vvp_object = readSU("struct vvp_object", int(args.vvp_object, 16))
+        print_vvp_object("", vvp_object)
     elif args.osc_object != 0 :
         osc_object = readSU("struct osc_object", int(args.osc_object, 16))
         print_osc_obj("", osc_object)

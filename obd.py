@@ -20,6 +20,15 @@ def fid_flatten32(fid) :
             0x00fff000) << 8)
     return ino
 
+def fid2str(fid) :
+    return "[0x%x:0x%x:0x%x]" % (fid.f_seq, fid.f_oid, fid.f_ver)
+
+def fid_be2str(f) :
+    seq = (f[0]<<56)|(f[1]<<48)|(f[2]<<40)|(f[3]<<32)|(f[4]<<24)|(f[5]<<16)|(f[6]<<8)|f[7]
+    oid = (f[8]<<24)|(f[9]<<16)|(f[10]<<8)|f[11]
+    ver = (f[12]<<24)|(f[13]<<16)|(f[14]<<8)|f[15]
+    return "[0x%x:0x%x:0x%x]" % (seq, oid, ver)
+
 def hash_long(val, bits) :
     CFS_GOLDEN_RATIO_PRIME_64 = 0x9e37fffffffc0001
     h = val & 0xffffffffffffffff

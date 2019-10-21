@@ -43,15 +43,6 @@ def attr2str(attr) :
         ret = ret +"|S_IFLKN"
     return ret
 
-def fid2str(fid) :
-    return "[0x%x:0x%x:0x%x]" % (fid.f_seq, fid.f_oid, fid.f_ver)
-
-def fid_be2str(f) :
-    seq = (f[0]<<56)|(f[1]<<48)|(f[2]<<40)|(f[3]<<32)|(f[4]<<24)|(f[5]<<16)|(f[6]<<8)|f[7]
-    oid = (f[8]<<24)|(f[9]<<16)|(f[10]<<8)|f[11]
-    ver = (f[12]<<24)|(f[13]<<16)|(f[14]<<8)|f[15]
-    return "[0x%x:0x%x:0x%x]" % (seq, oid, ver)
-
 def print_osd_object(osd_obj, prefix) :
     inode = readSU("struct inode", osd_obj.oo_inode)
     print(prefix, inode, "ino", osd_obj.oo_inode.i_ino,
