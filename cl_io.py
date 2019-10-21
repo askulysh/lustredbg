@@ -256,7 +256,7 @@ def get_vvp_obj_from_hash(hs) :
     off = member_offset('struct lu_object_header', 'loh_hash')
     for hn in ll.cfs_hash_get_nodes(hs) :
         vvp = readSU("struct vvp_object", hn - off)
-        print_vvp_object(vvp)
+        print_vvp_object("", vvp)
 
 if ( __name__ == '__main__'):
     import argparse
