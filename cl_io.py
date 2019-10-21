@@ -5,6 +5,7 @@ from __future__ import print_function
 from pykdump.API import *
 from LinuxDump.BTstack import *
 from LinuxDump.trees import *
+from obd import *
 import lustrelib as ll
 
 import fregsapi
