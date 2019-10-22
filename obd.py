@@ -93,15 +93,16 @@ def lu_object_find(dev, fid) :
     except:
         dep = readSU("struct cfs_hash_head_dep", bd_bucket.hsb_head + 16*bd_offset)
     head = dep.hd_head.first
+    off = member_offset('struct lu_object_header', 'loh_hash')
     while head != 0 :
-        mdt_object = readSU("struct mdt_object", head - 0x20)
-        if mdt_object.mot_header.loh_fid.f_seq == fid.f_seq and mdt_object.mot_header.loh_fid.f_oid == fid.f_oid and mdt_object.mot_header.loh_fid.f_ver == fid.f_ver :
+        loh = readSU("struct lu_object_header", head - off)
+        if loh.loh_fid.f_seq == fid.f_seq and loh.loh_fid.f_oid == fid.f_oid and loh.loh_fid.f_ver == fid.f_ver :
                break
         head = head.next
     if head == 0 :
         print("Can't find fid !")
         return 0
-    return mdt_object
+    return loh
 
 def fld_lookup(fld, seq) :
     fld_cache_entries = readSUListFromHead(fld.lsf_cache.fci_entries_head,
@@ -179,8 +180,8 @@ if ( __name__ == '__main__'):
         print(mdt_obj)
     elif args.fid_str != "" :
         fid = Fid(args.fid_str)
-        mdt_obj = lu_object_find(lu_dev, fid)
-        print(mdt_obj)
+        loh = lu_object_find(lu_dev, fid)
+        print(loh)
     elif args.seq != 0 :
         fld_lookup(lu_dev.ld_site.ld_seq_site.ss_server_fld, int(args.seq, 16))
     elif args.search_ptr != 0 :
