@@ -212,6 +212,7 @@ def print_lov_layout_entry(prefix, le) :
         print_layout_raid0(prefix, le.lle_raid0)
     elif le.lle_type == lov_pattern.LOV_PATTERN_MDT :
         print(prefix, le.lle_dom)
+        print_lu_obj_header(le.lle_dom.lo_dom.lso_header.coh_lu)
     else :
         print(prefix, le)
 
