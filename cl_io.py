@@ -67,6 +67,7 @@ except:
 
 lov_lu_obj_ops = readSymbol("lov_lu_obj_ops")
 osc_lu_obj_ops = readSymbol("osc_lu_obj_ops")
+mdc_lu_obj_ops = readSymbol("mdc_lu_obj_ops")
 
 def vvp_env_io(env) :
     vvp_session_key = readSymbol("vvp_session_key")
@@ -230,7 +231,7 @@ def print_lu_obj(lu_obj) :
     if lu_obj.lo_ops == lov_lu_obj_ops :
         lov = readSU("struct lov_object", lu_obj)
         print_lov_obj("    ", lov)
-    elif lu_obj.lo_ops == osc_lu_obj_ops :
+    elif lu_obj.lo_ops == osc_lu_obj_ops or lu_obj.lo_ops == mdc_lu_obj_ops :
         osc = readSU("struct osc_object", lu_obj)
         print_osc_obj("    ", osc)
     else :
