@@ -69,7 +69,7 @@ if ( __name__ == '__main__'):
         env = readSU("struct lu_env", int(args.env, 16))
         key = readSymbol(args.key)
         print(key)
-        if key.lct_tags == 256 :
+        if key.lct_tags == 16 or key.lct_tags == 256 :
             val = env.le_ses.lc_value[key.lct_index]
         else :
             val = env.le_ctx.lc_value[key.lct_index]
