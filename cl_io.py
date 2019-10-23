@@ -6,6 +6,7 @@ from pykdump.API import *
 from LinuxDump.BTstack import *
 from LinuxDump.trees import *
 from obd import *
+from ptlrpc import *
 import lustrelib as ll
 
 import fregsapi
@@ -260,6 +261,65 @@ def get_vvp_obj_from_hash(hs) :
         vvp = readSU("struct vvp_object", hn - off)
         print_vvp_object("", vvp)
 
+from crash import mem2long
+
+def ffs(x):
+    """Returns the index, counting from 1, of the
+    least significant set bit in `x`.
+    """
+    return (x&-x).bit_length()
+
+RADIX_TREE_MAP_SIZE = None
+RADIX_TREE_HEIGHT_MASK = None
+
+_rnode = "struct radix_tree_node"
+try:
+    ti = getStructInfo(_rnode)["slots"].ti
+    RADIX_TREE_MAP_SIZE = ti.dims[0]
+    RADIX_TREE_MAP_MASK = RADIX_TREE_MAP_SIZE - 1
+    RADIX_TREE_MAP_SHIFT = ffs(RADIX_TREE_MAP_SIZE) - 1
+    RADIX_TREE_INDIRECT_PTR = 1
+    height_to_maxindex = readSymbol("height_to_maxindex")
+    # Are we on a kernel with 'radix_tree_node.path'?
+    if (member_size(_rnode, "path") != -1):
+            # Yes, we are
+            RADIX_TREE_MAX_PATH = len(height_to_maxindex)-1
+            RADIX_TREE_HEIGHT_SHIFT = RADIX_TREE_MAX_PATH + 1
+            RADIX_TREE_HEIGHT_MASK = (1 << RADIX_TREE_HEIGHT_SHIFT) - 1
+except:
+    pass
+
+def radix_tree_is_indirect_ptr(addr):
+    return (long(addr) & RADIX_TREE_INDIRECT_PTR)
+
+def indirect_to_ptr(ptr):
+    return (long(ptr) & ~RADIX_TREE_INDIRECT_PTR)
+
+def walk_page_tree2(ptree):
+    first_rnode = readSU(_rnode, indirect_to_ptr(ptree.rnode))
+    if (not first_rnode):
+        return []
+    if not radix_tree_is_indirect_ptr(ptree.rnode) :
+        return [ptree.rnode]
+
+    _offset = member_offset(_rnode, "slots")
+    _size = RADIX_TREE_MAP_SIZE * pointersize
+
+    _addrs = set()
+    def walk_radix_node(rnode):
+        arr = mem2long(readmem(rnode+_offset, _size),
+                       array=RADIX_TREE_MAP_SIZE)
+        #for i, s in enumerate(rnode.slots):
+        for i, s in enumerate(arr):
+            if (not s):
+                continue
+            if not radix_tree_is_indirect_ptr(s) :
+                yield s
+            else:
+                for s1 in walk_radix_node(indirect_to_ptr(s)):
+                    yield s1
+    return walk_radix_node(long(first_rnode))
+
 if ( __name__ == '__main__'):
     import argparse
 
@@ -306,13 +366,9 @@ if ( __name__ == '__main__'):
     elif args.osc_object != 0 :
         osc_object = readSU("struct osc_object", int(args.osc_object, 16))
         print_osc_obj("", osc_object)
-        if osc_object.oo_npages == 1 :
-            osc_page = readSU("struct osc_page", osc_object.oo_tree.rnode)
+        for p in walk_page_tree2(osc_object.oo_tree) :
+            osc_page = readSU("struct osc_page", p)
             print_osc_page(osc_page, "    ")
-        else :
-            for p in walk_page_tree(osc_object.oo_tree) :
-                osc_page = readSU("struct osc_page", p)
-                print_osc_page(osc_page, "    ")
     elif args.hash != 0 :
         hs = readSU("struct cfs_hash", int(args.hash, 16))
         get_vvp_obj_from_hash(hs)
