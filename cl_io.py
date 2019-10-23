@@ -204,17 +204,17 @@ lov_pattern_c = '''
 lov_pattern = CDefine(lov_pattern_c)
 
 def print_layout_raid0(prefix, r0) :
-    print(prefix, "raid0", r0)
+    print(prefix, "raid0", r0, r0.lo_nr)
     for i in range(r0.lo_nr) :
         print(prefix + "    ", r0.lo_sub[i])
-        print_lu_obj_header(r0.lo_sub[i].lso_header.coh_lu)
+        print_lu_obj_header(prefix + "    ", r0.lo_sub[i].lso_header.coh_lu)
 
 def print_lov_layout_entry(prefix, le) :
     if le.lle_type == lov_pattern.LOV_PATTERN_RAID0 :
         print_layout_raid0(prefix, le.lle_raid0)
     elif le.lle_type == lov_pattern.LOV_PATTERN_MDT :
         print(prefix, le.lle_dom)
-        print_lu_obj_header(le.lle_dom.lo_dom.lso_header.coh_lu)
+        print_lu_obj_header(prefix, le.lle_dom.lo_dom.lso_header.coh_lu)
     else :
         print(prefix, le)
 
@@ -228,25 +228,25 @@ def print_osc_obj(prefix, osc) :
           "nr_writes", osc.oo_nr_writes.counter, "nr_ios",
           osc.oo_nr_ios.counter)
 
-def print_lu_obj(lu_obj) :
+def print_lu_obj(prefix, lu_obj) :
     if lu_obj.lo_ops == lov_lu_obj_ops :
         lov = readSU("struct lov_object", lu_obj)
-        print_lov_obj("    ", lov)
+        print_lov_obj(prefix + "    ", lov)
     elif lu_obj.lo_ops == osc_lu_obj_ops or lu_obj.lo_ops == mdc_lu_obj_ops :
         osc = readSU("struct osc_object", lu_obj)
-        print_osc_obj("    ", osc)
+        print_osc_obj(prefix + "    ", osc)
     else :
-        print(lu_obj)
+        print(prefix, lu_obj)
 
-def print_lu_obj_header(loh) :
-    print(fid2str(loh.loh_fid))
+def print_lu_obj_header(prefix, loh) :
+    print(prefix, fid2str(loh.loh_fid))
     for lu_obj in readSUListFromHead(loh.loh_layers,
                                     "lo_linkage", "struct lu_object") :
-        print_lu_obj(lu_obj)
+        print_lu_obj(prefix, lu_obj)
 
 def print_vvp_object(prefix, vvp) :
     print(vvp, "inode", vvp.vob_inode)
-    print_lu_obj_header(vvp.vob_header.coh_lu)
+    print_lu_obj_header("", vvp.vob_header.coh_lu)
 
 def print_inode(prefix, inode) :
     lli = readSU("struct ll_inode_info", inode -
