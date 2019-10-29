@@ -5,6 +5,8 @@ from __future__ import print_function
 from pykdump.API import *
 from LinuxDump.BTstack import *
 from LinuxDump.trees import *
+from LinuxDump.KernLocks import *
+from LinuxDump.fs.dcache import *
 from obd import *
 from ptlrpc import *
 import lustrelib as ll
@@ -251,9 +253,11 @@ def print_vvp_object(prefix, vvp) :
 def print_inode(prefix, inode) :
     lli = readSU("struct ll_inode_info", inode -
             member_offset('struct ll_inode_info', 'lli_vfs_inode'))
-    print(inode, lli, lli.lli_clob.co_lu.lo_header)
-    vvp_object = readSU("struct vvp_object", lli.lli_clob.co_lu.lo_header)
-    print_vvp_object(prefix, vvp_object)
+    print(inode, lli, "clob", lli.lli_clob)
+    decode_mutex(inode.i_mutex)
+    if lli.lli_clob :
+        vvp_object = readSU("struct vvp_object", lli.lli_clob.co_lu.lo_header)
+        print_vvp_object(prefix, vvp_object)
 
 def get_vvp_obj_from_hash(hs) :
     off = member_offset('struct lu_object_header', 'loh_hash')
@@ -330,6 +334,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-S","--osc_object", dest="osc_object", default = 0)
     parser.add_argument("-f","--file", dest="file", default = 0)
     parser.add_argument("-i","--inode", dest="inode", default = 0)
+    parser.add_argument("-d","--dentry", dest="dentry", default = 0)
     parser.add_argument("-p","--page", dest="cl_page", default = 0)
     parser.add_argument("-H","--hash", dest="hash", default = 0)
     parser.add_argument("-w","--waitpages", dest="waitpages",
@@ -360,6 +365,10 @@ if ( __name__ == '__main__'):
     elif args.inode != 0 :
         inode = readSU("struct inode", int(args.inode, 16))
         print_inode("", inode)
+    elif args.dentry != 0 :
+        dentry = readSU("struct dentry", int(args.dentry, 16))
+        print_dentry(dentry)
+        print_inode("", dentry.d_inode)
     elif args.vvp_object != 0 :
         vvp_object = readSU("struct vvp_object", int(args.vvp_object, 16))
         print_vvp_object("", vvp_object)
