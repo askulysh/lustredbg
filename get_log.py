@@ -26,7 +26,10 @@ def page_to_virt(page) :
 
 def lustre_log_dump(log_file):
 
-    cpu_possible_bits = readSymbol("cpu_possible_mask").bits
+    try:
+        cpu_possible_bits = readSymbol("cpu_possible_mask").bits
+    except :
+        cpu_possible_bits = readSymbol("__cpu_possible_mask").bits
     cpu_possible_list = []
 
     i = 0
