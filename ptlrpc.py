@@ -564,10 +564,13 @@ def req_client(req) :
         return "%s@%s" % (conn.c_remote_uuid.uuid, nid2str(conn.c_peer.nid))
     return ""
 
-def show_ptlrpc_request(req) :
+def show_ptlrpc_request_header(req) :
     print("%x x%d %s %4d %s %s" %
           (req, req.rq_xid, req_sent(req), req.rq_status,
            phase2str(req.rq_phase), print_req_flags(req)))
+
+def show_ptlrpc_request(req) :
+    show_ptlrpc_request_header(req)
     if req.rq_import != 0:
         show_import("  ", req.rq_import)
     if req.rq_export != 0:
@@ -633,13 +636,13 @@ def imp_show_requests(imp) :
     print("sending:")
     l = readSUListFromHead(imp.imp_sending_list, "rq_list", "struct ptlrpc_request")
     for req in l :
-        print(req, req_sent(req))
+        show_ptlrpc_request_header(req)
         show_ptlrpc_request_buf(req)
 
     print("delayed:")
     l = readSUListFromHead(imp.imp_delayed_list, "rq_list", "struct ptlrpc_request")
     for req in l :
-        print(req, req_sent(req))
+        show_ptlrpc_request_header(req)
         show_ptlrpc_request_buf(req)
 
     print("unreplied:")
@@ -658,7 +661,7 @@ def imp_show_history(imp) :
     print("replay list:")
     replay_list = readSUListFromHead(imp.imp_replay_list, "rq_replay_list", "struct ptlrpc_request")
     for req in replay_list :
-        print(req, req_sent(req))
+        show_ptlrpc_request_header(req)
         show_ptlrpc_request_buf(req)
 
 def show_ptlrpcd_ctl(ctl) :
