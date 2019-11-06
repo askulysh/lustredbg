@@ -1,4 +1,4 @@
 #!/bin/sh
 
-tar jcf vmcoreinfo.tar.bz2 dmesg_* analysis_* st_* log.dk_*
+tar jcf vmcoreinfo.tar.bz2 dmesg_* analysis_* st_* log.dk_* yaml_*
 
