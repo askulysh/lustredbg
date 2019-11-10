@@ -555,6 +555,10 @@ def show_ptlrpc_request_buf(req) :
         show_request_fmt(req, "RQF_OST_BRW_READ")
     elif body.pb_opc == opcodes.OST_WRITE :
         show_request_fmt(req, "RQF_OST_BRW_WRITE")
+    elif body.pb_opc == opcodes.OST_CREATE :
+        show_request_fmt(req, "RQF_OST_CREATE")
+    elif body.pb_opc == opcodes.OST_PUNCH :
+        show_request_fmt(req, "RQF_OST_PUNCH")
     elif body.pb_opc == opcodes.OUT_UPDATE :
         show_request_fmt(req, "RQF_OUT_UPDATE")
 
