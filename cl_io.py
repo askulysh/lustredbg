@@ -332,13 +332,14 @@ if ( __name__ == '__main__'):
 
     parser =  argparse.ArgumentParser()
     parser.add_argument("-e","--env", dest="env", default = 0)
+    parser.add_argument("-p","--page", dest="page", default = 0)
+    parser.add_argument("-c","--cl_page", dest="cl_page", default = 0)
     parser.add_argument("-s","--osc_page", dest="osc", default = 0)
     parser.add_argument("-V","--vvp_object", dest="vvp_object", default = 0)
     parser.add_argument("-S","--osc_object", dest="osc_object", default = 0)
     parser.add_argument("-f","--file", dest="file", default = 0)
     parser.add_argument("-i","--inode", dest="inode", default = 0)
     parser.add_argument("-d","--dentry", dest="dentry", default = 0)
-    parser.add_argument("-p","--page", dest="cl_page", default = 0)
     parser.add_argument("-H","--hash", dest="hash", default = 0)
     parser.add_argument("-w","--waitpages", dest="waitpages",
                         action='store_true')
@@ -359,6 +360,10 @@ if ( __name__ == '__main__'):
     elif args.osc != 0 :
         osc_page = readSU("struct osc_page", int(args.osc, 16))
         print_osc_page(osc_page, "")
+    elif args.page != 0 :
+        page = readSU("struct page", int(args.page, 16))
+        cl_page = readSU("struct cl_page", page.private)
+        print_cl_page(cl_page, "")
     elif args.cl_page != 0 :
         cl_page = readSU("struct cl_page", int(args.cl_page, 16))
         print_cl_page(cl_page, "")
