@@ -27,9 +27,12 @@ mod_flags_c = '''
 '''
 mod_flags = CDefine(mod_flags_c)
 
+def is_dir(attr) :
+    return attr & 0xf000 == 0x4000
+
 def attr2str(attr) :
     ret = dbits2str(attr & 7, lu_object_header_attr)
-    if attr & 0xf000 == 0x4000 :
+    if is_dir(attr) :
         ret = ret +"|S_IFDIR"
     elif attr & 0xf000 == 0x2000 :
         ret = ret +"|S_IFCHR"
@@ -62,6 +65,7 @@ def print_link_ea(prefix, leh) :
 
 def print_osp_object(osp_obj, prefix) :
     print(prefix, "osp", osp_obj)
+    prefix += "\t"
     for oxe in readSUListFromHead(osp_obj.opo_xattr_list, "oxe_list",
             "struct osp_xattr_entry") :
         name = readmem(oxe.oxe_buf, oxe.oxe_namelen)
@@ -70,13 +74,16 @@ def print_osp_object(osp_obj, prefix) :
             ea_header = readSU("struct link_ea_header", oxe.oxe_value)
             print_link_ea(prefix, ea_header)
 
-def print_mdt_obj(mdt, prefix):
-    moh = mdt.mot_header
-    print(prefix, "%s %s flags: %x attr 0%o %s" % (mdt, fid2str(moh.loh_fid),
-           moh.loh_flags, moh.loh_attr, attr2str(moh.loh_attr)))
+def print_lod_object(lod, prefix) :
+    if is_dir(lod.ldo_obj.do_lu.lo_header.loh_attr) :
+        slave = lod.ldo_dir_slave_stripe & 4
+        striped = lod.ldo_dir_striped & 2
+        print(prefix, "striped dir", striped, "slave", slave,
+              "stripe count", lod.ldo_dir_stripe_count)
+        for i in range(lod.ldo_dir_stripe_count) :
+            print_generic_mdt_obj(lod.ldo_stripe[i].do_lu, prefix + "\t")
 
-    for layer in readSUListFromHead(mdt.mot_header.loh_layers, "lo_linkage",
-            "struct lu_object") :
+def print_generic_mdt_obj(layer, prefix) :
         if layer.lo_ops == mdt_obj_ops :
             print(prefix, "mdt", layer)
         elif layer.lo_ops == mdd_lu_obj_ops :
@@ -86,15 +93,25 @@ def print_mdt_obj(mdt, prefix):
         elif layer.lo_ops == lod_lu_obj_ops :
             lod_obj = readSU("struct lod_object", layer)
             print(prefix, "lod", lod_obj)
+            print_lod_object(lod_obj, prefix + "\t")
         elif layer.lo_ops == osd_lu_obj_ops :
             osd_obj = readSU("struct osd_object", layer)
             print(prefix, "osd", osd_obj)
             print_osd_object(osd_obj, prefix + "\t")
         elif layer.lo_ops == osp_lu_obj_ops :
             osp_obj = readSU("struct osp_object", layer - 0x50)
-            print_osp_object(osp_obj, prefix + "\t")
+            print_osp_object(osp_obj, prefix)
         else :
             print(prefix, "unknown", layer)
+
+def print_mdt_obj(mdt, prefix):
+    moh = mdt.mot_header
+    print(prefix, "%s %s flags: %x attr 0%o %s" % (mdt, fid2str(moh.loh_fid),
+           moh.loh_flags, moh.loh_attr, attr2str(moh.loh_attr)))
+
+    for layer in readSUListFromHead(mdt.mot_header.loh_layers, "lo_linkage",
+            "struct lu_object") :
+        print_generic_mdt_obj(layer, prefix)
 
 def find_print_fid(lu_dev, fid, prefix) :
     mdt_obj = lu_object_find(lu_dev, fid)
