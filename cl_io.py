@@ -253,8 +253,11 @@ def print_vvp_object(prefix, vvp) :
 def print_inode(prefix, inode) :
     lli = readSU("struct ll_inode_info", inode -
             member_offset('struct ll_inode_info', 'lli_vfs_inode'))
-    print(inode, lli, fid2str(lli.lli_fid), lli.lli_clob)
-    decode_mutex(inode.i_mutex)
+    try :
+        inode_lock = inode.i_mutex
+    except :
+        inode_lock = inode.i_rwsem
+    print(inode, inode_lock, lli, fid2str(lli.lli_fid), lli.lli_clob)
     if lli.lli_clob :
         vvp_object = readSU("struct vvp_object", lli.lli_clob.co_lu.lo_header)
         print_vvp_object(prefix, vvp_object)
