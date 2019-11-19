@@ -47,9 +47,12 @@ def attr2str(attr) :
     return ret
 
 def print_osd_object(osd_obj, prefix) :
-    inode = readSU("struct inode", osd_obj.oo_inode)
-    print(prefix, inode, "ino", osd_obj.oo_inode.i_ino,
-            "nlink", osd_obj.oo_inode.i_nlink)
+    try :
+        inode = readSU("struct inode", osd_obj.oo_inode)
+        print(prefix, inode, "ino", osd_obj.oo_inode.i_ino,
+                "nlink", osd_obj.oo_inode.i_nlink)
+    except :
+        print(prefix, "dnode", osd_obj.oo_dn)
 
 def print_link_ea(prefix, leh) :
     if leh.leh_magic == 0x11EAF1DF :
