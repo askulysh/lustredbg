@@ -85,6 +85,14 @@ def print_lod_object(lod, prefix) :
               "stripe count", lod.ldo_dir_stripe_count)
         for i in range(lod.ldo_dir_stripe_count) :
             print_generic_mdt_obj(lod.ldo_stripe[i].do_lu, prefix + "\t")
+    else :
+        print(prefix, "comp count", lod.ldo_comp_cnt)
+        for i in range(lod.ldo_comp_cnt) :
+            comp = lod.ldo_comp_entries[i]
+            print(prefix, comp, "stripe cnt", comp.llc_stripe_count)
+            for j in range(comp.llc_stripe_count) :
+                osp_obj = readSU("struct osp_object", comp.llc_stripe[j])
+                print_osp_object(osp_obj, prefix + "\t")
 
 def print_generic_mdt_obj(layer, prefix) :
         if layer.lo_ops == mdt_obj_ops :
