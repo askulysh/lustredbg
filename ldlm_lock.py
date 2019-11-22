@@ -135,13 +135,16 @@ def policy_data2str(lr_type, data) :
 
 def print_ldlm_request(prefix, req) :
     res = req.lock_desc.l_resource
-    try:
-        print("%s %s %s %s %s" %
-                (prefix, ldlm_types.__getitem__(res.lr_type), res2str(res),
-                ldlm_mode2str(req.lock_desc.l_req_mode),
-                policy_data2str(res.lr_type, req.lock_desc.l_policy_data)))
-    except:
-        print("err")
+    if res.lr_type != 0 :
+        try:
+            print("%s %s %s %s %s" %
+                    (prefix, ldlm_types.__getitem__(res.lr_type), res2str(res),
+                    ldlm_mode2str(req.lock_desc.l_req_mode),
+                    policy_data2str(res.lr_type, req.lock_desc.l_policy_data)))
+        except:
+            print("err")
+    for i in range(req.lock_count) :
+        print("%s %x" % (prefix, req.lock_handle[i].cookie))
 
 def lock_client(lock) :
     if lock.l_export != 0 :
