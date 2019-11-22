@@ -172,7 +172,7 @@ def get_last_activity_seconds(lock) :
 
 def get_granted_time(lock) :
     try :
-        sec = (ktime_get() - lock.l_last_used.tv64)/1000000000
+        sec = get_seconds() - lock.l_activity
     except :
         sec = get_seconds() - lock.l_last_used
     return sec
