@@ -553,6 +553,8 @@ def show_ptlrpc_request_buf(req) :
         show_request_fmt(req, "RQF_MDS_CLOSE")
     elif body.pb_opc == opcodes.MDS_HSM_PROGRESS :
         show_request_fmt(req, "RQF_MDS_HSM_PROGRESS")
+    elif body.pb_opc == opcodes.OST_SETATTR :
+        show_request_fmt(req, "RQF_OST_SETATTR")
     elif body.pb_opc == opcodes.OST_READ :
         show_request_fmt(req, "RQF_OST_BRW_READ")
     elif body.pb_opc == opcodes.OST_WRITE :
