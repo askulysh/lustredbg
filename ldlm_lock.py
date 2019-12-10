@@ -143,7 +143,10 @@ def print_ldlm_request(prefix, req) :
                     policy_data2str(res.lr_type, req.lock_desc.l_policy_data)))
         except:
             print("err")
-    for i in range(req.lock_count) :
+    n = req.lock_count
+    if n > 2 :
+        n = 2
+    for i in range(n) :
         print("%s %x" % (prefix, req.lock_handle[i].cookie))
 
 def lock_client(lock) :
