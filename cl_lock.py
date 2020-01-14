@@ -53,6 +53,7 @@ except TypeError:
     lovsub_lock_ops = 0
 lov_lock_ops = readSymbol("lov_lock_ops")
 osc_lock_ops = readSymbol("osc_lock_ops")
+mdc_lock_ops = readSymbol("mdc_lock_ops")
 
 def print_osc_lock(osc_lock, prefix) :
     print(prefix, "state:", osc_lock_state.__getitem__(osc_lock.ols_state),
@@ -95,7 +96,7 @@ def print_cl_lock(cl, prefix):
             print(prefix, "vvp", layer)
         if layer.cls_ops == lovsub_lock_ops :
             print(prefix, "lovsub", layer)
-        if layer.cls_ops == osc_lock_ops :
+        if layer.cls_ops == osc_lock_ops or layer.cls_ops == mdc_lock_ops :
             osc_lock = readSU("struct osc_lock", layer)
             print(prefix, "osc", osc_lock)
             print_osc_lock(osc_lock, prefix + "\t")
