@@ -736,6 +736,15 @@ def show_processing(pattern) :
     for pid in waiting_pids_sorted :
         show_pid(pid, pattern)
 
+def show_cli_waiting() :
+    (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
+    waiting_pids = funcsMatch(funcpids, "ptlrpc_set_wait")
+    for pid in waiting_pids :
+        print("PID", pid)
+        rqset = readSU("struct ptlrpc_request_set",
+                search_for_reg("RSI", pid, "ptlrpc_set_wait"))
+        show_ptlrpc_set(rqset)
+
 def show_policy(policy, pattern) :
     if (policy == 0) :
         return
@@ -772,6 +781,8 @@ if ( __name__ == '__main__'):
                         action='store_true')
     parser.add_argument("-w","--waiting", dest="waiting",
                        default = 0)
+    parser.add_argument("-W","--cli-waiting", dest="cli_waiting",
+                       action='store_true')
     parser.add_argument("-c","--client", dest="client", default = "")
     parser.add_argument("-p","--pid", dest="pid",
                        default = 0)
@@ -800,6 +811,8 @@ if ( __name__ == '__main__'):
     elif args.waiting != 0 :
         service = readSU("struct ptlrpc_service", int(args.waiting, 16))
         show_waiting(service, pattern)
+    elif args.cli_waiting != 0 :
+        show_cli_waiting()
     elif args.pid != 0 :
         show_pid(int(args.pid), None)
     else :
