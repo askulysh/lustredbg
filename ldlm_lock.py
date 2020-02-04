@@ -147,7 +147,7 @@ def print_ldlm_request(prefix, req) :
     if n > 2 :
         n = 2
     for i in range(n) :
-        print("%s %x" % (prefix, req.lock_handle[i].cookie))
+        print("%s 0x%x" % (prefix, req.lock_handle[i].cookie))
 
 def lock_client(lock) :
     if lock.l_export != 0 :
