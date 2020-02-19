@@ -130,6 +130,9 @@ def policy_data2str(lr_type, data) :
         return "%s" % dbits2str(data.l_inodebits.bits, MDS_INODELOCK)
     elif lr_type == ldlm_types.LDLM_EXTENT :
         return "[%d-%d]" % (data.l_extent.start, data.l_extent.end)
+    elif lr_type == ldlm_types.LDLM_FLOCK :
+        return "[%d-%d] pid: %d owner: %x" % (data.l_flock.start,
+                data.l_flock.end, data.l_flock.pid, data.l_flock.owner)
 
     return "%s" % data
 
@@ -211,12 +214,9 @@ def print_ldlm_lock(ldlm_lock, prefix) :
             ldlm_lock.l_policy_data.l_extent.start,
             ldlm_lock.l_policy_data.l_extent.end,
             ldlm_lock.l_req_extent.start, ldlm_lock.l_req_extent.end))
-    elif ldlm_lock.l_resource.lr_type == ldlm_types.LDLM_IBITS :
-        print("%s %s" % (prefix,
-            dbits2str(ldlm_lock.l_policy_data.l_inodebits.bits,
-                MDS_INODELOCK)))
     else :
-        print("%s %s" % (prefix, ldlm_lock.l_policy_data))
+        print("%s %s" % (prefix, policy_data2str(ldlm_lock.l_resource.lr_type,
+            ldlm_lock.l_policy_data)))
 
 def hash_for_each(hs, func) :
     buckets = hs.hs_buckets
