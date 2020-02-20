@@ -730,11 +730,14 @@ def show_pid(pid, pattern) :
             print("watchdog touched",
                     (ktime_get() - touched.tv64)/1000000000, "s ago")
 
+def get_work_start_time(pid) :
+    return readS64(search_for_reg("RBP", pid, "tgt_request_handle")-0x38)
+
 def show_processing(pattern) :
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
     waiting_pids = funcsMatch(funcpids, "tgt_request_handle")
     waiting_pids_sorted = sorted(waiting_pids, key = lambda pid :
-            readS64(search_for_reg("RBP", pid, "tgt_request_handle")-0x38))
+           get_work_start_time(pid))
     for pid in waiting_pids_sorted :
         show_pid(pid, pattern)
 

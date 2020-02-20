@@ -335,7 +335,9 @@ def show_completition_waiting_locks() :
     res = dict()
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
     waiting_pids = funcsMatch(funcpids, "ldlm_completion_ast")
-    for pid in waiting_pids :
+    waiting_pids_sorted = sorted(waiting_pids, key = lambda pid :
+           get_work_start_time(pid))
+    for pid in waiting_pids_sorted :
         lock = show_tgt(pid)
         conflict = find_conflicting_lock(lock)
         try :
