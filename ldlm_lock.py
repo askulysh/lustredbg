@@ -183,6 +183,13 @@ def get_granted_time(lock) :
         sec = get_seconds() - lock.l_last_used
     return sec
 
+def lock_refc(lock) :
+    try :
+        refc = lock.l_refc.counter
+    except :
+        refc = lock.l_handle.h_ref.counter
+    return refc
+
 def print_ldlm_lock(ldlm_lock, prefix) :
     pid = ldlm_lock.l_pid
     remote = lock_client(ldlm_lock)
@@ -190,7 +197,7 @@ def print_ldlm_lock(ldlm_lock, prefix) :
     print("%s 0x%x/0x%x lrc %u/%d,%d %s %s %s" % (prefix,
                             ldlm_lock.l_handle.h_cookie,
                             ldlm_lock.l_remote_handle.cookie,
-                            ldlm_lock.l_refc.counter, ldlm_lock.l_readers,
+                            lock_refc(ldlm_lock), ldlm_lock.l_readers,
                             ldlm_lock.l_writers, remote,
                             res2str(ldlm_lock.l_resource), pid))
     print(prefix, "flags:", dbits2str(ldlm_lock.l_flags, LDLM_flags))
