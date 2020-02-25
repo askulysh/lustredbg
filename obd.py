@@ -154,6 +154,19 @@ def ptr_search(ptr) :
         else :
             print(s)
 
+HANDLE_HASH_SIZE = 1 << 16
+HANDLE_HASH_MASK = HANDLE_HASH_SIZE - 1
+
+def class_handle2object(cookie) :
+    handle_hash = readSymbol("handle_hash")
+    bucket = handle_hash + (cookie & HANDLE_HASH_MASK);
+    entries = readSUListFromHead(bucket.head, "h_link", "struct portals_handle")
+    for e in entries :
+        if cookie == e.h_cookie :
+            return e
+
+    return 0
+
 if ( __name__ == '__main__'):
     import argparse
 
@@ -169,6 +182,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-l","--fld_lookup", dest="seq",
                         default=0)
     parser.add_argument("-H","--hash", dest="hash", default=0)
+    parser.add_argument("-c","--cookie", dest="cookie", default=0)
     args = parser.parse_args()
 
     if args.device != 0 :
@@ -189,6 +203,8 @@ if ( __name__ == '__main__'):
     elif args.hash != 0 :
         hs = readSU("struct cfs_hash", int(args.hash, 16))
         hash_for_each_hd2(hs, print)
+    elif args.cookie != 0 :
+        print(class_handle2object(int(args.cookie, 16)))
     else :
         show_obds()
 
