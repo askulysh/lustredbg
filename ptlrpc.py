@@ -9,6 +9,7 @@ from ldlm_lock import *
 from LinuxDump.BTstack import *
 import fregsapi
 import re
+import lustrelib as ll
 
 max_req = 10
 
@@ -644,6 +645,15 @@ def show_import(prefix, imp) :
         if imp.imp_no_pinger_recover == 1 :
             print("imp_no_pinger_recover == 1 !!!!")
 
+def show_requests_from_list_reverse(head, offset):
+    entry = head
+    while entry.prev != head :
+        entry = entry.prev
+        req = readSU("struct ptlrpc_request", int(entry) - offset)
+        if req.rq_srv.sr_svc_thread != 0 :
+            print("PID %d" % req.rq_srv.sr_svc_thread.t_pid)
+        show_ptlrpc_request(req)
+
 def imp_show_requests(imp) :
     print("sending:")
     l = readSUListFromHead(imp.imp_sending_list, "rq_list", "struct ptlrpc_request")
@@ -663,11 +673,7 @@ def imp_show_requests(imp) :
     cli_rq_info = getStructInfo('struct ptlrpc_cli_req')
     offset = rq_info['rq_cli'].offset + cli_rq_info['cr_unreplied_list'].offset
 
-    while head.next != imp.imp_unreplied_list :
-        head = head.next
-        req = readSU("struct ptlrpc_request", int(head) - offset)
-        print(req, req_sent(req))
-        show_ptlrpc_request(req)
+    show_requests_from_list_reverse(imp.imp_unreplied_list, offset)
 
 def imp_show_history(imp) :
     print("replay list:")
@@ -675,6 +681,36 @@ def imp_show_history(imp) :
     for req in replay_list :
         show_ptlrpc_request_header(req)
         show_ptlrpc_request_buf(req)
+
+def show_export(prefix, exp) :
+    conn = exp.exp_imp_reverse.imp_connection
+    print("%s@%s" % (conn.c_remote_uuid.uuid, nid2str(conn.c_peer.nid)))
+    print("%s %u.%u.%u.%u" % (exp.exp_client_uuid.uuid,
+        (exp.exp_connect_data.ocd_version >> 24) & 255,
+        (exp.exp_connect_data.ocd_version >> 16) & 255,
+        (exp.exp_connect_data.ocd_version >> 8) & 255,
+        (exp.exp_connect_data.ocd_version >> 24) & 255))
+    print("requests:")
+    print("total %d last req %d" % (exp.exp_rpc_count, exp.exp_last_request_time))
+    try:
+       print("used slots %t" % exp.exp_used_slots)
+    except:
+        print("")
+
+    rq_info = getStructInfo('struct ptlrpc_request')
+    srv_rq_info = getStructInfo('struct ptlrpc_srv_req')
+    offset = rq_info['rq_srv'].offset + srv_rq_info['sr_exp_list'].offset
+
+    print("HP requests:")
+    show_requests_from_list_reverse(exp.exp_hp_rpcs, offset)
+    print("Regular requests:")
+    show_requests_from_list_reverse(exp.exp_reg_rpcs, offset)
+
+    print("\nlocks:")
+    for hn in ll.cfs_hash_get_nodes(exp.exp_lock_hash) :
+        lock_addr = Addr(hn) -  member_offset('struct ldlm_lock', 'l_exp_hash')
+        lock = readSU("struct ldlm_lock", lock_addr)
+        print_ldlm_lock(lock, "")
 
 def show_ptlrpcd_ctl(ctl) :
     pc_set = ctl.pc_set
@@ -784,6 +820,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-s","--set", dest="set", default = 0)
     parser.add_argument("-n","--num", dest="n", default = 0)
     parser.add_argument("-i","--import", dest="imp", default = 0)
+    parser.add_argument("-e","--export", dest="exp", default = 0)
     parser.add_argument("-u","--running", dest="running",
                         action='store_true')
     parser.add_argument("-w","--waiting", dest="waiting",
@@ -813,6 +850,9 @@ if ( __name__ == '__main__'):
         show_import("", imp)
         imp_show_requests(imp)
         imp_show_history(imp)
+    elif args.exp != 0 :
+        exp = readSU("struct obd_export", int(args.exp, 16))
+        show_export("", exp)
     elif args.running != 0 :
         show_processing(pattern)
     elif args.waiting != 0 :
