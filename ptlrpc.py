@@ -691,7 +691,8 @@ def show_export(prefix, exp) :
         (exp.exp_connect_data.ocd_version >> 8) & 255,
         (exp.exp_connect_data.ocd_version >> 24) & 255))
     print("requests:")
-    print("total %d last req %d" % (exp.exp_rpc_count, exp.exp_last_request_time))
+    print("total %d last req %d sec ago" % (exp.exp_rpc_count.counter,
+        get_seconds() - exp.exp_last_request_time))
     try:
        print("used slots %t" % exp.exp_used_slots)
     except:
