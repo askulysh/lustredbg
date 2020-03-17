@@ -191,6 +191,7 @@ def lock_refc(lock) :
     return refc
 
 def print_ldlm_lock(ldlm_lock, prefix) :
+    print(prefix, ldlm_lock)
     pid = ldlm_lock.l_pid
     remote = lock_client(ldlm_lock)
 
@@ -248,18 +249,13 @@ def show_resource(res) :
     granted = readSUListFromHead(res.lr_granted,
                 "l_res_link", "struct ldlm_lock")
     for lock in granted :
-        if args.active :
-            if lock.l_readers != 0 or lock.l_writers != 0:
+        if (not args.active) or lock.l_readers != 0 or lock.l_writers != 0:
                 print_ldlm_lock(lock, "    ")
-        else :
-            print("    ", lock)
-            print_ldlm_lock(lock, "    ")
     waiting = readSUListFromHead(res.lr_waiting,
                 "l_res_link", "struct ldlm_lock")
     if len(waiting) > 0 :
         print("waiting locks:")
         for lock in waiting :
-            print("    ", lock)
             print_ldlm_lock(lock, "    ")
 
 def walk_res_hash2(hlist) :
@@ -334,7 +330,6 @@ def show_tgt(pid) :
     if addr == 0 :
         addr = search_for_reg("RBX", pid, "schedule")
     lock = readSU("struct ldlm_lock", addr)
-    print(lock)
     print_ldlm_lock(lock, "")
     return lock
 
@@ -361,7 +356,6 @@ def show_completition_waiting_locks() :
     print("--------------")
     for l in res :
         print("%d threads are waiting (max %ss) for" % (res[l][0], res[l][1]))
-        print(l)
         print_ldlm_lock(l, "")
 
 def show_BL_AST_locks() :
@@ -372,7 +366,6 @@ def show_BL_AST_locks() :
     waiting = readSUListFromHead(waiting_locks_list,
                 "l_pending_chain", "struct ldlm_lock")
     for lock in waiting :
-        print(lock)
         print_ldlm_lock(lock, "    ")
         remote = lock_client(lock)
         pattern = re.compile(remote)
