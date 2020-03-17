@@ -176,13 +176,6 @@ def get_last_activity_seconds(lock) :
          sec = lock.l_last_activity
     return sec
 
-def get_granted_time(lock) :
-    try :
-        sec = get_seconds() - lock.l_activity
-    except :
-        sec = get_seconds() - lock.l_last_used
-    return sec
-
 def lock_refc(lock) :
     try :
         refc = lock.l_refc.counter
@@ -208,8 +201,17 @@ def print_ldlm_lock(ldlm_lock, prefix) :
             jiffies = readSymbol("jiffies")
             timeout = "will timeout in " + j_delay(jiffies,
                 ldlm_lock.l_callback_timeout)
-        print(prefix, "granted", ldlm_mode2str(ldlm_lock.l_granted_mode),
-              get_granted_time(ldlm_lock) , "sec ago", timeout)
+        print(prefix, "granted", ldlm_mode2str(ldlm_lock.l_granted_mode))
+
+        if ldlm_lock.l_flags & LDLM_flags.LDLM_FL_NS_SRV :
+            last_used = ldlm_lock.l_last_used.tv64
+            if last_used != 0 :
+                sec = (ktime_get() - last_used)/1000000000
+                print(prefix, "last used", sec, "sec ago")
+        else:
+            sec = get_seconds() - ldlm_lock.l_activity
+            print(prefix, "enqueued", sec, "sec ago")
+
         if ldlm_lock.l_flags & LDLM_flags.LDLM_FL_WAITED :
             print(prefix, "BL AST sent",
                     get_seconds() - get_bl_ast_seconds(ldlm_lock), "sec ago")
