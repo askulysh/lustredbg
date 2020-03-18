@@ -5,6 +5,7 @@ from __future__ import print_function
 from pykdump.API import *
 from obd import *
 import ptlrpc as ptlrpc
+import ldlm_lock as ldlm
 
 mdd_lu_obj_ops = readSymbol("mdd_lu_obj_ops")
 lod_lu_obj_ops = readSymbol("lod_lu_obj_ops")
@@ -155,6 +156,13 @@ def parse_mti(mti, prefix):
             mti.mti_rr.rr_name.ln_name, fid2str(mti.mti_rr.rr_fid2)))
     else :
         print(mti.mti_rr)
+    for i in range(6) :
+        cookie = mti.mti_lh[i].mlh_pdo_lh.cookie
+        if cookie :
+            print("%d : %x" % (i, cookie))
+            lock = ldlm.find_lock_by_cookie(cookie)
+            if lock :
+                ldlm.print_ldlm_lock(lock, prefix + "\t")
 
 if ( __name__ == '__main__'):
     import argparse

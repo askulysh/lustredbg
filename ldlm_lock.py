@@ -7,7 +7,7 @@ from LinuxDump.BTstack import *
 import fregsapi
 from ktime import *
 from lnet import *
-from ptlrpc import *
+import ptlrpc as ptlrpc
 import obd as obd
 import re
 
@@ -303,41 +303,41 @@ def show_namespaces(regexp) :
 #    srv_namespaces $arg0
 
 def lock_compatible(lock1, lock2) :
-    if lck_compat_array[lock1.l_req_mode] & lock2.l_granted_mode == 0 :
+    if lck_compat_array[lock1.l_req_mode] & lock2.l_req_mode == 0 :
         if lock1.l_resource.lr_type == ldlm_types.LDLM_IBITS :
             bits = lock1.l_policy_data.l_inodebits.bits
             if bits & lock2.l_policy_data.l_inodebits.bits != 0 :
                 return False
-            else :
-                print("TODO: conflict found")
-                return False
     return True
 
-def find_conflicting_lock(lock) :
-    granted = readSUListFromHead(lock.l_resource.lr_granted,
-                "l_res_link", "struct ldlm_lock")
-    for gr in granted :
-        if lock_compatible(lock, gr) == False :
-            return gr
+def find_conflicting_in_list(lock, lr_list) :
+    locks = readSUListFromHead(lr_list, "l_res_link", "struct ldlm_lock")
+    for l in locks :
+        if l != lock and lock_compatible(lock, l) == False :
+            return l
 
-    waiting = readSUListFromHead(lock.l_resource.lr_waiting,
-                "l_res_link", "struct ldlm_lock")
-    for w in waiting :
-        if lock_compatible(lock, w) == False :
-            return w
+    return None
+
+def find_conflicting_lock(lock) :
+    conflict = find_conflicting_in_list(lock, lock.l_resource.lr_granted)
+    if conflict :
+        return conflict
+
+    conflict = find_conflicting_in_list(lock, lock.l_resource.lr_waiting)
+    if conflict :
+        return conflict
+
     return None
 
 def show_tgt(pid) :
-    print(pid)
-    addr = search_for_reg("RDI", pid, "tgt_request_handle")
-    if addr != 0:
-        req = readSU("struct ptlrpc_request", addr)
-        show_ptlrpc_request(req)
-    addr = search_for_reg("RBX", pid, "schedule_timeout")
+    addr = ptlrpc.show_pid(pid, None)
+    if addr == 0:
+        return 0
+    addr = ptlrpc.search_for_reg("RBX", pid, "schedule_timeout")
     if addr == 0 :
-        addr = search_for_reg("RBX", pid, "__schedule")
+        addr = ptlrpc.search_for_reg("RBX", pid, "__schedule")
     if addr == 0 :
-        addr = search_for_reg("RBX", pid, "schedule")
+        addr = ptlrpc.search_for_reg("RBX", pid, "schedule")
     lock = readSU("struct ldlm_lock", addr)
     print_ldlm_lock(lock, "")
     return lock
@@ -382,6 +382,42 @@ def show_BL_AST_locks() :
         for srv in services :
             show_waiting(srv, pattern)
 
+def analyze_deadlock(lock) :
+    res = lock.l_resource
+    print("starting lock", lock)
+    print()
+
+    show_resource(lock.l_resource)
+
+    if lock.l_req_mode == lock.l_granted_mode :
+        conflict = find_conflicting_in_list(lock, lock.l_resource.lr_waiting)
+    else :
+        conflict = find_conflicting_in_list(lock, lock.l_resource.lr_granted)
+
+    while conflict :
+        print("\nconflicting lock", conflict)
+        if conflict.l_req_mode == conflict.l_granted_mode :
+            print_ldlm_lock(conflict, "")
+
+        print()
+        if conflict.l_export :
+            lock = 0
+        else :
+            lock = show_tgt(conflict.l_pid)
+
+        if lock == 0 :
+            if conflict.l_req_mode != conflict.l_granted_mode :
+                print_ldlm_lock(conflict, "")
+            print("\nexport", conflict.l_export, ":")
+            ptlrpc.show_export("", conflict.l_export)
+            return
+
+        print("lock", lock);
+        conflict = find_conflicting_lock(lock)
+
+    if not conflict :
+        print("\nError: no conflict")
+
 if ( __name__ == '__main__'):
     import argparse
 
@@ -399,6 +435,7 @@ if ( __name__ == '__main__'):
                         action='store_true')
     parser.add_argument("-p","--pid", dest="pid", default = 0)
     parser.add_argument("-f","--flags", dest="flags", default = 0)
+    parser.add_argument("-d","--dealock", dest="dead", default = 0)
     args = parser.parse_args()
 
     if args.lock != 0 :
@@ -424,6 +461,9 @@ if ( __name__ == '__main__'):
         show_namespaces(args.g)
     elif args.flags != 0 :
         print("flags:", dbits2str(int(args.flags, 0), LDLM_flags))
+    elif args.dead != 0 :
+        l = readSU("struct ldlm_lock", int(args.dead, 16))
+        analyze_deadlock(l)
     else :
         show_namespaces(r'.*')
 

@@ -525,6 +525,10 @@ def show_request_fmt(req, fmt) :
     print("reply:")
     show_request_loc(req, req_format, 1)
 
+def get_opc(req) :
+    body = readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
+    return body.pb_opc
+
 def show_ptlrpc_request_buf(req) :
     body = readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
     print("opc %s transno %d tag %d pid/status %d job %s" %
@@ -651,8 +655,13 @@ def show_requests_from_list_reverse(head, offset):
         entry = entry.prev
         req = readSU("struct ptlrpc_request", int(entry) - offset)
         if req.rq_srv.sr_svc_thread != 0 :
-            print("PID %d" % req.rq_srv.sr_svc_thread.t_pid)
-        show_ptlrpc_request(req)
+            pid = req.rq_srv.sr_svc_thread.t_pid
+            if get_opc(req) == opcodes.LDLM_ENQUEUE :
+                show_tgt(pid)
+            else :
+                show_pid(pid, None)
+        else:
+            show_ptlrpc_request(req)
 
 def imp_show_requests(imp) :
     print("sending:")
@@ -708,11 +717,11 @@ def show_export(prefix, exp) :
     print("Regular requests:")
     show_requests_from_list_reverse(exp.exp_reg_rpcs, offset)
 
-    print("\nlocks:")
-    for hn in ll.cfs_hash_get_nodes(exp.exp_lock_hash) :
-        lock_addr = Addr(hn) -  member_offset('struct ldlm_lock', 'l_exp_hash')
-        lock = readSU("struct ldlm_lock", lock_addr)
-        print_ldlm_lock(lock, "")
+#    print("\nlocks:")
+#    for hn in ll.cfs_hash_get_nodes(exp.exp_lock_hash) :
+#        lock_addr = Addr(hn) -  member_offset('struct ldlm_lock', 'l_exp_hash')
+#        lock = readSU("struct ldlm_lock", lock_addr)
+#        print_ldlm_lock(lock, "")
 
 def show_ptlrpcd_ctl(ctl) :
     pc_set = ctl.pc_set
@@ -753,6 +762,9 @@ def search_for_reg(r, pid, func) :
 
 def show_pid(pid, pattern) :
     addr = search_for_reg("RDI", pid, "tgt_request_handle")
+    if addr == 0 :
+        return 0
+
     req = readSU("struct ptlrpc_request", addr)
     if pattern == None or pattern.match(req_client(req)) :
         print("PID", pid)
@@ -769,6 +781,7 @@ def show_pid(pid, pattern) :
             touched = thread.t_touched
             print("watchdog touched",
                     (ktime_get() - touched.tv64)/1000000000, "s ago")
+    return req
 
 def get_work_start_time(pid) :
     return readS64(search_for_reg("RBP", pid, "tgt_request_handle")-0x38)
