@@ -683,6 +683,7 @@ def imp_show_history(imp) :
         show_ptlrpc_request_buf(req)
 
 def show_export(prefix, exp) :
+    print(exp.exp_obd, exp.exp_obd.obd_name)
     conn = exp.exp_imp_reverse.imp_connection
     print("%s@%s" % (conn.c_remote_uuid.uuid, nid2str(conn.c_peer.nid)))
     print("%s %u.%u.%u.%u" % (exp.exp_client_uuid.uuid,
