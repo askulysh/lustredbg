@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from pykdump.API import *
 from obd import *
+import ptlrpc as ptlrpc
 
 mdd_lu_obj_ops = readSymbol("mdd_lu_obj_ops")
 lod_lu_obj_ops = readSymbol("lod_lu_obj_ops")
@@ -91,7 +92,8 @@ def print_lod_object(lod, prefix) :
             comp = lod.ldo_comp_entries[i]
             print(prefix, comp, "stripe cnt", comp.llc_stripe_count)
             for j in range(comp.llc_stripe_count) :
-                osp_obj = readSU("struct osp_object", comp.llc_stripe[j])
+                osp_obj = readSU("struct osp_object", comp.llc_stripe[j] -
+                        member_offset('struct osp_object', 'opo_obj'))
                 print_osp_object(osp_obj, prefix + "\t")
 
 def print_generic_mdt_obj(layer, prefix) :
@@ -125,8 +127,9 @@ def print_mdt_obj(mdt, prefix):
         print_generic_mdt_obj(layer, prefix)
 
 def find_print_fid(lu_dev, fid, prefix) :
-    mdt_obj = lu_object_find(lu_dev, fid)
-    if mdt_obj :
+    lu_obj = lu_object_find(lu_dev, fid)
+    if lu_obj :
+        mdt_obj = readSU("struct mdt_object", Addr(lu_obj))
         print_mdt_obj(mdt_obj, prefix)
 
 def parse_mti(mti, prefix):
@@ -141,15 +144,17 @@ def parse_mti(mti, prefix):
     find_print_fid(lu_dev, mti.mti_rr.rr_fid1, fid_prefix)
     print("rr_fid2", mti.mti_rr.rr_fid2, fid2str( mti.mti_rr.rr_fid2))
     find_print_fid(lu_dev, mti.mti_rr.rr_fid2, fid_prefix)
-    if mti.mti_rr.rr_opcode == mds_reint.REINT_RENAME :
+    if mti.mti_rr.rr_opcode == ptlrpc.mds_reint.REINT_RENAME :
         print("rename %s/%s %s -> %s/%s %s" % (
               fid2str(mti.mti_rr.rr_fid1), mti.mti_rr.rr_name.ln_name,
               fid2str(mti.mti_tmp_fid1),
               fid2str(mti.mti_rr.rr_fid2), mti.mti_rr.rr_tgt_name.ln_name,
               fid2str(mti.mti_tmp_fid2)))
-    elif mti.mti_rr.rr_opcode == mds_reint.REINT_MIGRATE :
+    elif mti.mti_rr.rr_opcode == ptlrpc.mds_reint.REINT_MIGRATE :
         print("migrate %s/%s -> %s" % (fid2str(mti.mti_rr.rr_fid1),
             mti.mti_rr.rr_name.ln_name, fid2str(mti.mti_rr.rr_fid2)))
+    else :
+        print(mti.mti_rr)
 
 if ( __name__ == '__main__'):
     import argparse
