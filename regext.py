@@ -42,3 +42,6 @@ rprog("cl_io", "cl_io information",
       "-h   - list available options",
       help)
 
+rprog("ip", "Interactive python",
+      "",
+      help)
