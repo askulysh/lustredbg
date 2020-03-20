@@ -8,6 +8,7 @@ import fregsapi
 from ktime import *
 from lnet import *
 from ptlrpc import *
+import obd as obd
 import re
 
 __LDLM_flags_c = '''
@@ -228,6 +229,12 @@ def print_ldlm_lock(ldlm_lock, prefix) :
         print("%s %s" % (prefix, policy_data2str(ldlm_lock.l_resource.lr_type,
             ldlm_lock.l_policy_data)))
 
+def find_lock_by_cookie(cookie) :
+    handle = obd.class_handle2object(cookie)
+    if handle :
+        return readSU("struct ldlm_lock", Addr(handle))
+    return None
+
 def hash_for_each(hs, func) :
     buckets = hs.hs_buckets
     bucket_num = 1 << (hs.hs_cur_bits - hs.hs_bkt_bits)
@@ -380,6 +387,7 @@ if ( __name__ == '__main__'):
 
     parser =  argparse.ArgumentParser()
     parser.add_argument("-l","--lock", dest="lock", default = 0)
+    parser.add_argument("-c","--cookie", dest="cookie", default = 0)
     parser.add_argument("-r","--res", dest="res", default = 0)
     parser.add_argument("-n","--ns", dest="ns", default = 0)
     parser.add_argument("-g","--grep", dest="g", default = 0)
@@ -396,6 +404,10 @@ if ( __name__ == '__main__'):
     if args.lock != 0 :
         l = readSU("struct ldlm_lock", int(args.lock, 16))
         print_ldlm_lock(l, "")
+    elif args.cookie != 0 :
+        lock = find_lock_by_cookie(int(args.cookie, 16))
+        if lock :
+            print_ldlm_lock(lock, "")
     elif args.res != 0 :
         res = readSU("struct ldlm_resource", int(args.res, 16))
         show_resource(res)
