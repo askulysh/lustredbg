@@ -9,6 +9,7 @@ from ktime import *
 from lnet import *
 import ptlrpc as ptlrpc
 import obd as obd
+import mdt as mdt
 import re
 
 __LDLM_flags_c = '''
@@ -330,9 +331,18 @@ def find_conflicting_lock(lock) :
     return None
 
 def show_tgt(pid) :
-    addr = ptlrpc.show_pid(pid, None)
-    if addr == 0:
+    req = ptlrpc.show_pid(pid, None)
+    if req == 0:
         return 0
+    env = req.rq_srv.sr_svc_thread.t_env
+    key = readSymbol("mdt_thread_key")
+    if key.lct_tags == 16 or key.lct_tags == 256 :
+        val = env.le_ses.lc_value[key.lct_index]
+    else :
+        val = env.le_ctx.lc_value[key.lct_index]
+    mti = readSU("struct mdt_thread_info", val)
+    print(mti)
+    mdt.parse_mti(mti, ptlrpc.get_opc(req), "")
     addr = ptlrpc.search_for_reg("RBX", pid, "schedule_timeout")
     if addr == 0 :
         addr = ptlrpc.search_for_reg("RBX", pid, "__schedule")

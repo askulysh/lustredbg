@@ -133,33 +133,45 @@ def find_print_fid(lu_dev, fid, prefix) :
         mdt_obj = readSU("struct mdt_object", Addr(lu_obj))
         print_mdt_obj(mdt_obj, prefix)
 
-def parse_mti(mti, prefix):
+def parse_mti(mti, opc, prefix):
     fid_prefix = prefix + "    "
     print("mdt", mti.mti_mdt)
     lu_dev = mti.mti_mdt.mdt_lu_dev
     print("mti_tmp_fid1", mti.mti_tmp_fid1, fid2str(mti.mti_tmp_fid1))
     find_print_fid(lu_dev, mti.mti_tmp_fid1, fid_prefix)
     print("mti_tmp_fid2", mti.mti_tmp_fid2, fid2str(mti.mti_tmp_fid2))
-    find_print_fid(lu_dev, mti.mti_tmp_fid2, fid_prefix)
-    print("rr_fid1", mti.mti_rr.rr_fid1, fid2str( mti.mti_rr.rr_fid1))
-    find_print_fid(lu_dev, mti.mti_rr.rr_fid1, fid_prefix)
-    print("rr_fid2", mti.mti_rr.rr_fid2, fid2str( mti.mti_rr.rr_fid2))
-    find_print_fid(lu_dev, mti.mti_rr.rr_fid2, fid_prefix)
-    if mti.mti_rr.rr_opcode == ptlrpc.mds_reint.REINT_RENAME :
-        print("rename %s/%s %s -> %s/%s %s" % (
-              fid2str(mti.mti_rr.rr_fid1), mti.mti_rr.rr_name.ln_name,
-              fid2str(mti.mti_tmp_fid1),
-              fid2str(mti.mti_rr.rr_fid2), mti.mti_rr.rr_tgt_name.ln_name,
-              fid2str(mti.mti_tmp_fid2)))
-    elif mti.mti_rr.rr_opcode == ptlrpc.mds_reint.REINT_MIGRATE :
-        print("migrate %s/%s -> %s" % (fid2str(mti.mti_rr.rr_fid1),
-            mti.mti_rr.rr_name.ln_name, fid2str(mti.mti_rr.rr_fid2)))
-    else :
-        print(mti.mti_rr)
+    try :
+        find_print_fid(lu_dev, mti.mti_tmp_fid2, fid_prefix)
+    except:
+        print()
+
+    if opc == 0 or opc == ptlrpc.opcodes.MDS_REINT :
+        print("rr_fid1", mti.mti_rr.rr_fid1, fid2str( mti.mti_rr.rr_fid1))
+        find_print_fid(lu_dev, mti.mti_rr.rr_fid1, fid_prefix)
+        print("rr_fid2", mti.mti_rr.rr_fid2, fid2str( mti.mti_rr.rr_fid2))
+        find_print_fid(lu_dev, mti.mti_rr.rr_fid2, fid_prefix)
+        if mti.mti_rr.rr_opcode == ptlrpc.mds_reint.REINT_RENAME :
+            print("rename %s/%s %s -> %s/%s %s" % (
+                  fid2str(mti.mti_rr.rr_fid1), mti.mti_rr.rr_name.ln_name,
+                  fid2str(mti.mti_tmp_fid1),
+                  fid2str(mti.mti_rr.rr_fid2), mti.mti_rr.rr_tgt_name.ln_name,
+                  fid2str(mti.mti_tmp_fid2)))
+        elif mti.mti_rr.rr_opcode == ptlrpc.mds_reint.REINT_MIGRATE :
+            print("migrate %s/%s -> %s" % (fid2str(mti.mti_rr.rr_fid1),
+                mti.mti_rr.rr_name.ln_name, fid2str(mti.mti_rr.rr_fid2)))
+        else :
+            print(mti.mti_rr)
     for i in range(6) :
         cookie = mti.mti_lh[i].mlh_pdo_lh.cookie
         if cookie :
-            print("%d : %x" % (i, cookie))
+            print("%d : pdo %x" % (i, cookie))
+            lock = ldlm.find_lock_by_cookie(cookie)
+            if lock :
+                ldlm.print_ldlm_lock(lock, prefix + "\t")
+
+        cookie = mti.mti_lh[i].mlh_reg_lh.cookie
+        if cookie :
+            print("%d : reg %x" % (i, cookie))
             lock = ldlm.find_lock_by_cookie(cookie)
             if lock :
                 ldlm.print_ldlm_lock(lock, prefix + "\t")
@@ -186,5 +198,5 @@ if ( __name__ == '__main__'):
         print_mdt_obj(mdt_obj, "")
     elif args.mti != 0 :
         mti = readSU("struct mdt_thread_info", int(args.mti, 16))
-        parse_mti(mti, "")
+        parse_mti(mti, 0, "")
 
