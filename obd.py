@@ -21,7 +21,10 @@ def fid_flatten32(fid) :
     return ino
 
 def fid2str(fid) :
-    return "[0x%x:0x%x:0x%x]" % (fid.f_seq, fid.f_oid, fid.f_ver)
+    if fid == 0 :
+        return "[0x0:0x0:0x0]"
+    else :
+        return "[0x%x:0x%x:0x%x]" % (fid.f_seq, fid.f_oid, fid.f_ver)
 
 def fid_be2str(f) :
     seq = (f[0]<<56)|(f[1]<<48)|(f[2]<<40)|(f[3]<<32)|(f[4]<<24)|(f[5]<<16)|(f[6]<<8)|f[7]
