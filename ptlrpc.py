@@ -575,10 +575,13 @@ def show_ptlrpc_request_buf(req) :
     elif body.pb_opc == opcodes.OUT_UPDATE :
         show_request_fmt(req, "RQF_OUT_UPDATE")
 
+def exp_cl_str(exp) :
+    conn = exp.exp_imp_reverse.imp_connection
+    return "%s@%s" % (exp.exp_client_uuid.uuid, nid2str(conn.c_peer.nid))
+
 def req_client(req) :
     if req.rq_export != 0:
-        conn = req.rq_export.exp_imp_reverse.imp_connection
-        return "%s@%s" % (conn.c_remote_uuid.uuid, nid2str(conn.c_peer.nid))
+        return exp_cl_str(req.rq_export)
     return ""
 
 def show_ptlrpc_request_header(req) :
@@ -693,9 +696,7 @@ def imp_show_history(imp) :
 
 def show_export(prefix, exp) :
     print(exp.exp_obd, exp.exp_obd.obd_name)
-    conn = exp.exp_imp_reverse.imp_connection
-    print("%s@%s" % (conn.c_remote_uuid.uuid, nid2str(conn.c_peer.nid)))
-    print("%s %u.%u.%u.%u" % (exp.exp_client_uuid.uuid,
+    print("%s %u.%u.%u.%u" % (exp_cl_str(exp),
         (exp.exp_connect_data.ocd_version >> 24) & 255,
         (exp.exp_connect_data.ocd_version >> 16) & 255,
         (exp.exp_connect_data.ocd_version >> 8) & 255,
