@@ -349,7 +349,8 @@ def show_tgt(pid) :
     if addr == 0 :
         addr = ptlrpc.search_for_reg("RBX", pid, "schedule")
     lock = readSU("struct ldlm_lock", addr)
-    print_ldlm_lock(lock, "")
+    if lock != 0 :
+        print_ldlm_lock(lock, "")
     return lock
 
 def show_completition_waiting_locks() :
@@ -419,7 +420,8 @@ def analyze_deadlock(lock) :
             if conflict.l_req_mode != conflict.l_granted_mode :
                 print_ldlm_lock(conflict, "")
             print("\nexport", conflict.l_export, ":")
-            ptlrpc.show_export("", conflict.l_export)
+            if conflict.l_export != 0 :
+                ptlrpc.show_export("", conflict.l_export)
             return
 
         print("lock", lock);
