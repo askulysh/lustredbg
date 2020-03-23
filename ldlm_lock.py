@@ -429,6 +429,7 @@ def analyze_deadlock(lock) :
 
     if not conflict :
         print("\nError: no conflict")
+        show_resource(lock.l_resource)
 
 if ( __name__ == '__main__'):
     import argparse
