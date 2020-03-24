@@ -9,7 +9,11 @@ from ktime import *
 from lnet import *
 import ptlrpc as ptlrpc
 import obd as obd
-import mdt as mdt
+try :
+    import mdt as mdt
+except TypeError :
+    pass
+
 import re
 
 __LDLM_flags_c = '''
