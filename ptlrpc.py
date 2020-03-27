@@ -621,7 +621,7 @@ def show_ptlrpc_set(s) :
         if i == max_req :
             break
 
-def imp_time_last(state) :
+def imp_time_last(imp, state) :
     idx = imp.imp_state_hist_idx
     size = 16
     time = 0
@@ -655,8 +655,8 @@ def show_import(prefix, imp) :
            lustre_imp_state.__getitem__(imp.imp_state), cur_nid,
            j_delay(jiffies, imp.imp_next_ping)))
     if imp.imp_state != lustre_imp_state.LUSTRE_IMP_FULL :
-        time_connected = imp_time_last(lustre_imp_state.LUSTRE_IMP_FULL)
-        time_disconnected = imp_time_last(lustre_imp_state.LUSTRE_IMP_DISCON)
+        time_connected = imp_time_last(imp, lustre_imp_state.LUSTRE_IMP_FULL)
+        time_disconnected = imp_time_last(imp, lustre_imp_state.LUSTRE_IMP_DISCON)
         if time_connected != 0 :
             print("%slast FULL was %ds ago disconnected %ds" %
                     (prefix, get_seconds() - time_connected,
@@ -675,7 +675,7 @@ def show_requests_from_list_reverse(head, offset):
     while entry.prev != head :
         entry = entry.prev
         req = readSU("struct ptlrpc_request", int(entry) - offset)
-        if req.rq_srv.sr_svc_thread != 0 :
+        if req.rq_srv_req == 1 and req.rq_srv.sr_svc_thread != 0 :
             pid = req.rq_srv.sr_svc_thread.t_pid
             if get_opc(req) == opcodes.LDLM_ENQUEUE :
                 show_tgt(pid)
@@ -685,19 +685,19 @@ def show_requests_from_list_reverse(head, offset):
             show_ptlrpc_request(req)
 
 def imp_show_requests(imp) :
-    print("sending:")
+    print("\n=== sending ===")
     l = readSUListFromHead(imp.imp_sending_list, "rq_list", "struct ptlrpc_request")
     for req in l :
         show_ptlrpc_request_header(req)
         show_ptlrpc_request_buf(req)
 
-    print("delayed:")
+    print("\n=== delayed ===")
     l = readSUListFromHead(imp.imp_delayed_list, "rq_list", "struct ptlrpc_request")
     for req in l :
         show_ptlrpc_request_header(req)
         show_ptlrpc_request_buf(req)
 
-    print("unreplied:")
+    print("\n=== unreplied ===")
     head = imp.imp_unreplied_list
     rq_info = getStructInfo('struct ptlrpc_request')
     cli_rq_info = getStructInfo('struct ptlrpc_cli_req')
