@@ -621,6 +621,29 @@ def show_ptlrpc_set(s) :
         if i == max_req :
             break
 
+def imp_time_last(state) :
+    idx = imp.imp_state_hist_idx
+    size = 16
+    time = 0
+    for i in range(0, size) :
+        j = (idx - i - 1) % size
+        if imp.imp_state_hist[j].ish_state == state :
+            time = imp.imp_state_hist[j].ish_time
+            break
+    return time
+
+def imp_show_state_history(prefix, imp):
+    idx = imp.imp_state_hist_idx
+    size = 16
+    for i in range(0, size) :
+        j = (idx - i - 1) % size
+        if imp.imp_state_hist[j].ish_state == 0 :
+            break
+        print("%s%s\t%d\t%d ago" % (prefix,
+            lustre_imp_state.__getitem__(imp.imp_state_hist[j].ish_state),
+            imp.imp_state_hist[j].ish_time,
+            get_seconds() - imp.imp_state_hist[j].ish_time))
+
 def show_import(prefix, imp) :
     jiffies = readSymbol("jiffies")
     if imp.imp_conn_current != 0 :
@@ -632,17 +655,12 @@ def show_import(prefix, imp) :
            lustre_imp_state.__getitem__(imp.imp_state), cur_nid,
            j_delay(jiffies, imp.imp_next_ping)))
     if imp.imp_state != lustre_imp_state.LUSTRE_IMP_FULL :
-        idx = imp.imp_state_hist_idx
-        size = 16
-        time = 0
-        for i in range(0, size) :
-            if (imp.imp_state_hist[(idx - i -1) % size].ish_state ==
-                    lustre_imp_state.LUSTRE_IMP_FULL) :
-                time = imp.imp_state_hist[(idx - i -1) % size].ish_time
-                break
-
-        if time != 0 :
-            print("%slast FULL was %ss ago" % (prefix, get_seconds() - time))
+        time_connected = imp_time_last(lustre_imp_state.LUSTRE_IMP_FULL)
+        time_disconnected = imp_time_last(lustre_imp_state.LUSTRE_IMP_DISCON)
+        if time_connected != 0 :
+            print("%slast FULL was %ds ago disconnected %ds" %
+                    (prefix, get_seconds() - time_connected,
+                        get_seconds() - time_disconnected))
         else :
             print("%slast FULL was never" % prefix)
         connections = readSUListFromHead(imp.imp_conn_list, "oic_item", "struct obd_import_conn")
@@ -864,6 +882,7 @@ if ( __name__ == '__main__'):
     elif args.imp != 0 :
         imp = readSU("struct obd_import", int(args.imp, 16))
         show_import("", imp)
+        imp_show_state_history("", imp)
         imp_show_requests(imp)
         imp_show_history(imp)
     elif args.exp != 0 :
