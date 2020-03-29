@@ -298,7 +298,8 @@ enum lustre_imp_state {
         LUSTRE_IMP_REPLAY_WAIT  = 7,
         LUSTRE_IMP_RECOVER    = 8,
         LUSTRE_IMP_FULL       = 9,
-        LUSTRE_IMP_EVICTED    = 10
+        LUSTRE_IMP_EVICTED    = 10,
+        LUSTRE_IMP_IDLE       = 11
 };
 '''
 lustre_imp_state = CEnum(lustre_imp_state_c)
