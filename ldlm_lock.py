@@ -313,6 +313,17 @@ def lock_compatible(lock1, lock2) :
             bits = lock1.l_policy_data.l_inodebits.bits
             if bits & lock2.l_policy_data.l_inodebits.bits != 0 :
                 return False
+            else :
+                return True
+        elif lock1.l_resource.lr_type == ldlm_types.LDLM_EXTENT :
+            pol1 = lock1.l_policy_data.l_extent
+            pol2 = lock2.l_policy_data.l_extent
+            if pol1.end < pol2.start or pol1.start > pol2.end :
+                return True
+            else :
+                return False
+        else :
+            return False
     return True
 
 def find_conflicting_in_list(lock, lr_list) :
