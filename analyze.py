@@ -2,6 +2,24 @@ from pykdump.API import *
 from LinuxDump.BTstack import *
 import ptlrpc as ptlrpc
 import ldlm_lock as ldlm
+import cl_io as cl_io
+import cl_lock as cl_lock
+
+def show_client_pid(pid, prefix) :
+    addr = ptlrpc.search_for_reg("RDX", pid, "ll_file_io_generic")
+    if addr != 0 :
+        print()
+        f = readSU("struct file", addr)
+        cl_io.print_inode(prefix, f.f_inode)
+
+    try :
+        addr = ptlrpc.search_for_reg("RDX", pid, "cl_lock_request")
+    except:
+        addr = 0
+    if addr != 0 :
+        print()
+        cl = readSU("struct cl_lock", addr)
+        cl_lock.print_cl_lock(cl, prefix)
 
 def parse_client_eviction(pid) :
     addr = ptlrpc.search_for_reg("RDI", pid, "ptlrpc_import_recovery_state_machine")
@@ -19,6 +37,7 @@ def parse_client_eviction(pid) :
         for lock in granted :
             if lock.l_flags & ldlm.LDLM_flags.LDLM_FL_BL_AST != 0:
                 ldlm.print_ldlm_lock(lock, "")
+                show_client_pid(lock.l_pid, "")
 
     ptlrpc.imp_show_requests(imp)
     ptlrpc.imp_show_history(imp)
