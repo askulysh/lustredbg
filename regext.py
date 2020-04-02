@@ -45,3 +45,7 @@ rprog("cl_io", "cl_io information",
 rprog("ip", "Interactive python",
       "",
       help)
+
+rprog("analyze", "Automated vmcore analysis",
+      "",
+      help)

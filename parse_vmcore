@@ -10,13 +10,12 @@ dump_dmesg $1
 core=$(basename $1)
 analysis=analysis_$core
 dmesg=dmesg_$core
+grep "LNet: Added LNI" $dmesg > $analysis
 if grep "SysRq : Trigger a crash" $dmesg; then
 	vmcore_sysrq $1 &
 else if grep "ptlrpc_import_recovery_state_machine()) ASSERTION" $dmesg; then
-	crash_cmd $1 "bt > $analysis"
-	pid=$(grep PID $analysis | cut -d' ' -f 2 |uniq)
-	wait $log_pid
-	grep ":"$pid":" log.dk_$core | tail >> $analysis
+	crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
+		      epython ../../bin/analyze.py >> $analysis"
 else
 	vmcore_fp $1
 	pid=$(grep PID $analysis | cut -d' ' -f 2 |uniq)
