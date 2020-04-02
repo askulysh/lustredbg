@@ -2,6 +2,9 @@
 
 from pykdump.API import *
 
+def ktime_get_seconds() :
+    return ktime_get() / 1000000000
+
 if (symbol_exists("xtime")):
     xtime = readSymbol("xtime")
     def get_seconds():

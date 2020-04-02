@@ -647,7 +647,7 @@ def show_import(prefix, imp) :
     print("%simport %x %s inflight %d %s cur conn: %s next ping in %s" %
           (prefix, imp, imp.imp_obd.obd_name, imp.imp_inflight.counter,
            lustre_imp_state.__getitem__(imp.imp_state), cur_nid,
-           j_delay(jiffies, imp.imp_next_ping)))
+           imp.imp_next_ping - ktime_get_seconds()))
     if imp.imp_state != lustre_imp_state.LUSTRE_IMP_FULL :
         idx = imp.imp_state_hist_idx
         size = 16
@@ -671,7 +671,7 @@ def show_import(prefix, imp) :
         connections = readSUListFromHead(imp.imp_conn_list, "oic_item", "struct obd_import_conn")
         for conn in connections :
             print("%s%s tried %s ago" % (prefix, nid2str(conn.oic_conn.c_peer.nid),
-                    j_delay(conn.oic_last_attempt, jiffies)))
+                    ktime_get_seconds() - conn.oic_last_attempt))
         if imp.imp_no_pinger_recover == 1 :
             print("imp_no_pinger_recover == 1 !!!!")
 
