@@ -6,14 +6,18 @@ import cl_io as cl_io
 import cl_lock as cl_lock
 
 def show_client_pid(pid, prefix) :
-    addr = ptlrpc.search_for_reg("RDX", pid, "ll_file_io_generic")
+    stack = ptlrpc.get_stacklist(pid)
+    if stack == None :
+        return
+
+    addr = ptlrpc.search_stack_for_reg("RDX", stack, "ll_file_io_generic")
     if addr != 0 :
         print()
         f = readSU("struct file", addr)
         cl_io.print_inode(prefix, f.f_inode)
 
     try :
-        addr = ptlrpc.search_for_reg("RDX", pid, "cl_lock_request")
+        addr = ptlrpc.search_stack_for_reg("RDX", stack, "cl_lock_request")
     except:
         addr = 0
     if addr != 0 :
@@ -21,8 +25,8 @@ def show_client_pid(pid, prefix) :
         cl = readSU("struct cl_lock", addr)
         cl_lock.print_cl_lock(cl, prefix)
 
-def parse_client_eviction(pid) :
-    addr = ptlrpc.search_for_reg("RDI", pid, "ptlrpc_import_recovery_state_machine")
+def parse_client_eviction(stack) :
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "ptlrpc_import_recovery_state_machine")
     if addr == 0 :
         return 0
 
@@ -56,7 +60,7 @@ if ( __name__ == '__main__'):
         parsed = False
         for f in bts.frames:
             if f.func == "ptlrpc_import_recovery_state_machine" :
-                parse_client_eviction(pid)
+                parse_client_eviction(btsl)
                 parsed = True
                 break
         if not parsed :

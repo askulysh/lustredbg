@@ -770,19 +770,28 @@ def show_ptlrpcds() :
         ptlrpcd_rcv = ptlrpcds[0].pd_thread_rcv
     show_ptlrpcd_ctl(ptlrpcd_rcv)
 
-def search_for_reg(r, pid, func) :
-    #     with DisasmFlavor('att'):
-    try:
-        stacklist = exec_bt("bt %d" % pid, MEMOIZE=False)
-    except:
-        print("Unable to get stack trace")
-        return 0
+def search_stack_for_reg(r, stacklist, func) :
     for s in stacklist:
         fregsapi.search_for_registers(s)
         for f in s.frames:
             if f.func == func :
                 return f.reg[r][0]
     return 0
+
+def get_stacklist(pid) :
+    #     with DisasmFlavor('att'):
+    try:
+        stacklist = exec_bt("bt %d" % pid, MEMOIZE=False)
+    except:
+        print("Unable to get stack trace")
+        return None
+    return stacklist
+
+def search_for_reg(r, pid, func) :
+    stacklist = get_stacklist(pid)
+    if stacklist:
+        return search_stack_for_reg(r, stacklist, func)
+    return None
 
 def show_pid(pid, pattern) :
     addr = search_for_reg("RDI", pid, "tgt_request_handle")
