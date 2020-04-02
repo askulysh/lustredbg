@@ -240,7 +240,7 @@ def find_lock_by_cookie(cookie) :
         return readSU("struct ldlm_lock", Addr(handle))
     return None
 
-def hash_for_each(hs, func) :
+def get_hash_elements(hs) :
     buckets = hs.hs_buckets
     bucket_num = 1 << (hs.hs_cur_bits - hs.hs_bkt_bits)
     for ix in range(0, bucket_num) :
@@ -250,7 +250,7 @@ def hash_for_each(hs, func) :
             for offset in range(0, 1 << hs.hs_bkt_bits) :
                 hlist = readSU("struct hlist_head", a + 8*2*offset)
                 if hlist != 0 :
-                    func(hlist)
+                    yield hlist
 
 def show_resource(res) :
     try:
@@ -272,21 +272,17 @@ def show_resource(res) :
         for lock in waiting :
             print_ldlm_lock(lock, "    ")
 
-def walk_res_hash2(hlist) :
-    head = hlist.first
-
-    while head != 0 :
-        a = int(head) - 8 # lr_hash
-        res = readSU("struct ldlm_resource", a)
-        show_resource(res)
-
-        head = head.next
+def get_ns_resources(ns) :
+    offset = getStructInfo('struct ldlm_resource')['lr_hash'].offset
+    for e in get_hash_elements(ns.ns_rs_hash) :
+        for re in readStructNext(e.first, "next") :
+            yield readSU("struct ldlm_resource", int(re) - offset)
 
 def show_ns_locks(ns) :
     print("ns %x %s total granted %d" % (ns, ns.ns_obd.obd_name,
         ns.ns_pool.pl_granted.counter))
-    hs = ns.ns_rs_hash
-    hash_for_each(ns.ns_rs_hash, walk_res_hash2)
+    for res in get_ns_resources(ns) :
+        show_resource(res)
 
 def ns_list(l, regexp) :
     nss = readSUListFromHead(l, "ns_list_chain", "struct ldlm_namespace")
