@@ -626,17 +626,6 @@ def show_ptlrpc_set(s) :
         if i == max_req :
             break
 
-def imp_time_last(imp, state) :
-    idx = imp.imp_state_hist_idx
-    size = 16
-    time = 0
-    for i in range(0, size) :
-        j = (idx - i - 1) % size
-        if imp.imp_state_hist[j].ish_state == state :
-            time = imp.imp_state_hist[j].ish_time
-            break
-    return time
-
 def imp_show_state_history(prefix, imp):
     idx = imp.imp_state_hist_idx
     size = 16
@@ -660,8 +649,19 @@ def show_import(prefix, imp) :
            lustre_imp_state.__getitem__(imp.imp_state), cur_nid,
            j_delay(jiffies, imp.imp_next_ping)))
     if imp.imp_state != lustre_imp_state.LUSTRE_IMP_FULL :
-        time_connected = imp_time_last(imp, lustre_imp_state.LUSTRE_IMP_FULL)
-        time_disconnected = imp_time_last(imp, lustre_imp_state.LUSTRE_IMP_DISCON)
+        idx = imp.imp_state_hist_idx
+        size = 16
+        time_connected = 0
+        time_disconnected = 0
+        for i in range(0, size) :
+            j = (idx - i - 1) % size
+            state = imp.imp_state_hist[j].ish_state
+            if state == lustre_imp_state.LUSTRE_IMP_DISCON :
+                time_disconnected = imp.imp_state_hist[j].ish_time
+            if state == lustre_imp_state.LUSTRE_IMP_FULL :
+                time_connected = imp.imp_state_hist[j].ish_time
+                break
+
         if time_connected != 0 :
             print("%slast FULL was %ds ago disconnected %ds" %
                     (prefix, get_seconds() - time_connected,
