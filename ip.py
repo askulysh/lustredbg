@@ -6,8 +6,14 @@ from pykdump.API import *
 import code
 import ptlrpc as ptlrpc
 import ldlm_lock as ldlm
+import ktime as ktime
 import obd as obd
-import mdt as mdt
+
+try:
+    import mdt as mdt
+except:
+    pass
+
 import osd as osd
 import lnet as lnet
 import kiblnd as kiblnd
