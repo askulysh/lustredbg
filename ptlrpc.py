@@ -435,6 +435,8 @@ def mdt_body_show(prefix, body) :
     if len(out) > 1 :
         print(prefix, out)
 
+def ost_body_show(prefix, body) :
+    print("%s %s" % (prefix, fid2str(body.oa.o_oi.oi_fid)))
 
 def print_update(fmt, ou) :
     print(fmt, ou, update_type.__getitem__(ou.ou_type), fid2str(ou.ou_fid))
@@ -510,6 +512,8 @@ def show_request_loc(req, req_format, location) :
             mtd_reint_show(field)
         elif name == "mdt_body":
             mdt_body_show("   ", field)
+        elif name == "ost_body":
+            ost_body_show("   ", field)
         elif name == "ldlm_intent":
             print("  offset %d %s %s" % (offset,    field, dbits2str(field.opc, it_flags)))
         elif name == "ldlm_request":
