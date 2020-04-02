@@ -16,6 +16,13 @@ def show_client_pid(pid, prefix) :
         f = readSU("struct file", addr)
         cl_io.print_inode(prefix, f.f_inode)
 
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "notify_change")
+    if addr != 0 :
+        print()
+        dentry = readSU("struct dentry", addr)
+        cl_io.print_dentry(dentry)
+        cl_io.print_inode(prefix, dentry.d_inode)
+
     try :
         addr = ptlrpc.search_stack_for_reg("RDX", stack, "cl_lock_request")
     except:
