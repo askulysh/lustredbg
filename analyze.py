@@ -1,5 +1,6 @@
 from pykdump.API import *
 from LinuxDump.BTstack import *
+import ktime as ktime
 import ptlrpc as ptlrpc
 import ldlm_lock as ldlm
 import cl_io as cl_io
@@ -63,7 +64,8 @@ if ( __name__ == '__main__'):
     btsl = exec_bt("bt")
     for bts in btsl :
         pid = bts.pid
-        print("current pid:", pid)
+        print("current pid:", pid, "time:", ktime.get_seconds(),
+                ktime.ktime_get_seconds())
         parsed = False
         for f in bts.frames:
             if f.func == "ptlrpc_import_recovery_state_machine" :
