@@ -186,6 +186,8 @@ it_flags_c = '''
 #define IT_QUOTA_DQACQ 0x0800
 #define IT_QUOTA_CONN  0x1000
 #define IT_SETXATTR 0x2000
+#define IT_GLIMPSE  0x4000
+#define IT_BRW	    0x8000
 '''
 it_flags = CDefine(it_flags_c)
 
@@ -202,6 +204,8 @@ enum {
         MDT_IT_GETXATTR,
         MDT_IT_LAYOUT,
         MDT_IT_QUOTA,
+        MDT_IT_GLIMPSE,
+        MDT_IT_BRW,
         MDT_IT_NR
 };
 '''
@@ -233,6 +237,10 @@ def mdt_intent_code(itcode) :
         rc = mdt_it_code.MDT_IT_QUOTA
     elif itcode == it_flags.IT_QUOTA_CONN:
         rc = mdt_it_code.MDT_IT_QUOTA
+    elif itcode == it_flags.IT_GLIMPSE:
+        rc = mdt_it_code.MDT_IT_GLIMPSE
+    elif itcode == it_flags.IT_BRW:
+        rc = mdt_it_code.MDT_IT_BRW
     return rc;
 
 intent_fmts = [0 for i in range(mdt_it_code.MDT_IT_NR)]
@@ -244,6 +252,8 @@ intent_fmts[mdt_it_code.MDT_IT_LOOKUP] = "RQF_LDLM_INTENT_GETATTR"
 intent_fmts[mdt_it_code.MDT_IT_UNLINK] = "RQF_LDLM_INTENT_UNLINK"
 intent_fmts[mdt_it_code.MDT_IT_GETXATTR] = "RQF_LDLM_INTENT_GETXATTR"
 intent_fmts[mdt_it_code.MDT_IT_LAYOUT] = "RQF_LDLM_INTENT_LAYOUT"
+intent_fmts[mdt_it_code.MDT_IT_GLIMPSE] = "RQF_LDLM_INTENT"
+intent_fmts[mdt_it_code.MDT_IT_BRW] = "RQF_LDLM_INTENT"
 
 reint_fmts = [0 for i in range(10)]
 reint_fmts[mds_reint.REINT_SETATTR] = "RQF_MDS_REINT_SETATTR"
@@ -408,7 +418,8 @@ def mtd_reint_show(reint) :
         print("%s migrate %s/name -> %s" % (rec, fid2str(rec.rn_fid1),
             fid2str(rec.rn_fid2)))
     else :
-        print("%s %s %s" % (reint, mds_reint.__getitem__(reint.rr_opcode), fid2str(reint.rr_fid1)))
+        if reint.rr_opcode != 0 :
+            print("%s %s %s" % (reint, mds_reint.__getitem__(reint.rr_opcode), fid2str(reint.rr_fid1)))
 
 def mdt_body_show(prefix, body) :
     out = ""
