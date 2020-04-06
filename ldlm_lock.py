@@ -257,9 +257,13 @@ def show_resource(res) :
         recent = "recent lock " + ldlm_mode2str(res.lr_most_restr)
     except:
         recent = ""
-    print("res %x %s %s refc %d %s" %
+    if res.lr_ns_bucket.nsb_namespace.ns_client == 0x2 and res.lr_type == ldlm_types.LDLM_IBITS :
+        inode = "%s" % res.lr_lvb_inode
+    else :
+        inode = ""
+    print("res %x %s %s refc %d %s %s" %
             (res, ldlm_types.__getitem__(res.lr_type), res2str(res),
-            res.lr_refcount.counter, recent))
+            res.lr_refcount.counter, recent, inode))
     granted = readSUListFromHead(res.lr_granted,
                 "l_res_link", "struct ldlm_lock")
     for lock in granted :
