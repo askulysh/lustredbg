@@ -453,6 +453,8 @@ if ( __name__ == '__main__'):
     parser.add_argument("-l","--lock", dest="lock", default = 0)
     parser.add_argument("-c","--cookie", dest="cookie", default = 0)
     parser.add_argument("-r","--res", dest="res", default = 0)
+    parser.add_argument("-R","--show-res", dest="show_res",
+                        action='store_true')
     parser.add_argument("-n","--ns", dest="ns", default = 0)
     parser.add_argument("-g","--grep", dest="g", default = 0)
     parser.add_argument("-w","--compwait", dest="compl_waiting",
@@ -468,7 +470,10 @@ if ( __name__ == '__main__'):
 
     if args.lock != 0 :
         l = readSU("struct ldlm_lock", int(args.lock, 16))
-        print_ldlm_lock(l, "")
+        if args.show_res :
+            show_resource(l.l_resource)
+        else:
+            print_ldlm_lock(l, "")
     elif args.cookie != 0 :
         lock = find_lock_by_cookie(int(args.cookie, 16))
         if lock :
