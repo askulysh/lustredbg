@@ -204,10 +204,10 @@ def print_ldlm_lock(ldlm_lock, prefix) :
     if ldlm_lock.l_req_mode == ldlm_lock.l_granted_mode :
         timeout = ""
         if ldlm_lock.l_callback_timeout != 0 :
-            jiffies = readSymbol("jiffies")
-            timeout = "will timeout in " + j_delay(jiffies,
-                ldlm_lock.l_callback_timeout)
-        print(prefix, "granted", ldlm_mode2str(ldlm_lock.l_granted_mode))
+            timeout = "will timeout in " + str(ldlm_lock.l_callback_timeout -
+                    ktime_get_seconds())
+        print(prefix, "granted", ldlm_mode2str(ldlm_lock.l_granted_mode),
+                timeout)
 
         if ldlm_lock.l_flags & LDLM_flags.LDLM_FL_NS_SRV :
             last_used = ldlm_lock.l_last_used.tv64
@@ -404,9 +404,9 @@ def show_BL_AST_locks() :
         print_ldlm_lock(lock, "    ")
         remote = lock_client(lock)
         pattern = re.compile(remote)
-        show_processing(pattern)
+        ptlrpc.show_processing(pattern)
         for srv in services :
-            show_waiting(srv, pattern)
+            ptlrpc.show_waiting(srv, pattern)
 
 def analyze_deadlock(lock) :
     res = lock.l_resource
