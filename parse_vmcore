@@ -11,6 +11,7 @@ core=$(basename $1)
 analysis=analysis_$core
 dmesg=dmesg_$core
 ls -la $1 > $analysis
+grep "Lustre: Build" $dmesg >> $analysis
 grep "LNet: Added LNI" $dmesg >> $analysis
 echo "" >> $analysis
 grep MARKER $dmesg | tail -n 4 >> $analysis
