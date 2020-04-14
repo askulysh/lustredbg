@@ -368,6 +368,7 @@ if ( __name__ == '__main__'):
         print_cl_page(cl_page, "")
     elif args.file != 0 :
         f = readSU("struct file", int(args.file, 16))
+        print_dentry(f.f_path.dentry)
         print_inode("", f.f_inode)
     elif args.inode != 0 :
         inode = readSU("struct inode", int(args.inode, 16))
