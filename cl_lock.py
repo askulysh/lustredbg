@@ -4,8 +4,7 @@ from __future__ import print_function
 
 from pykdump.API import *
 from LinuxDump.BTstack import *
-
-import fregsapi
+import LinuxDump.fregsapi as fregsapi 
 import ldlm_lock as ldlm
 
 cl_lock_state_c = '''
