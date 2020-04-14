@@ -170,6 +170,28 @@ def class_handle2object(cookie) :
 
     return 0
 
+def lprocfs_stats_counter_get(stats, cpuid, index) :
+    cntr = stats.ls_percpu[cpuid].lp_cntr[index]
+    if stats.ls_flags & 0x0002 != 0 :
+        c = Addr(cntr) + index * 8
+        cntr = readSU("struct lprocfs_counter", c)
+
+    return cntr
+
+def obd_memory_sum() :
+    stats = readSymbol("obd_memory")
+    idx = 0
+    sum = 0
+    num_cpu = stats.ls_biggest_alloc_num
+    for i in range(0, num_cpu) :
+        if stats.ls_percpu[i] == 0 :
+            continue
+        cntr = lprocfs_stats_counter_get(stats, i, idx)
+        lc_sum_irq = readS64(Addr(cntr)+5*8)
+        sum = sum + cntr.lc_array_sum + lc_sum_irq
+
+    return sum
+
 if ( __name__ == '__main__'):
     import argparse
 
@@ -186,6 +208,8 @@ if ( __name__ == '__main__'):
                         default=0)
     parser.add_argument("-H","--hash", dest="hash", default=0)
     parser.add_argument("-c","--cookie", dest="cookie", default=0)
+    parser.add_argument("-p","--lprocfs_stats", dest="lprocfs_stats", default=0)
+    parser.add_argument("-m","--mem", dest="meminfo", action='store_true')
     args = parser.parse_args()
 
     if args.device != 0 :
@@ -208,6 +232,21 @@ if ( __name__ == '__main__'):
         hash_for_each_hd2(hs, print)
     elif args.cookie != 0 :
         print(class_handle2object(int(args.cookie, 16)))
+    elif args.lprocfs_stats :
+        stats = readSU("struct lprocfs_stats", int(args.lprocfs_stats, 16))
+        idx = 0
+        sum = 0
+        num_cpu = stats.ls_biggest_alloc_num
+        for i in range(0, num_cpu) :
+            if stats.ls_percpu[i] == 0 :
+                continue
+            cntr = lprocfs_stats_counter_get(stats, i, idx)
+            sum = sum + cntr.lc_array_sum
+        print(sum)
+    elif args.meminfo :
+        print("libcfs_kmemory %uk obd_max_alloc %uk obd_memory %uk" %
+                (readSymbol("libcfs_kmemory").counter/1024,
+                 readSymbol("obd_max_alloc")/1024, obd_memory_sum()/1024))
     else :
         show_obds()
 
