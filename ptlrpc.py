@@ -7,7 +7,7 @@ from ktime import *
 from lnet import *
 from ldlm_lock import *
 from LinuxDump.BTstack import *
-import fregsapi
+import LinuxDump.fregsapi
 import re
 import lustrelib as ll
 

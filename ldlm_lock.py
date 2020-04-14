@@ -4,7 +4,7 @@ from __future__ import print_function
 
 from pykdump.API import *
 from LinuxDump.BTstack import *
-import fregsapi
+import LinuxDump.fregsapi
 from ktime import *
 from lnet import *
 import ptlrpc as ptlrpc

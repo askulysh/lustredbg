@@ -7,11 +7,10 @@ from LinuxDump.BTstack import *
 from LinuxDump.trees import *
 from LinuxDump.KernLocks import *
 from LinuxDump.fs.dcache import *
+import LinuxDump.fregsapi
 from obd import *
 from ptlrpc import *
 import lustrelib as ll
-
-import fregsapi
 
 cl_page_state_c = '''
 enum cl_page_state {

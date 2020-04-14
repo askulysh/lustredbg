@@ -4,7 +4,7 @@ from __future__ import print_function
 
 from pykdump.API import *
 from LinuxDump.BTstack import *
-import fregsapi
+import LinuxDump.fregsapi
 from ktime import *
 
 def osd_oti_get(env) :
@@ -14,17 +14,17 @@ def osd_oti_get(env) :
             env.le_ctx.lc_value[osd_key.lct_index])
 
 def search_for_reg(r, pid, func) :
-    #     with DisasmFlavor('att'):
-    try:
-        stacklist = exec_bt("bt %d" % pid, MEMOIZE=False)
-    except:
-        print("Unable to get stack trace")
-        return 0
-    for s in stacklist:
-        fregsapi.search_for_registers(s)
-        for f in s.frames:
-            if f.func == func :
-                return f.reg[r][0]
+    with DisasmFlavor('att'):
+        try:
+            stacklist = exec_bt("bt %d" % pid, MEMOIZE=False)
+        except:
+            print("Unable to get stack trace")
+            return 0
+        for s in stacklist:
+            fregsapi.search_for_registers(s)
+            for f in s.frames:
+                if f.func == func :
+                    return f.reg[r][0]
     return 0
 
 def show_io() :
