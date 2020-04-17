@@ -650,7 +650,6 @@ def imp_show_state_history(prefix, imp):
             get_seconds() - imp.imp_state_hist[j].ish_time))
 
 def show_import(prefix, imp) :
-    jiffies = readSymbol("jiffies")
     if imp.imp_conn_current != 0 :
         cur_nid = nid2str(imp.imp_conn_current.oic_conn.c_peer.nid)
     else :
@@ -678,7 +677,8 @@ def show_import(prefix, imp) :
                     (prefix, get_seconds() - time_connected,
                         get_seconds() - time_disconnected))
         else :
-            print("%slast FULL was never" % prefix)
+            print("%slast success connect was %ds ago" %
+                    (prefix, ktime_get_seconds() - imp.imp_last_success_conn))
         connections = readSUListFromHead(imp.imp_conn_list, "oic_item", "struct obd_import_conn")
         for conn in connections :
             print("%s%s tried %s ago" % (prefix, nid2str(conn.oic_conn.c_peer.nid),
