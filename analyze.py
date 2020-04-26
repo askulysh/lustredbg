@@ -48,6 +48,13 @@ def show_client_pid(pid, prefix) :
             lock_slice = readSU("struct cl_lock_slice", addr)
             cl_lock.print_cl_lock(lock_slice.cls_lock, prefix)
 
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "lmv_revalidate_slaves")
+    if addr != 0 :
+        print()
+        lsm = readSU("struct lmv_stripe_md", addr)
+        cl_io.print_lsm("", lsm)
+
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "ptlrpc_set_wait")
     if addr != 0 :
         print()
         rqset = readSU("struct ptlrpc_request_set", addr)

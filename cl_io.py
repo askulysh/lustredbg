@@ -249,6 +249,16 @@ def print_vvp_object(prefix, vvp) :
     print(vvp, "inode", vvp.vob_inode)
     print_lu_obj_header("", vvp.vob_header.coh_lu)
 
+def print_lsm(prefix, lsm) :
+        print(prefix, lsm)
+        print(prefix, "stripe cnt", lsm.lsm_md_stripe_count,
+              "master MDT", lsm.lsm_md_master_mdt_index,
+              "hash type", lsm.lsm_md_hash_type);
+        for i in range(lsm.lsm_md_stripe_count) :
+            oi = lsm.lsm_md_oinfo[i]
+            print(prefix, "  stripe[%d] %s MDS %d %s" %
+                    (i, obd.fid2str(oi.lmo_fid), oi.lmo_mds, oi.lmo_root))
+
 def print_inode(prefix, inode) :
     lli = readSU("struct ll_inode_info", inode -
             member_offset('struct ll_inode_info', 'lli_vfs_inode'))
@@ -257,6 +267,9 @@ def print_inode(prefix, inode) :
     except :
         inode_lock = inode.i_rwsem
     print(inode, inode_lock, lli, fid2str(lli.lli_fid), lli.lli_clob)
+    if S_ISDIR(inode.i_mode) and lli.lli_lsm_md != 0 :
+        print_lsm(prefix + '   ', lli.lli_lsm_md)
+
     if lli.lli_clob :
         vvp_object = readSU("struct vvp_object", lli.lli_clob.co_lu.lo_header)
         print_vvp_object(prefix, vvp_object)
