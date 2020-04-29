@@ -158,6 +158,16 @@ def print_ldlm_request(prefix, req) :
     for i in range(n) :
         print("%s 0x%x" % (prefix, req.lock_handle[i].cookie))
 
+def print_ldlm_reply(prefix, rep) :
+    res = rep.lock_desc.l_resource
+    if res.lr_type != 0 :
+        print("%s %s %s %s %s 0x%x %x %d" %
+                (prefix, ldlm_types.__getitem__(res.lr_type), res2str(res),
+                ldlm_mode2str(rep.lock_desc.l_granted_mode),
+                policy_data2str(res.lr_type, rep.lock_desc.l_policy_data),
+                rep.lock_handle.cookie,
+                rep.lock_policy_res1, rep.lock_policy_res2))
+
 def lock_client(lock) :
     if lock.l_export != 0 :
         conn = lock.l_export.exp_imp_reverse.imp_connection

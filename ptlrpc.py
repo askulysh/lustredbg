@@ -529,6 +529,8 @@ def show_request_loc(req, req_format, location) :
             print("  offset %d %s %s" % (offset,    field, dbits2str(field.opc, it_flags)))
         elif name == "ldlm_request":
             print_ldlm_request("   ", field)
+        elif name == "ldlm_reply":
+            print_ldlm_reply("   ", field)
         elif name == "out_update_header" and field.ouh_inline_length > 0 :
             our = readSU("struct object_update_request",
                     field.ouh_inline_data)
