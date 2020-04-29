@@ -26,6 +26,12 @@ def show_client_pid(pid, prefix) :
         cl_io.print_dentry(dentry)
         cl_io.print_inode(prefix, dentry.d_inode)
 
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "ll_lookup_it")
+    if addr != 0 :
+        print()
+        inode = readSU("struct inode", addr)
+        cl_io.print_inode(prefix, inode)
+
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "ll_getattr")
     if addr != 0 :
         print()
@@ -59,6 +65,14 @@ def show_client_pid(pid, prefix) :
         print()
         rqset = readSU("struct ptlrpc_request_set", addr)
         ptlrpc.show_ptlrpc_set(rqset)
+    else :
+        addr = ptlrpc.search_stack_for_reg("RSI", stack, "ldlm_cli_enqueue")
+        if addr != 0 :
+            print()
+            addr = readU64(addr)
+            if addr != 0 :
+                req = readSU("struct ptlrpc_request", addr)
+                ptlrpc.show_ptlrpc_request(req)
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "__mutex_lock_slowpath")
     if addr != 0 :
