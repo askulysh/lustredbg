@@ -737,6 +737,9 @@ def show_export(prefix, exp) :
         (exp.exp_connect_data.ocd_version >> 16) & 255,
         (exp.exp_connect_data.ocd_version >> 8) & 255,
         (exp.exp_connect_data.ocd_version >> 24) & 255))
+    print("conn_cnt", exp.exp_conn_cnt,
+            "last_committed", exp.exp_last_committed,
+            "last_xid", exp.exp_last_xid)
     print("requests:")
     print("total %d last req %d sec ago" % (exp.exp_rpc_count.counter,
         get_seconds() - exp.exp_last_request_time))
@@ -868,12 +871,37 @@ def show_policy(policy, pattern) :
         if pattern == None or pattern.match(req_client(req)) :
             show_ptlrpc_request(req)
 
+def find_service(name) :
+    ptlrpc_all_services = readSymbol("ptlrpc_all_services")
+    services = readSUListFromHead(ptlrpc_all_services,
+                "srv_list", "struct ptlrpc_service")
+    for srv in services :
+        if srv.srv_name == name :
+            return srv
+        elif name == "list" :
+            print(srv.srv_name)
+
+    return None
+
 def show_waiting(service, pattern) :
     for i in range(service.srv_ncpts) :
         srv_part = service.srv_parts[i]
 #        print(srv_part)
         show_policy(srv_part.scp_nrs_reg.nrs_policy_primary, pattern)
         show_policy(srv_part.scp_nrs_reg.nrs_policy_fallback, pattern)
+
+def get_history_reqs(service):
+    rq_info = getStructInfo('struct ptlrpc_request')
+    srv_rq_info = getStructInfo('struct ptlrpc_srv_req')
+    nrs_rq_info = getStructInfo('struct ptlrpc_nrs_request')
+    offset = rq_info['rq_srv'].offset + srv_rq_info['sr_hist_list'].offset
+
+    for i in range(service.srv_ncpts) :
+        svcpt = service.srv_parts[i]
+        for req in readStructNext(svcpt.scp_hist_reqs.next, "next") :
+            if req == svcpt.scp_hist_reqs :
+                break
+            yield readSU("struct ptlrpc_request", int(req) - offset)
 
 if ( __name__ == '__main__'):
     import argparse
@@ -892,6 +920,8 @@ if ( __name__ == '__main__'):
                        action='store_true')
     parser.add_argument("-c","--client", dest="client", default = "")
     parser.add_argument("-p","--pid", dest="pid",
+                       default = 0)
+    parser.add_argument("-H","--history", dest="history",
                        default = 0)
     args = parser.parse_args()
 
@@ -926,5 +956,12 @@ if ( __name__ == '__main__'):
         show_cli_waiting()
     elif args.pid != 0 :
         show_pid(int(args.pid), None)
+    elif args.history != 0 :
+        svc = find_service(args.history)
+        if svc :
+            for req in get_history_reqs(svc) :
+                show_ptlrpc_request(req)
+        else :
+            print("Wrong service name", args.history)
     else :
         show_ptlrpcds()
