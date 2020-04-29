@@ -66,12 +66,8 @@ def show_client_pid(pid, prefix) :
         mutex = readSU("struct mutex", addr)
         kernlocks.decode_mutex(mutex)
 
-def parse_client_eviction(stack) :
-    addr = ptlrpc.search_stack_for_reg("RDI", stack, "ptlrpc_import_recovery_state_machine")
-    if addr == 0 :
-        return 0
 
-    imp = readSU("struct obd_import", addr)
+def parse_import_eviction(imp) :
     ptlrpc.show_import("", imp)
     ptlrpc.imp_show_state_history("", imp)
 
@@ -86,6 +82,13 @@ def parse_client_eviction(stack) :
 
     ptlrpc.imp_show_requests(imp)
     ptlrpc.imp_show_history(imp)
+
+def parse_client_eviction(stack) :
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "ptlrpc_import_recovery_state_machine")
+    if addr == 0 :
+        return 0
+    imp = readSU("struct obd_import", addr)
+    parse_import_eviction(imp)
 
 def analyze_eviction() :
     btsl = exec_bt("bt")
@@ -107,10 +110,14 @@ if ( __name__ == '__main__'):
 
     parser =  argparse.ArgumentParser()
     parser.add_argument("-p","--pid", dest="pid", default = 0)
+    parser.add_argument("-i","--import", dest="imp", default = 0)
     args = parser.parse_args()
 
     if args.pid != 0 :
         show_client_pid(int(args.pid), "")
+    elif args.imp != 0 :
+        imp = readSU("struct obd_import", int(args.imp, 16))
+        parse_import_eviction(imp)
     else :
         analyze_eviction()
 
