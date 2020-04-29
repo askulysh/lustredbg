@@ -785,7 +785,6 @@ def show_ptlrpcds() :
 
 def search_stack_for_reg(r, stacklist, func) :
     for s in stacklist:
-        fregsapi.search_for_registers(s)
         for f in s.frames:
             if f.func == func :
                 return f.reg[r][0]
@@ -795,6 +794,9 @@ def get_stacklist(pid) :
     #     with DisasmFlavor('att'):
     try:
         stacklist = exec_bt("bt %d" % pid, MEMOIZE=False)
+        for s in stacklist:
+            fregsapi.search_for_registers(s)
+
     except:
         print("Unable to get stack trace")
         return None
