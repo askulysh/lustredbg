@@ -163,11 +163,11 @@ def print_ldlm_request(prefix, req) :
 def print_ldlm_reply(prefix, rep) :
     res = rep.lock_desc.l_resource
     if res.lr_type != 0 :
-        print("%s %s %s %s %s 0x%x %x %d" %
+        print("%s %s %s %s %s 0x%x %s %x %d" %
                 (prefix, ldlm_types.__getitem__(res.lr_type), res2str(res),
                 ldlm_mode2str(rep.lock_desc.l_granted_mode),
                 policy_data2str(res.lr_type, rep.lock_desc.l_policy_data),
-                rep.lock_handle.cookie,
+                rep.lock_handle.cookie, dbits2str(rep.lock_flags, LDLM_flags),
                 rep.lock_policy_res1, rep.lock_policy_res2))
 
 def lock_client(lock) :
