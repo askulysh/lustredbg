@@ -77,6 +77,17 @@ obd_md_flags_c = '''
 '''
 obd_md_flags = CDefine(obd_md_flags_c)
 
+pb_flags_c = '''
+#define MSG_RESENT		0x0002 /* was previously sent, no reply seen */
+#define MSG_REPLAY		0x0004 /* was processed, got reply, recovery */
+#define MSG_AT_SUPPORT	0x0008 obsolete since 1.5, AT always enabled */
+#define MSG_DELAY_REPLAY	0x0010 obsolete since 2.0 */
+#define MSG_VERSION_REPLAY	0x0020 obsolete since 1.8.2, VBR always on */
+#define MSG_REQ_REPLAY_DONE	0x0040 /* request replay over, locks next */
+#define MSG_LOCK_REPLAY_DONE	0x0080 /* lock replay over, client done */
+'''
+pb_flags = CDefine(pb_flags_c)
+
 opcodes_c = '''
 enum {
         OST_REPLY      =  0,
@@ -549,8 +560,9 @@ def get_opc(req) :
 
 def show_ptlrpc_request_buf(req) :
     body = readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
-    print("opc %s transno %d tag %d pid/status %d job %s" %
+    print("opc %s transno %d tag %d conn %d %s pid/status %d job %s" %
           (opcodes.__getitem__(body.pb_opc), body.pb_transno, body.pb_tag,
+           body.pb_conn_cnt, dbits2str(body.pb_flags, pb_flags),
            body.pb_status, body.pb_jobid))
     if body.pb_opc == opcodes.LDLM_ENQUEUE :
         ldlm_req = readSU("struct ldlm_request", get_req_buffer(req, 1))
