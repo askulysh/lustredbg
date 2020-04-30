@@ -558,6 +558,10 @@ def get_opc(req) :
     body = readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
     return body.pb_opc
 
+def get_pid(req) :
+    body = readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
+    return body.pb_status
+
 def show_ptlrpc_request_buf(req) :
     body = readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
     print("opc %s transno %d tag %d conn %d %s pid/status %d job %s" %

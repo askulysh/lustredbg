@@ -1,12 +1,17 @@
 from pykdump.API import *
 from LinuxDump.BTstack import *
+import LinuxDump.fregsapi as fregsapi
 import LinuxDump.KernLocks as kernlocks
 import ktime as ktime
 import obd as obd
 import ptlrpc as ptlrpc
 import ldlm_lock as ldlm
-import cl_io as cl_io
-import cl_lock as cl_lock
+try:
+    import cl_io as cl_io
+    import cl_lock as cl_lock
+    cli_modules = True
+except:
+    cli_modules = False
 
 def show_client_pid(pid, prefix) :
     stack = ptlrpc.get_stacklist(pid)
@@ -104,8 +109,65 @@ def parse_client_eviction(stack) :
     imp = readSU("struct obd_import", addr)
     parse_import_eviction(imp)
 
+def show_bl_ast_lock(lock) :
+    ldlm.print_ldlm_lock(lock, "")
+    cli_pid = 0
+    cli_lock = None
+    if cli_modules :
+        cli_lock = ldlm.find_lock_by_cookie(lock.l_remote_handle.cookie)
+    if cli_lock :
+        print("client lock:")
+        ldlm.print_ldlm_lock(cli_lock, "")
+        cli_pid = cli_lock.l_pid
+
+    if cli_lock == None or not cli_lock.l_flags & ldlm.LDLM_flags.LDLM_FL_BL_AST:
+        received_bl_ast = False
+        svc = ptlrpc.find_service("ldlm_cbd")
+        if svc :
+            for req in ptlrpc.get_history_reqs(svc) :
+                if ptlrpc.get_opc(req) == ptlrpc.opcodes.LDLM_BL_CALLBACK :
+                    ldlm_req = readSU("struct ldlm_request", ptlrpc.get_req_buffer(req, 1))
+                    if ldlm_req.lock_handle[0].cookie == lock.l_remote_handle.cookie :
+                        ptlrpc.show_ptlrpc_request(req)
+                        received_bl_ast = True
+    else :
+        received_bl_ast = True
+    if not received_bl_ast :
+        svc = ptlrpc.find_service("mdt")
+        if svc :
+            for req in ptlrpc.get_history_reqs(svc) :
+                if ptlrpc.get_opc(req) == ptlrpc.opcodes.LDLM_ENQUEUE :
+                    ldlm_req = readSU("struct ldlm_request", ptlrpc.get_req_buffer(req, 1))
+                    if ldlm_req.lock_handle[0].cookie == lock.l_remote_handle.cookie :
+                        ptlrpc.show_ptlrpc_request(req)
+                        if cli_pid == 0 :
+                            cli_pid = ptlrpc.get_pid(req)
+    if cli_pid != 0 :
+        print("client PID", cli_pid)
+        if cli_modules :
+            show_client_pid(cli_pid, "    ")
+
+def parse_srv_eviction(stack) :
+    addr = ptlrpc.search_stack_for_reg("R13", stack, "panic")
+    if addr == 0 :
+        return 0
+    lock = readSU("struct ldlm_lock", addr)
+    print("evicted lock:")
+    show_bl_ast_lock(lock)
+    print()
+
+    print("waiting locks:")
+    waiting_locks_list = readSymbol("waiting_locks_list")
+    waiting = readSUListFromHead(waiting_locks_list,
+                "l_pending_chain", "struct ldlm_lock")
+    for lock in waiting :
+        show_bl_ast_lock(lock)
+        print()
+
 def analyze_eviction() :
     btsl = exec_bt("bt")
+    for s in btsl:
+        fregsapi.search_for_registers(s)
     for bts in btsl :
         pid = bts.pid
         print("current pid:", pid, "time:", ktime.get_seconds(),
@@ -114,6 +176,10 @@ def analyze_eviction() :
         for f in bts.frames:
             if f.func == "ptlrpc_import_recovery_state_machine" :
                 parse_client_eviction(btsl)
+                parsed = True
+                break
+            elif f.func == "expired_lock_main" :
+                parse_srv_eviction(btsl)
                 parsed = True
                 break
         if not parsed :
