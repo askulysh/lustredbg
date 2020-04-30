@@ -805,10 +805,13 @@ def show_ptlrpcds() :
     show_ptlrpcd_ctl(ptlrpcd_rcv)
 
 def search_stack_for_reg(r, stacklist, func) :
-    for s in stacklist:
-        for f in s.frames:
-            if f.func == func :
-                return f.reg[r][0]
+    try :
+        for s in stacklist:
+            for f in s.frames:
+                if f.func == func :
+                    return f.reg[r][0]
+    except KeyError :
+        return 0
     return 0
 
 def get_stacklist(pid) :
