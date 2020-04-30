@@ -569,6 +569,8 @@ def show_ptlrpc_request_buf(req) :
         show_request_fmt(req, "RQF_LDLM_CONVERT")
     elif body.pb_opc == opcodes.LDLM_CANCEL :
         show_request_fmt(req, "RQF_LDLM_CANCEL")
+    elif body.pb_opc == opcodes.LDLM_BL_CALLBACK :
+        show_request_fmt(req, "RQF_LDLM_BL_CALLBACK")
     elif body.pb_opc == opcodes.LDLM_CP_CALLBACK :
         show_request_fmt(req, "RQF_LDLM_CP_CALLBACK")
     elif body.pb_opc == opcodes.MDS_REINT :

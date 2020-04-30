@@ -153,6 +153,8 @@ def print_ldlm_request(prefix, req) :
         except:
             print("err")
     n = req.lock_count
+    if n == 0 :
+        n = 1
     if n > 2 :
         n = 2
     for i in range(n) :
