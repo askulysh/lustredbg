@@ -178,19 +178,19 @@ def lprocfs_stats_counter_get(stats, cpuid, index) :
 
     return cntr
 
-def obd_memory_sum() :
-    stats = readSymbol("obd_memory")
-    idx = 0
+def stats_couter_sum(stats, idx) :
     sum = 0
-    num_cpu = stats.ls_biggest_alloc_num
-    for i in range(0, num_cpu) :
+    for i in range(0, stats.ls_biggest_alloc_num) :
         if stats.ls_percpu[i] == 0 :
             continue
         cntr = lprocfs_stats_counter_get(stats, i, idx)
-        lc_sum_irq = readS64(Addr(cntr)+5*8)
-        sum = sum + cntr.lc_array_sum + lc_sum_irq
-
+        sum = sum + cntr.lc_array_sum
+        if stats.ls_flags & 0x0002 != 0 :
+            sum = sum + readS64(Addr(cntr)+5*8)
     return sum
+
+def obd_memory_sum() :
+    return stats_couter_sum(readSymbol("obd_memory"), 0)
 
 if ( __name__ == '__main__'):
     import argparse
@@ -234,15 +234,7 @@ if ( __name__ == '__main__'):
         print(class_handle2object(int(args.cookie, 16)))
     elif args.lprocfs_stats :
         stats = readSU("struct lprocfs_stats", int(args.lprocfs_stats, 16))
-        idx = 0
-        sum = 0
-        num_cpu = stats.ls_biggest_alloc_num
-        for i in range(0, num_cpu) :
-            if stats.ls_percpu[i] == 0 :
-                continue
-            cntr = lprocfs_stats_counter_get(stats, i, idx)
-            sum = sum + cntr.lc_array_sum
-        print(sum)
+        print("Sum:",stats_couter_sum(stats, 0))
     elif args.meminfo :
         print("libcfs_kmemory %uk obd_max_alloc %uk obd_memory %uk" %
                 (readSymbol("libcfs_kmemory").counter/1024,

@@ -314,13 +314,6 @@ def show_namespaces(regexp) :
     l = readSymbol("ldlm_cli_active_namespace_list")
     ns_list(l, regexp)
 
-#    print("Looking for CLI inactive name spaces:")
-#    l = readSymbol("ldlm_cli_inactive_namespace_list")
-#    ns_list(l, regexp)
-
-#    printf "Looking for SRV name spaces:\n"
-#    srv_namespaces $arg0
-
 def lock_compatible(lock1, lock2) :
     if lck_compat_array[lock1.l_req_mode] & lock2.l_req_mode == 0 :
         if lock1.l_resource.lr_type == ldlm_types.LDLM_IBITS :
@@ -460,6 +453,17 @@ def analyze_deadlock(lock) :
         print("\nError: no conflict")
         show_resource(lock.l_resource)
 
+def show_ns_info(ns_list) :
+    namespaces = readSUListFromHead(ns_list, "ns_list_chain", "struct ldlm_namespace")
+    for ns in namespaces :
+        print(ns, ns.ns_name, "lock count", obd.stats_couter_sum(ns.ns_stats, 0))
+
+def list_namespaces() :
+    print("SRV namespaces:")
+    show_ns_info(readSymbol("ldlm_srv_namespace_list"))
+    print("CLI namespaces:")
+    show_ns_info(readSymbol("ldlm_cli_active_namespace_list"))
+
 if ( __name__ == '__main__'):
     import argparse
 
@@ -476,6 +480,8 @@ if ( __name__ == '__main__'):
     parser.add_argument("-b","--blocking", dest="blocking",
                         action='store_true')
     parser.add_argument("-a","--active", dest="active",
+                        action='store_true')
+    parser.add_argument("-N","--show-namespaces", dest="show_namespaces",
                         action='store_true')
     parser.add_argument("-p","--pid", dest="pid", default = 0)
     parser.add_argument("-f","--flags", dest="flags", default = 0)
@@ -495,6 +501,8 @@ if ( __name__ == '__main__'):
     elif args.res != 0 :
         res = readSU("struct ldlm_resource", int(args.res, 16))
         show_resource(res)
+    elif args.show_namespaces :
+        list_namespaces()
     elif args.ns != 0 :
         ns = readSU("struct ldlm_namespace", int(args.ns, 16))
         show_ns_locks(ns)
