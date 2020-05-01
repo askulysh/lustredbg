@@ -137,21 +137,23 @@ def policy_data2str(lr_type, data) :
     elif lr_type == ldlm_types.LDLM_EXTENT :
         return "[%d-%d]" % (data.l_extent.start, data.l_extent.end)
     elif lr_type == ldlm_types.LDLM_FLOCK :
-        return "[%d-%d] pid: %d owner: %x" % (data.l_flock.start,
+        try :
+            return "[%d-%d] pid: %d owner: %x" % (data.l_flock.start,
                 data.l_flock.end, data.l_flock.pid, data.l_flock.owner)
+        except KeyError :
+            return "[%d-%d] pid: %d owner: %x" % (data.l_flock.lfw_start,
+                data.l_flock.lfw_end, data.l_flock.lfw_pid,
+                data.l_flock.lfw_owner)
 
     return "%s" % data
 
 def print_ldlm_request(prefix, req) :
     res = req.lock_desc.l_resource
     if res.lr_type != 0 :
-        try:
-            print("%s %s %s %s %s" %
-                    (prefix, ldlm_types.__getitem__(res.lr_type), res2str(res),
-                    ldlm_mode2str(req.lock_desc.l_req_mode),
-                    policy_data2str(res.lr_type, req.lock_desc.l_policy_data)))
-        except:
-            print("err")
+        print("%s %s %s %s %s" %
+                (prefix, ldlm_types.__getitem__(res.lr_type), res2str(res),
+                ldlm_mode2str(req.lock_desc.l_req_mode),
+                policy_data2str(res.lr_type, req.lock_desc.l_policy_data)))
     n = req.lock_count
     if n == 0 :
         n = 1
