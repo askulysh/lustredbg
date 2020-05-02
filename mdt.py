@@ -86,7 +86,7 @@ def print_lod_object(lod, prefix) :
         print(prefix, "striped dir", striped, "slave", slave,
               "stripe count", lod.ldo_dir_stripe_count)
         for i in range(lod.ldo_dir_stripe_count) :
-            print_generic_mdt_obj(lod.ldo_stripe[i].do_lu, prefix + "\t")
+            print_full_tree_mdt_obj(lod.ldo_stripe[i].do_lu, prefix + "    ")
     else :
         print(prefix, "comp count", lod.ldo_comp_cnt)
         for i in range(lod.ldo_comp_cnt) :
@@ -118,6 +118,30 @@ def print_generic_mdt_obj(layer, prefix) :
         else :
             print(prefix, "unknown", layer)
 
+def print_full_tree_mdt_obj(layer, prefix) :
+    if layer.lo_ops == mdt_obj_ops :
+        mdt = layer
+        print(prefix, "mdt", layer)
+    elif layer.lo_ops == mdd_lu_obj_ops :
+        mdd_obj = readSU("struct mdd_object", layer)
+        mdt = readSU("struct mdt_object",
+                Addr(mdd_obj.mod_obj.mo_lu.lo_header))
+    elif layer.lo_ops == lod_lu_obj_ops :
+        lod_obj = readSU("struct lod_object", layer)
+        mdt = readSU("struct mdt_object",
+                Addr(lod_obj.ldo_obj.do_lu.lo_header))
+    elif layer.lo_ops == osd_lu_obj_ops :
+        osd_obj = readSU("struct osd_object", layer)
+        mdt = readSU("struct mdt_object",
+                Addr(osd_obj.oo_dt.do_lu.lo_header))
+    elif layer.lo_ops == osp_lu_obj_ops :
+        osp_obj = readSU("struct osp_object", layer - 0x50)
+        mdt = readSU("struct mdt_object",
+                Addr(osp_obj.opo_obj.do_lu.lo_header))
+    else :
+        print(prefix, "unknown", layer)
+    print_mdt_obj(mdt, prefix)
+
 def print_mdt_obj(mdt, prefix):
     moh = mdt.mot_header
     print(prefix, "%s %s flags: %x attr 0%o %s" % (mdt, fid2str(moh.loh_fid),
@@ -125,7 +149,7 @@ def print_mdt_obj(mdt, prefix):
 
     for layer in readSUListFromHead(mdt.mot_header.loh_layers, "lo_linkage",
             "struct lu_object") :
-        print_generic_mdt_obj(layer, prefix)
+        print_generic_mdt_obj(layer, prefix + "    ")
 
 def find_print_fid(lu_dev, fid, prefix) :
     lu_obj = lu_object_find(lu_dev, fid)
