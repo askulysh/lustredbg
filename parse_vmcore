@@ -20,6 +20,9 @@ if grep "SysRq : Trigger a crash" $dmesg; then
 else if grep "ptlrpc_import_recovery_state_machine()) ASSERTION" $dmesg; then
 	crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
 		      epython ../../bin/analyze.py >> $analysis"
+else if grep "LBUG upon eviction" $dmesg; then
+	crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
+		      epython ../../bin/analyze.py >> $analysis"
 else
 	vmcore_fp $1
 	pid=$(grep PID $analysis | cut -d' ' -f 2 |uniq)
@@ -28,6 +31,7 @@ else
 	grep ":"$pid":" log.dk_$core | tail >> $analysis
 	[ $req != 0 ] && crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
 		 epython ../../bin/ptlrpc.py -r $req >> $analysis"
+fi
 fi
 fi
 wait
