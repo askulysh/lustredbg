@@ -131,6 +131,10 @@ def res2str(res) :
     return "[0x%x:0x%x:0x%x]" % (res.lr_name.name[0], res.lr_name.name[1],
             res.lr_name.name[2])
 
+def res2fid(res) :
+    return obd.Fid("0x%x:0x%x:0x%x" % (res.lr_name.name[0], res.lr_name.name[1],
+            res.lr_name.name[2]))
+
 def policy_data2str(lr_type, data) :
     if lr_type == ldlm_types.LDLM_IBITS :
         return "%s" % dbits2str(data.l_inodebits.bits, MDS_INODELOCK)

@@ -6,6 +6,7 @@ import ktime as ktime
 import obd as obd
 import ptlrpc as ptlrpc
 import ldlm_lock as ldlm
+import mdt as mdt
 try:
     import cl_io as cl_io
     import cl_lock as cl_lock
@@ -142,6 +143,9 @@ def show_bl_ast_lock(lock) :
                         ptlrpc.show_ptlrpc_request(req)
                         if cli_pid == 0 :
                             cli_pid = ptlrpc.get_pid(req)
+    mdt.find_print_fid(lock.l_export.exp_obd.obd_lu_dev,
+            ldlm.res2fid(lock.l_resource), "    ")
+
     if cli_pid != 0 :
         print("client PID", cli_pid)
         if cli_modules :
