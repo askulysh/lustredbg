@@ -140,7 +140,9 @@ def print_full_tree_mdt_obj(layer, prefix) :
                 Addr(osp_obj.opo_obj.do_lu.lo_header))
     else :
         print(prefix, "unknown", layer)
-    print_mdt_obj(mdt, prefix)
+        mdt = None
+    if mdt:
+        print_mdt_obj(mdt, prefix)
 
 def print_mdt_obj(mdt, prefix):
     moh = mdt.mot_header

@@ -6,7 +6,12 @@ import ktime as ktime
 import obd as obd
 import ptlrpc as ptlrpc
 import ldlm_lock as ldlm
-import mdt as mdt
+
+try:
+    import mdt as mdt
+except:
+    pass
+
 try:
     import cl_io as cl_io
     import cl_lock as cl_lock
