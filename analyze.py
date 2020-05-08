@@ -71,6 +71,21 @@ def show_client_pid(pid, prefix) :
         lsm = readSU("struct lmv_stripe_md", addr)
         cl_io.print_lsm("", lsm)
 
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "__wait_on_bit_lock")
+    if addr != 0 :
+        print()
+        wb = readSU("struct wait_bit_queue", addr)
+        page = readSU("struct page", wb.key.flags)
+        cl_page = readSU("struct cl_page", page.private)
+        cl_io.print_cl_page(cl_page, "")
+
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "ll_readpage")
+    if addr != 0 :
+        print()
+        page = readSU("struct page", addr)
+        cl_page = readSU("struct cl_page", page.private)
+        cl_io.print_cl_page(cl_page, "")
+
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "ptlrpc_set_wait")
     if addr != 0 :
         print()
