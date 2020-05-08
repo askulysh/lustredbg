@@ -106,6 +106,23 @@ def show_client_pid(pid, prefix) :
         mutex = readSU("struct mutex", addr)
         kernlocks.decode_mutex(mutex)
 
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "osc_extent_wait")
+    if addr != 0 :
+        print()
+        ext = readSU("struct osc_extent", addr)
+        print(ext)
+
+def find_bl_handler(lock) :
+    (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
+    pids = funcsMatch(funcpids, "ldlm_handle_bl_callback")
+    for pid in pids :
+        stack = ptlrpc.get_stacklist(pid)
+        addr = ptlrpc.search_stack_for_reg("RDX", stack, "ldlm_handle_bl_callback")
+        if addr != Addr(lock) :
+            continue
+        print("\n    Pid", pid, "is serving BL callback")
+        show_client_pid(pid, "    ")
+        break
 
 def parse_import_eviction(imp) :
     ptlrpc.show_import("", imp)
@@ -118,10 +135,13 @@ def parse_import_eviction(imp) :
         for lock in granted :
             if lock.l_flags & ldlm.LDLM_flags.LDLM_FL_BL_AST != 0:
                 ldlm.print_ldlm_lock(lock, "")
-                show_client_pid(lock.l_pid, "")
+                if lock.l_readers != 0 or lock.l_writers != 0 :
+                    show_client_pid(lock.l_pid, "")
+                else :
+                    find_bl_handler(lock)
 
     ptlrpc.imp_show_requests(imp)
-    ptlrpc.imp_show_history(imp)
+#    ptlrpc.imp_show_history(imp)
 
 def parse_client_eviction(stack) :
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "ptlrpc_import_recovery_state_machine")
