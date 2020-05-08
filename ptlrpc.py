@@ -536,6 +536,8 @@ def show_request_loc(req, req_format, location) :
             mdt_body_show("   ", field)
         elif name == "ost_body":
             ost_body_show("   ", field)
+        elif name == "niobuf_remote":
+            print("   ", field.rnb_offset, field.rnb_offset + field.rnb_len)
         elif name == "ldlm_intent":
             print("  offset %d %s %s" % (offset,    field, dbits2str(field.opc, it_flags)))
         elif name == "ldlm_request":
