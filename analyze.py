@@ -118,6 +118,8 @@ def find_bl_handler(lock) :
     for pid in pids :
         stack = ptlrpc.get_stacklist(pid)
         addr = ptlrpc.search_stack_for_reg("RDX", stack, "ldlm_handle_bl_callback")
+        if addr == 0 :
+            addr = ptlrpc.search_stack_for_reg("RDI", stack, "osc_ldlm_blocking_ast")
         if addr != Addr(lock) :
             continue
         print("\n    Pid", pid, "is serving BL callback")
@@ -134,6 +136,7 @@ def parse_import_eviction(imp) :
                 "l_res_link", "struct ldlm_lock")
         for lock in granted :
             if lock.l_flags & ldlm.LDLM_flags.LDLM_FL_BL_AST != 0:
+                print()
                 ldlm.print_ldlm_lock(lock, "")
                 if lock.l_readers != 0 or lock.l_writers != 0 :
                     show_client_pid(lock.l_pid, "")
