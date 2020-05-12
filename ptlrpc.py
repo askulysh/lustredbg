@@ -614,7 +614,10 @@ def show_ptlrpc_request_buf(req) :
         show_request_fmt(req, "RQF_OUT_UPDATE")
 
 def exp_cl_str(exp) :
-    conn = exp.exp_imp_reverse.imp_connection
+    if exp.exp_imp_reverse != 0 :
+        conn = exp.exp_imp_reverse.imp_connection
+    else :
+        conn = exp.exp_connection
     return "%s@%s" % (exp.exp_client_uuid.uuid, nid2str(conn.c_peer.nid))
 
 def req_client(req) :
