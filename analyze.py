@@ -142,6 +142,10 @@ def parse_import_eviction(imp) :
                     show_client_pid(lock.l_pid, "")
                 else :
                     find_bl_handler(lock)
+                if lock.l_resource.lr_type == ldlm.ldlm_types.LDLM_EXTENT :
+                    if lock.l_ast_data != 0 :
+                        osc_obj = readSU("struct osc_object", lock.l_ast_data)
+                        cl_io.print_vvp_object("", cl_io.osc2vvp(osc_obj))
 
     ptlrpc.imp_show_requests(imp)
 #    ptlrpc.imp_show_history(imp)
