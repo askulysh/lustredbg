@@ -249,6 +249,10 @@ def print_vvp_object(prefix, vvp) :
     print(vvp, "inode", vvp.vob_inode)
     print_lu_obj_header("", vvp.vob_header.coh_lu)
 
+def osc2vvp(osc) :
+    lovsub = readSU("struct lovsub_object", Addr(osc.oo_cl.co_lu.lo_header))
+    return readSU("struct vvp_object", lovsub.lso_header.coh_parent)
+
 def print_lsm(prefix, lsm) :
         print(prefix, lsm)
         print(prefix, "stripe cnt", lsm.lsm_md_stripe_count,
@@ -349,6 +353,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-s","--osc_page", dest="osc", default = 0)
     parser.add_argument("-V","--vvp_object", dest="vvp_object", default = 0)
     parser.add_argument("-S","--osc_object", dest="osc_object", default = 0)
+    parser.add_argument("-l","--ldlm_lock", dest="ldlm_lock", default = 0)
     parser.add_argument("-f","--file", dest="file", default = 0)
     parser.add_argument("-i","--inode", dest="inode", default = 0)
     parser.add_argument("-d","--dentry", dest="dentry", default = 0)
@@ -399,6 +404,11 @@ if ( __name__ == '__main__'):
         for p in walk_page_tree2(osc_object.oo_tree) :
             osc_page = readSU("struct osc_page", p)
             print_osc_page(osc_page, "    ")
+    elif args.ldlm_lock != 0 :
+        lock = readSU("struct ldlm_lock", int(args.ldlm_lock, 16))
+        if lock.l_ast_data != 0:
+            osc_obj = readSU("struct osc_object", lock.l_ast_data)
+            print_vvp_object("", osc2vvp(osc_obj))
     elif args.hash != 0 :
         hs = readSU("struct cfs_hash", int(args.hash, 16))
         get_vvp_obj_from_hash(hs)
