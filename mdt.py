@@ -50,11 +50,15 @@ def attr2str(attr) :
 
 def print_osd_object(osd_obj, prefix) :
     try :
-        inode = readSU("struct inode", osd_obj.oo_inode)
-        print(prefix, inode, "ino", osd_obj.oo_inode.i_ino,
+        if osd_obj.oo_inode != 0 :
+            inode = readSU("struct inode", osd_obj.oo_inode)
+            print(prefix, inode, "ino", osd_obj.oo_inode.i_ino,
                 "nlink", osd_obj.oo_inode.i_nlink)
     except :
-        print(prefix, "dnode", osd_obj.oo_dn)
+        try :
+            print(prefix, "dnode", osd_obj.oo_dn)
+        except :
+            pass
 
 def print_link_ea(prefix, leh) :
     if leh.leh_magic == 0x11EAF1DF :
@@ -107,7 +111,10 @@ def print_generic_mdt_obj(layer, prefix) :
         elif layer.lo_ops == lod_lu_obj_ops :
             lod_obj = readSU("struct lod_object", layer)
             print(prefix, "lod", lod_obj)
-            print_lod_object(lod_obj, prefix + "\t")
+            try :
+                print_lod_object(lod_obj, prefix + "\t")
+            except :
+                pass
         elif layer.lo_ops == osd_lu_obj_ops :
             osd_obj = readSU("struct osd_object", layer)
             print(prefix, "osd", osd_obj)

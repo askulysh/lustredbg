@@ -228,7 +228,10 @@ def print_ldlm_lock(ldlm_lock, prefix) :
                 timeout)
 
         if ldlm_lock.l_flags & LDLM_flags.LDLM_FL_NS_SRV :
-            last_used = ldlm_lock.l_last_used.tv64
+            try :
+                last_used = ldlm_lock.l_last_used.tv64
+            except :
+                last_used = 0
             if last_used != 0 :
                 sec = (ktime_get() - last_used)/1000000000
                 print(prefix, "last used", sec, "sec ago")
