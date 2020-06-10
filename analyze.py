@@ -19,16 +19,13 @@ try:
 except:
     cli_modules = False
 
-def show_client_pid(pid, prefix) :
-    stack = ptlrpc.get_stacklist(pid)
-    if stack == None :
-        return
-
+def cli_get_ionode(stack, prefix) :
     addr = ptlrpc.search_stack_for_reg("RDX", stack, "ll_file_io_generic")
     if addr != 0 :
         print()
         f = readSU("struct file", addr)
         cl_io.print_inode(prefix, f.f_inode)
+        return f.f_inode
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "notify_change")
     if addr != 0 :
@@ -36,12 +33,14 @@ def show_client_pid(pid, prefix) :
         dentry = readSU("struct dentry", addr)
         cl_io.print_dentry(dentry)
         cl_io.print_inode(prefix, dentry.d_inode)
+        return dentry.d_inode
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "ll_lookup_it")
     if addr != 0 :
         print()
         inode = readSU("struct inode", addr)
         cl_io.print_inode(prefix, inode)
+        return inode
 
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "ll_getattr")
     if addr != 0 :
@@ -49,6 +48,23 @@ def show_client_pid(pid, prefix) :
         dentry = readSU("struct dentry", addr)
         cl_io.print_dentry(dentry)
         cl_io.print_inode(prefix, dentry.d_inode)
+        return dentry.d_inode
+
+    addr = ptlrpc.search_stack_for_reg("RDX", stack, "cl_glimpse_lock")
+    if addr != 0 :
+        print()
+        inode = readSU("struct inode", addr)
+        cl_io.print_inode(prefix, inode)
+        return inode
+
+    return None
+
+def show_client_pid(pid, prefix) :
+    stack = ptlrpc.get_stacklist(pid)
+    if stack == None :
+        return
+
+    cli_get_ionode(stack, prefix)
 
     try :
         addr = ptlrpc.search_stack_for_reg("RDX", stack, "cl_lock_request")
