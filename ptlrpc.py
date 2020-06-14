@@ -162,6 +162,9 @@ enum {
 	QUOTA_DQACQ	= 601,
 	QUOTA_DQREL	= 602,
 
+	FLD_QUERY	= 900,
+	FLD_READ	= 901,
+
 	OUT_UPDATE	 = 1000
 };
 '''
@@ -610,6 +613,10 @@ def show_ptlrpc_request_buf(req) :
         show_request_fmt(req, "RQF_OST_CREATE")
     elif body.pb_opc == opcodes.OST_PUNCH :
         show_request_fmt(req, "RQF_OST_PUNCH")
+    elif body.pb_opc == opcodes.FLD_QUERY :
+        show_request_fmt(req, "RQF_FLD_QUERY")
+    elif body.pb_opc == opcodes.FLD_READ :
+        show_request_fmt(req, "RQF_FLD_READ")
     elif body.pb_opc == opcodes.OUT_UPDATE :
         show_request_fmt(req, "RQF_OUT_UPDATE")
 
