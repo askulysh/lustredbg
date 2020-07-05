@@ -8,7 +8,7 @@ from LinuxDump.trees import *
 from LinuxDump.KernLocks import *
 from LinuxDump.fs.dcache import *
 import LinuxDump.fregsapi
-from obd import *
+import obd as obd
 from ptlrpc import *
 import lustrelib as ll
 
@@ -240,7 +240,7 @@ def print_lu_obj(prefix, lu_obj) :
         print(prefix, lu_obj)
 
 def print_lu_obj_header(prefix, loh) :
-    print(prefix, fid2str(loh.loh_fid))
+    print(prefix, obd.fid2str(loh.loh_fid))
     for lu_obj in readSUListFromHead(loh.loh_layers,
                                     "lo_linkage", "struct lu_object") :
         print_lu_obj(prefix, lu_obj)
@@ -270,7 +270,7 @@ def print_inode(prefix, inode) :
         inode_lock = inode.i_mutex
     except :
         inode_lock = inode.i_rwsem
-    print(inode, inode_lock, lli, fid2str(lli.lli_fid), lli.lli_clob)
+    print(inode, inode_lock, lli, obd.fid2str(lli.lli_fid), lli.lli_clob)
     if S_ISDIR(inode.i_mode) and lli.lli_lsm_md != 0 :
         print_lsm(prefix + '   ', lli.lli_lsm_md)
 
