@@ -2,6 +2,7 @@ from pykdump.API import *
 from LinuxDump.BTstack import *
 import LinuxDump.fregsapi as fregsapi
 import LinuxDump.KernLocks as kernlocks
+import crashlib.util as crutil
 import ktime as ktime
 import obd as obd
 import ptlrpc as ptlrpc
@@ -128,6 +129,14 @@ def show_client_pid(pid, prefix) :
         print()
         mutex = readSU("struct mutex", addr)
         kernlocks.decode_mutex(mutex)
+
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "__pv_queued_spin_lock_slowpath")
+    if addr != 0 :
+        print()
+        qspin = readSU("struct qspinlock", addr)
+        print(qspin)
+        t = crutil.read_qspinlock(qspin)
+        print(t)
 
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "osc_extent_wait")
     if addr != 0 :
