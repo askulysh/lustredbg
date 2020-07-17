@@ -583,7 +583,7 @@ def show_ptlrpc_request_buf(req) :
            body.pb_status, body.pb_jobid))
     if body.pb_opc == opcodes.LDLM_ENQUEUE :
         ldlm_req = readSU("struct ldlm_request", get_req_buffer(req, 1))
-        if ldlm_req.lock_flags & LDLM_flags.LDLM_FL_HAS_INTENT :
+        if ldlm_req.lock_desc.l_resource.lr_type == ldlm_types.LDLM_IBITS and ldlm_req.lock_flags & LDLM_flags.LDLM_FL_HAS_INTENT :
             intent = readSU("struct ldlm_intent", get_req_buffer(req, 2))
             it = mdt_intent_code(intent.opc)
             if it != -1 :
