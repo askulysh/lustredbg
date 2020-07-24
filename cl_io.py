@@ -225,9 +225,10 @@ def print_lov_obj(prefix, lov) :
         print_lov_layout_entry(prefix + "    ", lov.u.composite.lo_entries[i])
 
 def print_osc_obj(prefix, osc) :
-    print(prefix, "osc", osc, "npages", osc.oo_npages, osc_cli(osc),
+    print(prefix, osc, "npages", osc.oo_npages, osc_cli(osc),
           "nr_writes", osc.oo_nr_writes.counter, "nr_ios",
           osc.oo_nr_ios.counter)
+    show_import(prefix, osc_cli(osc).cl_import)
 
 def print_lu_obj(prefix, lu_obj) :
     if lu_obj.lo_ops == lov_lu_obj_ops :
