@@ -67,6 +67,34 @@ def cli_get_ionode(stack, prefix) :
 
     return None
 
+def cli_get_request(stack, prefix) :
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "ptlrpc_set_wait")
+    if addr != 0 :
+        print()
+        rqset = readSU("struct ptlrpc_request_set", addr)
+        ptlrpc.show_ptlrpc_set(rqset)
+        return rqset
+
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "ldlm_cli_enqueue")
+    if addr != 0 :
+        print()
+        addr = readU64(addr)
+        if addr != 0 :
+            req = readSU("struct ptlrpc_request", addr)
+            ptlrpc.show_ptlrpc_request(req)
+            return req
+
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "ldlm_cli_enqueue_fini")
+    if addr != 0 :
+        print()
+        if addr != 0 :
+            req = readSU("struct ptlrpc_request", addr)
+            ptlrpc.show_ptlrpc_request(req)
+            return req
+
+    return None
+
+
 def show_client_pid(pid, prefix) :
     stack = ptlrpc.get_stacklist(pid)
     if stack == None :
@@ -110,19 +138,7 @@ def show_client_pid(pid, prefix) :
         cl_page = readSU("struct cl_page", page.private)
         cl_io.print_cl_page(cl_page, "")
 
-    addr = ptlrpc.search_stack_for_reg("RSI", stack, "ptlrpc_set_wait")
-    if addr != 0 :
-        print()
-        rqset = readSU("struct ptlrpc_request_set", addr)
-        ptlrpc.show_ptlrpc_set(rqset)
-    else :
-        addr = ptlrpc.search_stack_for_reg("RSI", stack, "ldlm_cli_enqueue")
-        if addr != 0 :
-            print()
-            addr = readU64(addr)
-            if addr != 0 :
-                req = readSU("struct ptlrpc_request", addr)
-                ptlrpc.show_ptlrpc_request(req)
+    cli_get_request(stack, prefix)
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "__mutex_lock_slowpath")
     if addr != 0 :
