@@ -853,7 +853,11 @@ def search_for_reg(r, pid, func) :
     return None
 
 def show_pid(pid, pattern) :
-    addr = search_for_reg("RDI", pid, "tgt_request_handle")
+    stack = get_stacklist(pid)
+    if not stack:
+        return 0
+
+    addr = search_stack_for_reg("RDI", stack, "tgt_request_handle")
     if addr == 0 :
         return 0
 
@@ -873,6 +877,14 @@ def show_pid(pid, pattern) :
             touched = thread.t_touched
             print("watchdog touched",
                     (ktime_get() - touched.tv64)/1000000000, "s ago")
+
+        addr = search_stack_for_reg("RSI", stack, "__wait_on_bit_lock")
+        if addr != 0 :
+            print()
+            wb = readSU("struct wait_bit_queue", addr)
+            page = readSU("struct page", wb.key.flags)
+            print(page, "idx:", page.index)
+
     return req
 
 def get_work_start_time(pid) :

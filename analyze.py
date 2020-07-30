@@ -65,6 +65,14 @@ def cli_get_ionode(stack, prefix) :
         cl_io.print_inode(prefix, inode)
         return inode
 
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "ll_new_node")
+    if addr != 0 :
+        print()
+        inode = readSU("struct inode", addr)
+        cl_io.print_inode(prefix, inode)
+        return inode
+
+
     return None
 
 def cli_get_request(stack, prefix) :
