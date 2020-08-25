@@ -533,7 +533,11 @@ def show_request_loc(req, req_format, location) :
         if name :
             try:
                field = readSU("struct " + name, buf)
-               print("  offset %d %s %s" % (offset, req_msg_field.rmf_name, field))
+               if req_msg_field.rmf_flags & 4 : # array
+                   array  = "x %d" % (msg.lm_buflens[i] / req_msg_field.rmf_size)
+               else :
+                   array = ""
+               print("  offset %d %s %s %s" % (offset, req_msg_field.rmf_name, field, array))
             except TypeError :
                 name = 0
 
