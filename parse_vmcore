@@ -14,6 +14,7 @@ ls -la $1 > $analysis
 grep "Lustre: Build" $dmesg >> $analysis
 grep "LNet: Added LNI" $dmesg >> $analysis
 echo "" >> $analysis
+grep "racer test 1" $dmesg | tail -n 1  >> $analysis
 grep MARKER $dmesg | tail -n 4 >> $analysis
 if grep "SysRq : Trigger a crash" $dmesg; then
 	vmcore_sysrq $1 &
