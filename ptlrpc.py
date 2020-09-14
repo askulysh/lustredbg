@@ -897,6 +897,12 @@ def show_pid(pid, pattern) :
             lu_env = readSU("struct lu_env", addr)
             show_io_time(lu_env)
 
+        addr = search_stack_for_reg("RSI", stack, "range_lock")
+        if addr != 0 :
+            print()
+            rlock = readSU("struct range_lock", addr)
+            print(rlock)
+
         addr = search_stack_for_reg("RSI", stack, "__wait_on_bit_lock")
         if addr != 0 :
             print()
