@@ -6,6 +6,7 @@ from pykdump.API import *
 from ktime import *
 from lnet import *
 from ldlm_lock import *
+import osd as osd
 from LinuxDump.BTstack import *
 import LinuxDump.fregsapi as fregsapi
 import re
@@ -856,6 +857,14 @@ def search_for_reg(r, pid, func) :
         return search_stack_for_reg(r, stacklist, func)
     return None
 
+def show_io_time(lu_env) :
+    oti = osd.osd_oti_get(lu_env)
+    iobuf = oti.oti_iobuf
+    print(iobuf, "dr_numreqs", iobuf.dr_numreqs.counter)
+    if iobuf.dr_numreqs.counter != 0 :
+        print("waiting for ",
+                (ktime_get() - iobuf.dr_start_time.tv64)/1000000000, "seconds")
+
 def show_pid(pid, pattern) :
     stack = get_stacklist(pid)
     if not stack:
@@ -881,6 +890,12 @@ def show_pid(pid, pattern) :
             touched = thread.t_touched
             print("watchdog touched",
                     (ktime_get() - touched.tv64)/1000000000, "s ago")
+
+        addr = search_stack_for_reg("RDI", stack, "osd_trans_stop")
+        if addr != 0 :
+            print()
+            lu_env = readSU("struct lu_env", addr)
+            show_io_time(lu_env)
 
         addr = search_stack_for_reg("RSI", stack, "__wait_on_bit_lock")
         if addr != 0 :
