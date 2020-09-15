@@ -572,13 +572,14 @@ def show_request_fmt(req, fmt) :
     print("reply:")
     show_request_loc(req, req_format, 1)
 
+def get_req_body(req) :
+    return readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
+
 def get_opc(req) :
-    body = readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
-    return body.pb_opc
+    return get_req_body(req).pb_opc
 
 def get_pid(req) :
-    body = readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
-    return body.pb_status
+    return get_req_body(req).pb_status
 
 def show_ptlrpc_request_buf(req) :
     body = readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
@@ -660,6 +661,10 @@ def show_ptlrpc_request(req) :
               get_seconds() - req.rq_srv.sr_arrival_time.tv_sec, "sec ago")
 
     show_ptlrpc_request_buf(req)
+
+    if req.rq_status == -75 :
+        print()
+        print("versions:", get_req_body(req).pb_pre_versions)
 
 def show_ptlrpc_set(s) :
     print("set %x new %d remaining %d" % (s,
