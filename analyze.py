@@ -213,6 +213,13 @@ def parse_client_eviction(stack) :
     imp = readSU("struct obd_import", addr)
     parse_import_eviction(imp)
 
+def parse_version_mismatch(stack) :
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "ptlrpc_replay_interpret")
+    if addr == 0 :
+        return 0
+    req = readSU("struct ptlrpc_request", addr)
+    ptlrpc.show_ptlrpc_request(req)
+
 def show_bl_ast_lock(lock) :
     ldlm.print_ldlm_lock(lock, "")
     cli_pid = 0
@@ -287,6 +294,10 @@ def analyze_eviction() :
                 break
             elif f.func == "expired_lock_main" :
                 parse_srv_eviction(btsl)
+                parsed = True
+                break
+            elif f.func == "ptlrpc_replay_interpret" :
+                parse_version_mismatch(btsl)
                 parsed = True
                 break
         if not parsed :
