@@ -95,9 +95,13 @@ def page_list_sanity_check(obj, queue) :
             vvp_page.vpg_cl.cpl_index))
 
 def print_osc_page(osc_page, prefix) :
+    try :
+        index = osc_page.ops_cl.cpl_page.cp_osc_index
+    except:
+        index = osc_page.ops_cl.cpl_index
     oap = osc_page.ops_oap
     print(prefix, # osc_page,
-          "idx:", osc_page.ops_cl.cpl_index,
+          "idx:", index,
           "cmd:", dbits2str(oap.oap_cmd, obd_brw_flags),
           "flg:", dbits2str(oap.oap_brw_page.flag, obd_brw_flags),
           "off:", oap.oap_obj_off, oap.oap_brw_page.pg)
@@ -106,31 +110,45 @@ def print_osc_page(osc_page, prefix) :
     else :
         print(prefix, oap.oap_request)
 
-def print_cl_page(cl, prefix):
-    print(prefix, cl, "state: ", cl_page_state.__getitem__(cl.cp_state),
-          "type:",  cl_page_type.__getitem__(cl.cp_type),
-          cl.cp_vmpage)
+def print_page_slice(layer, prefix) :
+    if layer.cpl_ops == vvp_page_ops :
+        try:
+            ccc_page = readSU("struct ccc_page", layer)
+            print(prefix + "  ", "ccc", ccc_page)
+        except:
+            vvp_page = readSU("struct vvp_page", layer)
+            print(prefix + "  ", "vvp", vvp_page)
+    elif layer.cpl_ops == lovsub_page_ops :
+        print(prefix + "  ", "lovsub", layer)
+    elif layer.cpl_ops == osc_page_ops :
+        osc_page = readSU("struct osc_page", layer)
+        print(prefix + "  ", "osc", osc_page)
+        print_osc_page(osc_page, prefix + "\t")
+    elif layer.cpl_ops == lov_raid0_page_ops or layer.cpl_ops == lov_comp_page_ops :
+        lov_page = readSU("struct lov_page", layer)
+        print(prefix + "  ", "lov", lov_page)
+    else :
+        print("unknown layer", layer, layer.cpl_ops)
 
-    for layer in readSUListFromHead(cl.cp_layers, "cpl_linkage",
-            "struct cl_page_slice") :
-        if layer.cpl_ops == vvp_page_ops :
-            try:
-                ccc_page = readSU("struct ccc_page", layer)
-                print(prefix + "  ", "ccc", ccc_page)
-            except:
-                vvp_page = readSU("struct vvp_page", layer)
-                print(prefix + "  ", "vvp", vvp_page)
-        elif layer.cpl_ops == lovsub_page_ops :
-            print(prefix + "  ", "lovsub", layer)
-        elif layer.cpl_ops == osc_page_ops :
-            osc_page = readSU("struct osc_page", layer)
-            print(prefix + "  ", "osc", osc_page)
-            print_osc_page(osc_page, prefix + "\t")
-        elif layer.cpl_ops == lov_raid0_page_ops or layer.cpl_ops == lov_comp_page_ops :
-            lov_page = readSU("struct lov_page", layer)
-            print(prefix + "  ", "lov", lov_page)
-        else :
-            print("unknown layer", layer, layer.cpl_ops)
+def print_cl_page(cl, prefix):
+    try :
+        page_state = cl_page_state.__getitem__(cl.cp_state)
+        page_type = cl_page_type.__getitem__(cl.cp_type)
+    except :
+        page_type ="unknown"
+        page_state ="unknown"
+    print(prefix, cl, "state: ", page_state, "type:",  page_type, cl.cp_vmpage)
+    try:
+        for i in range(cl.cp_layer_count) :
+            # struct_size("struct cl_page")
+            a = Addr(cl) + struct_size("struct cl_page") + cl.cp_layer_offset[i]
+            layer = readSU("struct cl_page_slice", a)
+            print_page_slice(layer, prefix)
+    except:
+        for layer in readSUListFromHead(cl.cp_layers, "cpl_linkage",
+                "struct cl_page_slice") :
+            print_page_slice(layer, prefix)
+
 
 def search_for_reg(r, pid, func) :
     #     with DisasmFlavor('att'):
