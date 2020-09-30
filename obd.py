@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from pykdump.API import *
 import lustrelib as ll
+import ptlrpc as ptlrpc
 
 class Fid:
     def __init__(self, desc):
@@ -134,6 +135,13 @@ def show_obds() :
         if obd_devs[i] != 0 :
             show_obd(obd_devs[i])
 
+def show_imports() :
+    obd_devs = readSymbol("obd_devs")
+    for i in range(0, 8192) :
+        obd = obd_devs[i]
+        if obd and obd.obd_lu_dev and obd_devs[i].u.cli.cl_import :
+            ptlrpc.show_import("", obd.u.cli.cl_import)
+
 __re_search = re.compile(r'^([a-f0-9]+):')
 __re_kmem = re.compile(r'^([a-f0-9]+)\s([a-z_0-9-]+)')
 def ptr_search(ptr) :
@@ -210,6 +218,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-c","--cookie", dest="cookie", default=0)
     parser.add_argument("-p","--lprocfs_stats", dest="lprocfs_stats", default=0)
     parser.add_argument("-m","--mem", dest="meminfo", action='store_true')
+    parser.add_argument("-i","--show_imports", dest="show_imports", action='store_true')
     args = parser.parse_args()
 
     if args.device != 0 :
@@ -239,6 +248,8 @@ if ( __name__ == '__main__'):
         print("libcfs_kmemory %uk obd_max_alloc %uk obd_memory %uk" %
                 (readSymbol("libcfs_kmemory").counter/1024,
                  readSymbol("obd_max_alloc")/1024, obd_memory_sum()/1024))
+    elif args.show_imports :
+        show_imports()
     else :
         show_obds()
 
