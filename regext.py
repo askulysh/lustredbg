@@ -49,3 +49,6 @@ rprog("ip", "Interactive python",
 rprog("analyze", "Automated vmcore analysis",
       "",
       help)
+rprog("debug_flags", "Show debug flags",
+      "",
+      help)
