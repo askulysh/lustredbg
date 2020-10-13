@@ -174,6 +174,15 @@ def show_client_pid(pid, prefix) :
         ext = readSU("struct osc_extent", addr)
         print(ext)
 
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "obd_get_mod_rpc_slot")
+    if addr != 0 :
+        print()
+        cli_obd = readSU("struct client_obd", addr)
+        print("%s %s mod slots %d/%d" % (cli_obd, cli_obd.cl_import,
+            cli_obd.cl_mod_rpcs_in_flight, cli_obd.cl_max_mod_rpcs_in_flight))
+        if cli_obd.cl_mod_rpcs_in_flight == cli_obd.cl_max_mod_rpcs_in_flight :
+            ptlrpc.show_import("", cli_obd.cl_import)
+
 def find_bl_handler(lock) :
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
     pids = funcsMatch(funcpids, "ldlm_handle_bl_callback")
