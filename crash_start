@@ -14,4 +14,4 @@ fi
 export PYKDUMPPATH=$WDIR/pycrashext:$WDIR/lustredbg:$WDIR/pykdump
 export CRASH_EXTENSIONS=$WDIR/crash_ext
 
-$crash -x -i ./load_modules ./vmlinux $1
+$crash -x -i ./load_modules ./vmlinux $*
