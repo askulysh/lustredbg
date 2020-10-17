@@ -159,7 +159,7 @@ def show_client_pid(pid, prefix) :
         cl_page = readSU("struct cl_page", page.private)
         cl_io.print_cl_page(cl_page, "")
 
-    cli_get_request(stack, prefix)
+    req = cli_get_request(stack, prefix)
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "__mutex_lock_slowpath")
     if addr != 0 :
@@ -190,6 +190,8 @@ def show_client_pid(pid, prefix) :
         if cli_obd.cl_mod_rpcs_in_flight == cli_obd.cl_max_mod_rpcs_in_flight :
             ptlrpc.show_import("", cli_obd.cl_import)
 
+    return req != None
+
 def find_bl_handler(lock) :
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
     pids = funcsMatch(funcpids, "ldlm_handle_bl_callback")
@@ -208,6 +210,7 @@ def parse_import_eviction(imp) :
     ptlrpc.show_import("", imp)
     ptlrpc.imp_show_state_history("", imp)
 
+    cli_waits = False
     print("\n=== BL AST pending locks ===")
     for res in ldlm.get_ns_resources(imp.imp_obd.obd_namespace) :
         granted = readSUListFromHead(res.lr_granted,
@@ -217,7 +220,8 @@ def parse_import_eviction(imp) :
                 print()
                 ldlm.print_ldlm_lock(lock, "")
                 if lock.l_readers != 0 or lock.l_writers != 0 :
-                    show_client_pid(lock.l_pid, "")
+                    if show_client_pid(lock.l_pid, "") :
+                        cli_waits = True
                 else :
                     find_bl_handler(lock)
                 if lock.l_resource.lr_type == ldlm.ldlm_types.LDLM_EXTENT :
@@ -225,8 +229,9 @@ def parse_import_eviction(imp) :
                         osc_obj = readSU("struct osc_object", lock.l_ast_data)
                         cl_io.print_vvp_object("", cl_io.osc2vvp(osc_obj))
 
-    ptlrpc.imp_show_requests(imp)
-#    ptlrpc.imp_show_history(imp)
+    if not cli_waits :
+        ptlrpc.imp_show_requests(imp)
+#       ptlrpc.imp_show_history(imp)
 
 def parse_client_eviction(stack) :
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "ptlrpc_import_recovery_state_machine")
