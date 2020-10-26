@@ -292,7 +292,8 @@ def parse_srv_eviction(stack) :
     addr = ptlrpc.search_stack_for_reg("R13", stack, "panic")
     if addr == 0 :
         return 0
-    lock = readSU("struct ldlm_lock", addr)
+    l_exp_list_off = getStructInfo('struct ldlm_lock')['l_exp_list'].offset
+    lock = readSU("struct ldlm_lock", addr - l_exp_list_off)
     print("evicted lock:")
     show_bl_ast_lock(lock)
     print()
