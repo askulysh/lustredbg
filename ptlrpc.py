@@ -796,6 +796,12 @@ def show_export(prefix, exp) :
     except:
         print("")
 
+    reply_list = readSUListFromHead(exp.u.eu_target_data.ted_reply_list,
+            "trd_list", "struct tg_reply_data")
+    for trd in reply_list :
+        print("tag: ", trd.trd_tag, "xid:", trd.trd_reply.lrd_xid,
+                "transno", trd.trd_reply.lrd_transno)
+
     rq_info = getStructInfo('struct ptlrpc_request')
     srv_rq_info = getStructInfo('struct ptlrpc_srv_req')
     offset = rq_info['rq_srv'].offset + srv_rq_info['sr_exp_list'].offset
