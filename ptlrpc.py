@@ -726,6 +726,10 @@ def show_import(prefix, imp) :
             print("%slast FULL was %ds ago disconnected %ds" %
                     (prefix, get_seconds() - time_connected,
                         get_seconds() - time_disconnected))
+        elif imp.imp_state == lustre_imp_state.LUSTRE_IMP_EVICTED :
+            j = (idx + 1) % size
+            print("%slast success connect was > %ds ago" %
+                    (prefix, get_seconds() - imp.imp_state_hist[j].ish_time))
         else :
             print("%slast success connect was %ds ago" %
                     (prefix, ktime_get_seconds() - imp.imp_last_success_conn))
