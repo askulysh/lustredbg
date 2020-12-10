@@ -700,8 +700,8 @@ def imp_show_state_history(prefix, imp):
             get_seconds() - imp.imp_state_hist[j].ish_time))
 
 def show_import(prefix, imp) :
-    if imp.imp_conn_current != 0 :
-        cur_nid = nid2str(imp.imp_conn_current.oic_conn.c_peer.nid)
+    if imp.imp_connection != 0 :
+        cur_nid = nid2str(imp.imp_connection.c_peer.nid)
     else :
         cur_nid = "null"
     print("%simport %x %s inflight %d %s cur conn: %s next ping in %s" %
