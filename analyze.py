@@ -108,10 +108,28 @@ def cli_get_request(stack, prefix) :
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "ldlm_cli_enqueue_fini")
     if addr != 0 :
         print()
-        if addr != 0 :
-            req = readSU("struct ptlrpc_request", addr)
-            ptlrpc.show_ptlrpc_request(req)
-            return req
+        req = readSU("struct ptlrpc_request", addr)
+        ptlrpc.show_ptlrpc_request(req)
+        return req
+
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "wait_for_completion")
+    if addr != 0 :
+        print()
+        cbargs_addr = addr - getStructInfo('struct osc_async_cbargs')['opc_sync'].offset
+        cbargs = readSU("struct osc_async_cbargs", cbargs_addr)
+        print(cbargs)
+        res = exec_crash_command("search 0x%x" % cbargs_addr)
+        if len(res) == 0 :
+            print("no matches!")
+            return None
+        print(res)
+        for s in res.splitlines():
+            m = obd.__re_search.match(s)
+            if (m) :
+                addr = int(m.group(1), 16)
+                req = readSU("struct ptlrpc_request", addr - 0x180)
+                ptlrpc.show_ptlrpc_request(req)
+                return req
 
     return None
 
