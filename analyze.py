@@ -245,7 +245,7 @@ def parse_import_eviction(imp) :
                 if lock.l_resource.lr_type == ldlm.ldlm_types.LDLM_EXTENT :
                     if lock.l_ast_data != 0 :
                         osc_obj = readSU("struct osc_object", lock.l_ast_data)
-                        cl_io.print_vvp_object("", cl_io.osc2vvp(osc_obj))
+                        print("osc obj in l_ast_data", osc_obj)
 
     if not cli_waits :
         ptlrpc.imp_show_requests(imp)
