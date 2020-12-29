@@ -222,20 +222,26 @@ lov_pattern_c = '''
 '''
 lov_pattern = CDefine(lov_pattern_c)
 
-def print_layout_raid0(prefix, r0) :
-    print(prefix, "raid0", r0, r0.lo_nr)
+def print_layout_raid0(prefix, ext, r0) :
+    print(prefix, ext, "raid0", r0, r0.lo_nr)
     for i in range(r0.lo_nr) :
         print(prefix + "    ", r0.lo_sub[i])
         print_lu_obj_header(prefix + "    ", r0.lo_sub[i].lso_header.coh_lu)
 
+def lu_ext2str(ext) :
+    if ext.e_end == 0xffffffffffffffff :
+        return "%u - EOF" % ext.e_start
+    else :
+        return "%u - %u" % (ext.e_start, ext.e_end)
+
 def print_lov_layout_entry(prefix, le) :
     if le.lle_type == lov_pattern.LOV_PATTERN_RAID0 :
-        print_layout_raid0(prefix, le.lle_raid0)
+        print_layout_raid0(prefix, lu_ext2str(le.lle_extent), le.lle_raid0)
     elif le.lle_type == lov_pattern.LOV_PATTERN_MDT :
-        print(prefix, le.lle_dom)
+        print(prefix, lu_ext2str(le.lle_extent), le.lle_dom)
         print_lu_obj_header(prefix, le.lle_dom.lo_dom.lso_header.coh_lu)
     else :
-        print(prefix, le)
+        print(prefix, lu_ext2str(le.lle_extent), le)
 
 def print_lov_obj(prefix, lov) :
     print(prefix, "lov", lov)
