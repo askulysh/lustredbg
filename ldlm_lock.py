@@ -321,6 +321,14 @@ def show_namespaces(regexp) :
     l = readSymbol("ldlm_cli_active_namespace_list")
     ns_list(l, regexp)
 
+def cli_granted_locks() :
+    l = readSymbol("ldlm_cli_active_namespace_list")
+    nss = readSUListFromHead(l, "ns_list_chain", "struct ldlm_namespace")
+    for ns in nss :
+       for res in get_ns_resources(ns) :
+           yield from readSUListFromHead(res.lr_granted,
+                "l_res_link", "struct ldlm_lock")
+
 def lock_compatible(lock1, lock2) :
     if lck_compat_array[lock1.l_req_mode] & lock2.l_req_mode == 0 :
         if lock1.l_resource.lr_type == ldlm_types.LDLM_IBITS :
@@ -491,6 +499,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-N","--show-namespaces", dest="show_namespaces",
                         action='store_true')
     parser.add_argument("-p","--pid", dest="pid", default = 0)
+    parser.add_argument("-G","--granted", dest="granted_pid", default = 0)
     parser.add_argument("-f","--flags", dest="flags", default = 0)
     parser.add_argument("-d","--dealock", dest="dead", default = 0)
     args = parser.parse_args()
@@ -526,6 +535,11 @@ if ( __name__ == '__main__'):
     elif args.dead != 0 :
         l = readSU("struct ldlm_lock", int(args.dead, 16))
         analyze_deadlock(l)
+    elif args.granted_pid != 0 :
+        for lock in sorted(filter(lambda l : l.l_pid == int(args.granted_pid),
+                                    cli_granted_locks()),
+                            key = lambda l : l.l_activity) :
+            print_ldlm_lock(lock, "")
     else :
         show_namespaces(r'.*')
 
