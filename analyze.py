@@ -233,10 +233,12 @@ def parse_import_eviction(imp) :
     for res in ldlm.get_ns_resources(imp.imp_obd.obd_namespace) :
         granted = readSUListFromHead(res.lr_granted,
                 "l_res_link", "struct ldlm_lock")
-        for lock in granted :
+        for lock in sorted(granted, key = lambda l : l.l_activity) :
             if lock.l_flags & ldlm.LDLM_flags.LDLM_FL_BL_AST != 0:
                 print()
                 ldlm.print_ldlm_lock(lock, "")
+                if lock.l_activity < 100 :
+                    continue
                 if lock.l_readers != 0 or lock.l_writers != 0 :
                     if show_client_pid(lock.l_pid, "") :
                         cli_waits = True
