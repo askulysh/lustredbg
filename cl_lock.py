@@ -104,6 +104,11 @@ def print_cl_lock(cl, prefix):
             print(prefix, "lov", lov_lock)
             print_lov_lock(lov_lock, prefix + "\t")
 
+def print_cl_lockset(lockset, prefix):
+    for link in readSUListFromHead(lockset.cls_done, "cill_linkage",
+            "struct cl_io_lock_link") :
+        print_cl_lock(link.cill_lock, "")
+
 def search_for_reg(r, pid, func) :
     #     with DisasmFlavor('att'):
     try:
@@ -134,6 +139,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-l","--lock", dest="cl", default = 0)
     parser.add_argument("-o","--lov", dest="lov", default = 0)
     parser.add_argument("-s","--osc", dest="osc", default = 0)
+    parser.add_argument("-S","--io_slice", dest="io_slice", default = 0)
     args = parser.parse_args()
     if args.cl != 0 :
         cl_lock = readSU("struct cl_lock", int(args.cl, 16))
@@ -144,6 +150,9 @@ if ( __name__ == '__main__'):
     elif args.osc != 0 :
         osc_lock = readSU("struct osc_lock", int(args.osc, 16))
         print_osc_lock(osc_lock, "")
+    elif args.io_slice != 0 :
+        io_slice = readSU("struct cl_io_slice", int(args.io_slice, 16))
+        print_cl_lockset(io_slice.cis_io.ci_lockset, "")
     else :
         print_waiting_cl_locks()
 
