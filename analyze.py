@@ -2,6 +2,7 @@ from pykdump.API import *
 from LinuxDump.BTstack import *
 import LinuxDump.fregsapi as fregsapi
 import LinuxDump.KernLocks as kernlocks
+import LinuxDump.fs as fs
 import crashlib.util as crutil
 import ktime as ktime
 import obd as obd
@@ -20,70 +21,53 @@ try:
 except:
     cli_modules = False
 
-def cli_get_ionode(stack, prefix) :
-    addr = ptlrpc.search_stack_for_reg("RDX", stack, "ll_file_io_generic")
-    if addr != 0 :
-        print()
-        f = readSU("struct file", addr)
-        cl_io.print_inode(prefix, f.f_inode)
-        return f.f_inode
-
+def cli_get_dentry(stack) :
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "notify_change")
     if addr != 0 :
-        print()
         dentry = readSU("struct dentry", addr)
-        cl_io.print_dentry(dentry)
-        cl_io.print_inode(prefix, dentry.d_inode)
-        return dentry.d_inode
+        return dentry
+
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "ll_getattr")
+    if addr != 0 :
+        dentry = readSU("struct dentry", addr)
+        return dentry
+
+    return None
+
+def cli_get_inode(stack) :
+    addr = ptlrpc.search_stack_for_reg("RDX", stack, "ll_file_io_generic")
+    if addr != 0 :
+        f = readSU("struct file", addr)
+        return f.f_inode
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "ll_lookup_it")
     if addr != 0 :
-        print()
         inode = readSU("struct inode", addr)
-        cl_io.print_inode(prefix, inode)
         return inode
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "ll_close_inode_openhandle")
     if addr != 0 :
-        print()
         inode = readSU("struct inode", addr)
-        cl_io.print_inode(prefix, inode)
         return inode
-
-    addr = ptlrpc.search_stack_for_reg("RSI", stack, "ll_getattr")
-    if addr != 0 :
-        print()
-        dentry = readSU("struct dentry", addr)
-        cl_io.print_dentry(dentry)
-        cl_io.print_inode(prefix, dentry.d_inode)
-        return dentry.d_inode
 
     addr = ptlrpc.search_stack_for_reg("RDX", stack, "cl_glimpse_lock")
     if addr != 0 :
-        print()
         inode = readSU("struct inode", addr)
-        cl_io.print_inode(prefix, inode)
         return inode
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "ll_new_node")
     if addr != 0 :
-        print()
         inode = readSU("struct inode", addr)
-        cl_io.print_inode(prefix, inode)
         return inode
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "ll_layout_conf")
     if addr != 0 :
-        print()
         inode = readSU("struct inode", addr)
-        cl_io.print_inode(prefix, inode)
         return inode
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "ll_layout_intent")
     if addr != 0 :
-        print()
         inode = readSU("struct inode", addr)
-        cl_io.print_inode(prefix, inode)
         return inode
 
     return None
@@ -133,13 +117,28 @@ def cli_get_request(stack, prefix) :
 
     return None
 
+def dentry2path(de) :
+    p = fs.get_dentry_name(de)
+    while de.d_parent != 0 and de.d_parent != de:
+        de = de.d_parent
+        p = fs.get_dentry_name(de) + "/" + p
+    return p
 
 def show_client_pid(pid, prefix) :
     stack = ptlrpc.get_stacklist(pid)
     if stack == None :
         return
 
-    cli_get_ionode(stack, prefix)
+    dentry = cli_get_dentry(stack)
+    if dentry :
+        print()
+        print(prefix, dentry2path(dentry))
+        cl_io.print_dentry(dentry)
+        cl_io.print_inode(prefix, dentry.d_inode)
+    else :
+        inode = cli_get_inode(stack)
+        print()
+        cl_io.print_inode(prefix, inode)
 
     try :
         addr = ptlrpc.search_stack_for_reg("RDX", stack, "cl_lock_request")
