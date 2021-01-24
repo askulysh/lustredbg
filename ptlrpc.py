@@ -754,18 +754,22 @@ def show_requests_from_list_reverse(head, offset):
         else:
             show_ptlrpc_request(req)
 
-def imp_show_requests(imp) :
-    print("\n=== sending ===")
-    l = readSUListFromHead(imp.imp_sending_list, "rq_list", "struct ptlrpc_request")
+def show_requests_from_list(l) :
     for req in l :
         show_ptlrpc_request_header(req)
         show_ptlrpc_request_buf(req)
 
+def imp_show_sending_requests(imp) :
+    print("\n=== sending ===")
+    l = readSUListFromHead(imp.imp_sending_list, "rq_list", "struct ptlrpc_request")
+    show_requests_from_list(l)
+
+def imp_show_requests(imp) :
+    imp_show_sending_requests(imp)
+
     print("\n=== delayed ===")
     l = readSUListFromHead(imp.imp_delayed_list, "rq_list", "struct ptlrpc_request")
-    for req in l :
-        show_ptlrpc_request_header(req)
-        show_ptlrpc_request_buf(req)
+    show_requests_from_list(l)
 
     print("\n=== unreplied ===")
     head = imp.imp_unreplied_list
@@ -778,9 +782,7 @@ def imp_show_requests(imp) :
 def imp_show_history(imp) :
     print("replay list:")
     replay_list = readSUListFromHead(imp.imp_replay_list, "rq_replay_list", "struct ptlrpc_request")
-    for req in replay_list :
-        show_ptlrpc_request_header(req)
-        show_ptlrpc_request_buf(req)
+    show_requests_from_list(replay_list)
 
 def show_export(prefix, exp) :
     print(exp.exp_obd, exp.exp_obd.obd_name)
