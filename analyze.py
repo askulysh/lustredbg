@@ -32,6 +32,11 @@ def cli_get_dentry(stack) :
         dentry = readSU("struct dentry", addr)
         return dentry
 
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "ll_lookup_it")
+    if addr != 0 :
+        dentry = readSU("struct dentry", addr)
+        return dentry
+
     return None
 
 def cli_get_inode(stack) :
@@ -138,16 +143,19 @@ def show_client_pid(pid, prefix) :
     if stack == None :
         return
 
+    print()
+    inode  = None
     dentry = cli_get_dentry(stack)
     if dentry :
-        print()
         print(prefix, dentry2path(dentry))
         cl_io.print_dentry(dentry)
-        cl_io.print_inode(prefix, dentry.d_inode)
-    else :
+        if int(dentry.d_inode) != 0 :
+            inode = dentry.d_inode
+
+    if inode == None:
         inode = cli_get_inode(stack)
-        print()
-        cl_io.print_inode(prefix, inode)
+
+    cl_io.print_inode(prefix, inode)
 
     try :
         addr = ptlrpc.search_stack_for_reg("RDX", stack, "cl_lock_request")
