@@ -78,7 +78,16 @@ def cli_get_request(stack, prefix) :
         print()
         rqset = readSU("struct ptlrpc_request_set", addr)
         ptlrpc.show_ptlrpc_set(rqset)
-        return rqset
+
+        rq_info = getStructInfo('struct ptlrpc_request')
+        try:
+            offset = rq_info['rq_set_chain'].offset
+        except KeyError:
+            cli_rq_info = getStructInfo('struct ptlrpc_cli_req')
+            offset = rq_info['rq_cli'].offset + cli_rq_info['cr_set_chain'].offset
+
+        req = readSU("struct ptlrpc_request", int(rqset.set_requests.next) - offset)
+        return req
 
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "ldlm_cli_enqueue")
     if addr != 0 :
