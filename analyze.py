@@ -202,10 +202,15 @@ def show_client_pid(pid, prefix) :
     if addr != 0 :
         print()
         cli_obd = readSU("struct client_obd", addr)
-        print("%s %s mod slots %d/%d" % (cli_obd, cli_obd.cl_import,
+    elif req != None :
+        cli_obd = req.rq_import.imp_obd.u.cli
+
+    if cli_obd :
+        print("\n%s %s mod slots %d/%d" % (cli_obd, cli_obd.cl_import,
             cli_obd.cl_mod_rpcs_in_flight, cli_obd.cl_max_mod_rpcs_in_flight))
         if cli_obd.cl_mod_rpcs_in_flight == cli_obd.cl_max_mod_rpcs_in_flight :
             ptlrpc.show_import("", cli_obd.cl_import)
+            ptlrpc.imp_show_requests(cli_obd.cl_import)
 
     return req != None
 
