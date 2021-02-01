@@ -155,7 +155,8 @@ def show_client_pid(pid, prefix) :
     if inode == None:
         inode = cli_get_inode(stack)
 
-    cl_io.print_inode(prefix, inode)
+    if inode :
+        cl_io.print_inode(prefix, inode)
 
     try :
         addr = ptlrpc.search_stack_for_reg("RDX", stack, "cl_lock_request")
@@ -221,6 +222,8 @@ def show_client_pid(pid, prefix) :
         cli_obd = readSU("struct client_obd", addr)
     elif req != None :
         cli_obd = req.rq_import.imp_obd.u.cli
+    else :
+        cli_obd = None
 
     if cli_obd :
         print("\n%s %s rpcs in flight %d/%d" % (cli_obd, cli_obd.cl_import,
