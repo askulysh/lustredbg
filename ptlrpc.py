@@ -280,7 +280,7 @@ intent_fmts[mdt_it_code.MDT_IT_BRW] = "RQF_LDLM_INTENT"
 
 reint_fmts = [0 for i in range(10)]
 reint_fmts[mds_reint.REINT_SETATTR] = "RQF_MDS_REINT_SETATTR"
-reint_fmts[mds_reint.REINT_CREATE] = "RQF_MDS_REINT_CREATE"
+reint_fmts[mds_reint.REINT_CREATE] = "RQF_MDS_REINT_CREATE_ACL"
 reint_fmts[mds_reint.REINT_LINK] = "RQF_MDS_REINT_LINK"
 reint_fmts[mds_reint.REINT_UNLINK] = "RQF_MDS_REINT_UNLINK"
 reint_fmts[mds_reint.REINT_RENAME] = "RQF_MDS_REINT_RENAME"
