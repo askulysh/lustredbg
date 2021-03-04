@@ -245,8 +245,19 @@ def print_lov_layout_entry(prefix, le) :
 
 def print_lov_obj(prefix, lov) :
     print(prefix, "lov", lov)
-    for i in range(lov.u.composite.lo_entry_count) :
-        print_lov_layout_entry(prefix + "    ", lov.u.composite.lo_entries[i])
+    try:
+        print(prefix, "mirrors", lov.u.composite.lo_mirror_count, "flags",
+                lov.u.composite.lo_flags)
+        for i in range(lov.u.composite.lo_mirror_count) :
+            lre = lov.u.composite.lo_mirrors[i]
+            print(prefix, "mirror[", i,"] id:", lre.lre_mirror_id,  " valid:",
+                    lre.lre_valid)
+            for j in range(lre.lre_start, lre.lre_end + 1) :
+                print_lov_layout_entry(prefix + "    ",
+                        lov.u.composite.lo_entries[j])
+    except:
+        for i in range(lov.u.composite.lo_entry_count) :
+            print_lov_layout_entry(prefix + "    ", lov.u.composite.lo_entries[i])
 
 def print_osc_obj(prefix, osc) :
     print(prefix, osc, "npages", osc.oo_npages, osc_cli(osc),
