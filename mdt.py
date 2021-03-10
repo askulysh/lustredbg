@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 from pykdump.API import *
-from obd import *
+import obd as obd
 import ptlrpc as ptlrpc
 import ldlm_lock as ldlm
 
@@ -153,7 +153,7 @@ def print_full_tree_mdt_obj(layer, prefix) :
 
 def print_mdt_obj(mdt, prefix):
     moh = mdt.mot_header
-    print(prefix, "%s %s flags: %x attr 0%o %s" % (mdt, fid2str(moh.loh_fid),
+    print(prefix, "%s %s flags: %x attr 0%o %s" % (mdt, obd.fid2str(moh.loh_fid),
            moh.loh_flags, moh.loh_attr, attr2str(moh.loh_attr)))
 
     for layer in readSUListFromHead(mdt.mot_header.loh_layers, "lo_linkage",
@@ -161,7 +161,7 @@ def print_mdt_obj(mdt, prefix):
         print_generic_mdt_obj(layer, prefix + "    ")
 
 def find_print_fid(lu_dev, fid, prefix) :
-    lu_obj = lu_object_find(lu_dev, fid)
+    lu_obj = obd.lu_object_find(lu_dev, fid)
     if lu_obj :
         mdt_obj = readSU("struct mdt_object", Addr(lu_obj))
         print_mdt_obj(mdt_obj, prefix)
@@ -170,31 +170,31 @@ def parse_mti(mti, opc, prefix):
     fid_prefix = prefix + "    "
     print("mdt", mti.mti_mdt)
     lu_dev = mti.mti_mdt.mdt_lu_dev
-    print("mti_tmp_fid1", mti.mti_tmp_fid1, fid2str(mti.mti_tmp_fid1))
+    print("mti_tmp_fid1", mti.mti_tmp_fid1, obd.fid2str(mti.mti_tmp_fid1))
     find_print_fid(lu_dev, mti.mti_tmp_fid1, fid_prefix)
-    print("mti_tmp_fid2", mti.mti_tmp_fid2, fid2str(mti.mti_tmp_fid2))
+    print("mti_tmp_fid2", mti.mti_tmp_fid2, obd.fid2str(mti.mti_tmp_fid2))
     try :
         find_print_fid(lu_dev, mti.mti_tmp_fid2, fid_prefix)
     except:
         print()
 
     if opc == 0 or opc == ptlrpc.opcodes.MDS_REINT :
-        print("rr_fid1", mti.mti_rr.rr_fid1, fid2str( mti.mti_rr.rr_fid1))
+        print("rr_fid1", mti.mti_rr.rr_fid1, obd.fid2str( mti.mti_rr.rr_fid1))
         find_print_fid(lu_dev, mti.mti_rr.rr_fid1, fid_prefix)
-        print("rr_fid2", mti.mti_rr.rr_fid2, fid2str( mti.mti_rr.rr_fid2))
+        print("rr_fid2", mti.mti_rr.rr_fid2, obd.fid2str( mti.mti_rr.rr_fid2))
         try :
             find_print_fid(lu_dev, mti.mti_rr.rr_fid2, fid_prefix)
         except:
             print()
         if mti.mti_rr.rr_opcode == ptlrpc.mds_reint.REINT_RENAME :
             print("rename %s/%s %s -> %s/%s %s" % (
-                  fid2str(mti.mti_rr.rr_fid1), mti.mti_rr.rr_name.ln_name,
-                  fid2str(mti.mti_tmp_fid1),
-                  fid2str(mti.mti_rr.rr_fid2), mti.mti_rr.rr_tgt_name.ln_name,
-                  fid2str(mti.mti_tmp_fid2)))
+                  obd.fid2str(mti.mti_rr.rr_fid1), mti.mti_rr.rr_name.ln_name,
+                  obd.fid2str(mti.mti_tmp_fid1),
+                  obd.fid2str(mti.mti_rr.rr_fid2), mti.mti_rr.rr_tgt_name.ln_name,
+                  obd.fid2str(mti.mti_tmp_fid2)))
         elif mti.mti_rr.rr_opcode == ptlrpc.mds_reint.REINT_MIGRATE :
-            print("migrate %s/%s -> %s" % (fid2str(mti.mti_rr.rr_fid1),
-                mti.mti_rr.rr_name.ln_name, fid2str(mti.mti_rr.rr_fid2)))
+            print("migrate %s/%s -> %s" % (obd.fid2str(mti.mti_rr.rr_fid1),
+                mti.mti_rr.rr_name.ln_name, obd.fid2str(mti.mti_rr.rr_fid2)))
         else :
             print(mti.mti_rr)
     for i in range(6) :
