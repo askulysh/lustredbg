@@ -927,6 +927,15 @@ def show_pid(pid, pattern) :
             page = readSU("struct page", wb.key.flags)
             print(page, "idx:", page.index)
 
+        addr = search_stack_for_reg("RDI", stack, "bit_wait_io")
+        if addr != 0 :
+            print()
+            wbk = readSU("struct wait_bit_key", addr)
+            print(wbk)
+            bh = readSU("struct buffer_head", wbk.flags)
+            page = readSU("struct page", bh.b_page)
+            print(bh, page, "idx:", page.index)
+
     return req
 
 def get_work_start_time(pid) :
