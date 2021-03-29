@@ -9,6 +9,7 @@ from ldlm_lock import *
 import osd as osd
 from LinuxDump.BTstack import *
 import LinuxDump.fregsapi as fregsapi
+from LinuxDump import Tasks
 import re
 import lustrelib as ll
 
@@ -907,6 +908,15 @@ def show_pid(pid, pattern) :
             touched = thread.t_touched
             print("watchdog touched",
                     (ktime_get() - touched.tv64)/1000000000, "s ago")
+        try :
+#            T_table = TaskTable()
+#            task = Task(thread.t_task, T_table.getByPid(pid))
+            print(task)
+#           print(task.Ran_ago)
+            print("last run", ktime_get() - thread.t_task.sched_info.last_arrival, "ms ago")
+            print("last run", Tasks.sched_clock2ms(thread.t_task.se.exec_start), "ms ago")
+        except:
+            pass
 
         addr = search_stack_for_reg("RDI", stack, "osd_trans_stop")
         if addr != 0 :
