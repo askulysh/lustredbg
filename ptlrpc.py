@@ -875,6 +875,14 @@ def search_for_reg(r, pid, func) :
         return search_stack_for_reg(r, stacklist, func)
     return None
 
+def search_for_rw_semaphore(stack) :
+    addr = search_stack_for_reg("RDI", stack, "call_rwsem_down_write_failed")
+    if addr == 0:
+        return
+    print()
+    sem = readSU("struct rw_semaphore", addr)
+    print(sem, "counter: %lx owner: %x" % (sem.count.counter, sem.owner))
+
 def show_io_time(lu_env) :
     oti = osd.osd_oti_get(lu_env)
     iobuf = oti.oti_iobuf
@@ -945,6 +953,8 @@ def show_pid(pid, pattern) :
             bh = readSU("struct buffer_head", wbk.flags)
             page = readSU("struct page", bh.b_page)
             print(bh, page, "idx:", page.index)
+
+        search_for_rw_semaphore(stack)
 
     return req
 
