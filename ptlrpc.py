@@ -5,7 +5,7 @@ from __future__ import print_function
 from pykdump.API import *
 from ktime import *
 from lnet import *
-from ldlm_lock import *
+import ldlm_lock as ldlm
 import osd as osd
 from LinuxDump.BTstack import *
 import LinuxDump.fregsapi as fregsapi
@@ -558,9 +558,9 @@ def show_request_loc(req, req_format, location) :
         elif name == "ldlm_intent":
             print("  offset %d %s %s" % (offset,    field, dbits2str(field.opc, it_flags)))
         elif name == "ldlm_request":
-            print_ldlm_request("   ", field)
+            ldlm.print_ldlm_request("   ", field)
         elif name == "ldlm_reply":
-            print_ldlm_reply("   ", field)
+            ldlm.print_ldlm_reply("   ", field)
         elif name == "out_update_header" and field.ouh_inline_length > 0 :
             our = readSU("struct object_update_request",
                     field.ouh_inline_data)
@@ -590,7 +590,7 @@ def show_ptlrpc_request_buf(req) :
            body.pb_status, body.pb_jobid))
     if body.pb_opc == opcodes.LDLM_ENQUEUE :
         ldlm_req = readSU("struct ldlm_request", get_req_buffer(req, 1))
-        if ldlm_req.lock_desc.l_resource.lr_type == ldlm_types.LDLM_IBITS and ldlm_req.lock_flags & LDLM_flags.LDLM_FL_HAS_INTENT :
+        if ldlm_req.lock_desc.l_resource.lr_type == ldlm.ldlm_types.LDLM_IBITS and ldlm_req.lock_flags & ldlm.LDLM_flags.LDLM_FL_HAS_INTENT :
             intent = readSU("struct ldlm_intent", get_req_buffer(req, 2))
             it = mdt_intent_code(intent.opc)
             if it != -1 :
