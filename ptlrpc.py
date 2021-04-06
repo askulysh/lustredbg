@@ -878,6 +878,8 @@ def search_for_reg(r, pid, func) :
 def search_for_rw_semaphore(stack) :
     addr = search_stack_for_reg("RDI", stack, "call_rwsem_down_write_failed")
     if addr == 0:
+        addr = search_stack_for_reg("RDI", stack, "down_read")
+    if addr == 0:
         return
     print()
     sem = readSU("struct rw_semaphore", addr)
