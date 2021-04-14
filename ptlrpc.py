@@ -951,10 +951,13 @@ def show_pid(pid, pattern) :
         if addr != 0 :
             print()
             wbk = readSU("struct wait_bit_key", addr)
-            print(wbk)
-            bh = readSU("struct buffer_head", wbk.flags)
-            page = readSU("struct page", bh.b_page)
-            print(bh, page, "idx:", page.index)
+            print("addr: %x" % wbk.flags, "bit:", wbk.bit_nr, "timeout:", wbk.timeout)
+            try :
+                bh = readSU("struct buffer_head", wbk.flags)
+                page = readSU("struct page", bh.b_page)
+                print(bh, page, "idx:", page.index)
+            except:
+                pass
 
         search_for_rw_semaphore(stack)
 
