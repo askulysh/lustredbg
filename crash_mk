@@ -148,6 +148,15 @@ download_lustre() {
 	lustre_modules=$lustre_mod_prefix-$build_id".rpm"
 	echo "LMRPM $lustre_modules"
 
+	if [ -f yaml_* ]; then
+		if [ $client_build -eq 1 ]; then
+			rpm_url=$(cli_pkgs yaml_*)
+		else
+			rpm_url=$(srv_pkgs yaml_*)
+		fi
+		[ -z $rpm_url ] || wget -nc $rpm_url/$lustre_modules -O $rpmdir/$lustre_modules
+	fi
+
 	url="$APPD/$NEO_ver/job/$lustre_ver/$build/artifact/rpmbuild/RPMS/$lustre_modules"
 	echo $url
 	download_and_extract $url $rpmdir/$lustre_modules
@@ -167,6 +176,18 @@ download_lustre() {
 			echo "mod -S ./lib/modules/$kernel_str/extra/kernel/net/lustre" >> load_modules
 		fi
 	fi
+}
+
+yaml_get() {
+        xmllint --xpath "$1" $2 | cut -d'^' -f2
+}
+
+cli_pkgs() {
+	yaml_get "string(//row[contains(@id,'client_packages')])" $1
+}
+
+srv_pkgs() {
+	yaml_get "string(//row[contains(@id,'server_packages')])" $1
 }
 
 set_release() {
@@ -515,6 +536,7 @@ if [[ -n $2 ]]; then
 	mv ./usr/lib/debug/lib .
 	rm -rf ./usr
 	parse
+	exit
 fi
 
 if [ $base_ver = "2.1.0" ]; then
