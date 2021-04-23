@@ -121,11 +121,14 @@ def cli_get_request(stack, prefix) :
             print("no matches!")
             return None
         print(res)
+        off = getStructInfo('struct ptlrpc_request')['rq_cli'].offset
+        off += getStructInfo('struct ptlrpc_cli_req')['cr_async_args'].offset
         for s in res.splitlines():
             m = obd.__re_search.match(s)
             if (m) :
                 addr = int(m.group(1), 16)
-                req = readSU("struct ptlrpc_request", addr - 0x180)
+                req = readSU("struct ptlrpc_request", addr - off)
+                print(req)
                 ptlrpc.show_ptlrpc_request(req)
                 return req
 
