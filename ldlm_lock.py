@@ -289,12 +289,12 @@ def show_resource_hdr(res) :
 def show_resource(res) :
     show_resource_hdr(res)
     granted = readSUListFromHead(res.lr_granted,
-                "l_res_link", "struct ldlm_lock")
+                "l_res_link", "struct ldlm_lock", maxel=res.lr_refcount.counter)
     for lock in granted :
         if (not args.active) or lock.l_readers != 0 or lock.l_writers != 0:
                 print_ldlm_lock(lock, "    ")
     waiting = readSUListFromHead(res.lr_waiting,
-                "l_res_link", "struct ldlm_lock")
+                "l_res_link", "struct ldlm_lock", maxel=res.lr_refcount.counter)
     if len(waiting) > 0 :
         print("waiting locks:")
         for lock in waiting :
