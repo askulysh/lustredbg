@@ -273,7 +273,7 @@ def get_hash_elements(hs) :
                 if hlist != 0 :
                     yield hlist
 
-def show_resource(res) :
+def show_resource_hdr(res) :
     try:
         recent = "recent lock " + ldlm_mode2str(res.lr_most_restr)
     except:
@@ -285,6 +285,9 @@ def show_resource(res) :
     print("res %x %s %s refc %d %s %s" %
             (res, ldlm_types.__getitem__(res.lr_type), res2str(res),
             res.lr_refcount.counter, recent, inode))
+
+def show_resource(res) :
+    show_resource_hdr(res)
     granted = readSUListFromHead(res.lr_granted,
                 "l_res_link", "struct ldlm_lock")
     for lock in granted :
@@ -521,7 +524,15 @@ if ( __name__ == '__main__'):
         list_namespaces()
     elif args.ns != 0 :
         ns = readSU("struct ldlm_namespace", int(args.ns, 16))
-        show_ns_locks(ns)
+        if args.show_res :
+            print("ns %x %s total granted %d" % (ns, ns.ns_obd.obd_name,
+                ns.ns_pool.pl_granted.counter))
+            res_sorted = sorted(get_ns_resources(ns),
+                    key = lambda res : res.lr_refcount.counter,  reverse=True)
+            for res in res_sorted :
+                show_resource_hdr(res)
+        else:
+            show_ns_locks(ns)
     elif args.compl_waiting != 0 :
         show_completition_waiting_locks()
     elif args.blocking != 0 :
