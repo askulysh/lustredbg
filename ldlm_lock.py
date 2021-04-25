@@ -293,12 +293,33 @@ def show_resource(res) :
     for lock in granted :
         if (not args.active) or lock.l_readers != 0 or lock.l_writers != 0:
                 print_ldlm_lock(lock, "    ")
+#                for l in granted :
+#                    if l != lock and lock_compatible(lock, l) == False :
+#                        print("not compatible !!! :")
+#                        print_ldlm_lock(l, "         ")
+
     waiting = readSUListFromHead(res.lr_waiting,
                 "l_res_link", "struct ldlm_lock", maxel=res.lr_refcount.counter)
     if len(waiting) > 0 :
         print("waiting locks:")
         for lock in waiting :
             print_ldlm_lock(lock, "    ")
+            scans = 0
+            for l in waiting :
+                if l == lock :
+                    for ll in granted :
+                        if lock_compatible(lock, ll) == False :
+                            print("conflicts with granted :")
+                            print_ldlm_lock(ll, "\t\t\t")
+                    print("scans:", scans)
+                    break
+                elif lock_compatible(lock, l) == False :
+                    print("conflicts with waiting !!! :")
+                    print_ldlm_lock(l, "\t\t\t")
+                    print("scans:", scans)
+                    break
+                else :
+                    scans += 1
 
 def get_ns_resources(ns) :
     offset = getStructInfo('struct ldlm_resource')['lr_hash'].offset
