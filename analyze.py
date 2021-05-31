@@ -43,7 +43,10 @@ def cli_get_inode(stack) :
     addr = ptlrpc.search_stack_for_reg("RDX", stack, "ll_file_io_generic")
     if addr != 0 :
         f = readSU("struct file", addr)
-        return f.f_inode
+        try:
+            return f.f_inode
+        except:
+            pass
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "ll_lookup_it")
     if addr != 0 :
