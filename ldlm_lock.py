@@ -5,6 +5,7 @@ from __future__ import print_function
 from pykdump.API import *
 from LinuxDump.BTstack import *
 import LinuxDump.fregsapi as fregsapi
+from LinuxDump.fs.dcache import *
 from ktime import *
 from lnet import *
 import ptlrpc as ptlrpc
@@ -280,6 +281,8 @@ def show_resource_hdr(res) :
         recent = ""
     if res.lr_ns_bucket.nsb_namespace.ns_client == 0x2 and res.lr_type == ldlm_types.LDLM_IBITS :
         inode = "%s" % res.lr_lvb_inode
+        if res.lr_lvb_inode and S_ISDIR(res.lr_lvb_inode.i_mode) :
+            inode += " DIR"
     else :
         inode = ""
     print("res %x %s %s refc %d %s %s" %
