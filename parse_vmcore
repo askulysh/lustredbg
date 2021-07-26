@@ -18,13 +18,12 @@ grep "racer test 1" $dmesg | tail -n 1  >> $analysis
 grep MARKER $dmesg | tail -n 4 >> $analysis
 if grep "SysRq : Trigger a crash" $dmesg; then
 	vmcore_sysrq $1 &
-else if grep "ptlrpc_import_recovery_state_machine()) ASSERTION" $dmesg; then
+else if grep "ptlrpc_replay_interpret()) LBUG" $dmesg; then
 	if grep "Version mismatch during replay" $dmesg; then
 		grep "Version mismatch during replay" $dmesg >> $analysis
-	else
-		crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
-		      epython ../../bin/analyze.py >> $analysis"
 	fi
+	crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
+		      epython ../../bin/analyze.py >> $analysis"
 else if grep "LBUG upon eviction" $dmesg; then
 	crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
 		      epython ../../bin/analyze.py >> $analysis"
