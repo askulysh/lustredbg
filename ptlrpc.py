@@ -910,9 +910,9 @@ def show_pid(pid, pattern) :
         print(readS64(addr - 0x38))
         show_ptlrpc_request(req)
         thread = req.rq_srv.sr_svc_thread
+        jiffies = readSymbol("jiffies")
         try:
             touched = thread.t_watchdog.lcw_last_touched
-            jiffies = readSymbol("jiffies")
             print("watchdog touched", j_delay(touched, jiffies), "ago")
         except KeyError:
             touched = thread.t_touched
@@ -958,6 +958,15 @@ def show_pid(pid, pattern) :
                 print(bh, page, "idx:", page.index)
             except:
                 pass
+
+        addr = search_stack_for_reg("RSI", stack, "jbd2_journal_get_write_access")
+        if addr != 0 :
+            print()
+            bh = readSU("struct buffer_head", addr)
+            page = readSU("struct page", bh.b_page)
+            start_lock = search_stack_for_reg("R14", stack, "out_of_line_wait_on_bit_lock")
+            print("journal do_get_write_access", bh, page, "idx:", page.index,
+                    "started", j_delay(start_lock, jiffies), "ago")
 
         search_for_rw_semaphore(stack)
 
