@@ -2,6 +2,9 @@
 
 from pykdump.API import *
 
+def ktime2sec(kt):
+    return ("%d sec" % (kt / 1000000000))
+
 def ktime_get_seconds() :
     try:
         return ktime_get() / 1000000000
@@ -32,6 +35,14 @@ else :
                 return ((tk.xtime_sec +
                         tk.wall_to_monotonic.tv_sec)*1000000000 +
                         tk.wall_to_monotonic.tv_nsec);
+
+def ktime_diff(kt) :
+    t = ktime_get()
+    try :
+        t = t - kt
+    except KeyError:
+        t = t - kt.tv64
+    return ktime2sec(t)
 
 def j_delay(ts, jiffies,maxhours = 20):
     v = (jiffies - ts) & INT_MASK

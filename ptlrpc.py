@@ -890,8 +890,7 @@ def show_io_time(lu_env) :
     iobuf = oti.oti_iobuf
     print(iobuf, "dr_numreqs", iobuf.dr_numreqs.counter)
     if iobuf.dr_numreqs.counter != 0 :
-        print("waiting for ",
-                (ktime_get() - iobuf.dr_start_time.tv64)/1000000000, "seconds")
+        print("waiting for ", ktime_diff(iobuf.dr_start_time))
 
 def show_pid(pid, pattern) :
     stack = get_stacklist(pid)
@@ -916,8 +915,7 @@ def show_pid(pid, pattern) :
             print("watchdog touched", j_delay(touched, jiffies), "ago")
         except KeyError:
             touched = thread.t_touched
-            print("watchdog touched",
-                    (ktime_get() - touched.tv64)/1000000000, "s ago")
+            print("watchdog touched", ktime_diff(touched), "ago")
         try :
 #            T_table = TaskTable()
 #            task = Task(thread.t_task, T_table.getByPid(pid))
