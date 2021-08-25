@@ -904,9 +904,13 @@ def show_pid(pid, pattern) :
     req = readSU("struct ptlrpc_request", addr)
     if pattern == None or pattern.match(req_client(req)) :
         print("PID", pid)
-        addr = search_for_reg("RBP", pid, "tgt_request_handle")
-        print(readS64(addr - 0x30))
-        print(readS64(addr - 0x38))
+        if sys_info.kernel == "3.10.0" :
+            addr = search_stack_for_reg("RBP", stack, "tgt_request_handle")
+            print(readS64(addr - 0x30))
+            print(readS64(addr - 0x38))
+        if sys_info.kernel == "4.18.0" :
+            work_start = search_stack_for_reg("R12", stack, "tgt_request_handle")
+            print(work_start, ktime_diff(work_start))
         show_ptlrpc_request(req)
         thread = req.rq_srv.sr_svc_thread
         jiffies = readSymbol("jiffies")
@@ -962,7 +966,18 @@ def show_pid(pid, pattern) :
             print()
             bh = readSU("struct buffer_head", addr)
             page = readSU("struct page", bh.b_page)
-            start_lock = search_stack_for_reg("R14", stack, "out_of_line_wait_on_bit_lock")
+            if sys_info.kernel == "3.10.0" :
+                start_lock = search_stack_for_reg("R14", stack, "out_of_line_wait_on_bit_lock")
+            elif sys_info.kernel == "4.18.0" :
+                addr = search_stack_for_reg("RDI", stack, "bit_wait_io")
+                start_lock = 0
+                if addr != 0 :
+                    print("%x %x" % (addr, addr - 0x30))
+                    try :
+                        start_lock = readU64(addr - 0x30)
+                    except:
+                        pass
+                print(start_lock)
             print("journal do_get_write_access", bh, page, "idx:", page.index,
                     "started", j_delay(start_lock, jiffies), "ago")
 
@@ -970,15 +985,30 @@ def show_pid(pid, pattern) :
 
     return req
 
-def get_work_start_time(pid) :
-    return readS64(search_for_reg("RBP", pid, "tgt_request_handle")-0x38)
+def get_work_arrived_time(pid) :
+    addr = search_for_reg("RDI", pid, "tgt_request_handle")
+    req = readSU("struct ptlrpc_request", addr)
+
+    return req.rq_srv.sr_arrival_time.tv_sec
+
+def get_work_start_time_3_10(pid) :
+    return readU64(search_for_reg("RBP", pid, "tgt_request_handle")-0x38)
+
+def get_work_start_time_4_18(pid) :
+    return search_for_reg("R12", pid, "tgt_request_handle")
 
 def show_processing(pattern) :
+    print("Kernel version", sys_info.kernel)
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
     waiting_pids = funcsMatch(funcpids, "tgt_request_handle")
-    waiting_pids_sorted = sorted(waiting_pids, key = lambda pid :
-           get_work_start_time(pid))
+    if sys_info.kernel == "3.10.0" :
+        la = lambda pid : get_work_start_time_3_10(pid)
+    else :
+        la = lambda pid : get_work_start_time_4_18(pid)
+
+    waiting_pids_sorted = sorted(waiting_pids, key=la)
     for pid in waiting_pids_sorted :
+        print()
         show_pid(pid, pattern)
 
 def show_cli_waiting() :
