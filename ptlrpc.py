@@ -936,13 +936,13 @@ def show_pid(pid, pattern) :
         except KeyError:
             touched = thread.t_touched
             print("watchdog touched", ktime_diff(touched), "ago")
+        print("last arrival", ktime_get_seconds() - thread.t_task.sched_info.last_arrival/1000000000,"sec ago")
+        print("exec start", ktime_get_seconds() - Tasks.sched_clock2ms(thread.t_task.se.exec_start)/1000, "sec ago")
         try :
-#            T_table = TaskTable()
-#            task = Task(thread.t_task, T_table.getByPid(pid))
+            T_table = TaskTable()
+            task = Task(thread.t_task, T_table.getByPid(pid))
             print(task)
-#           print(task.Ran_ago)
-            print("last run", ktime_get() - thread.t_task.sched_info.last_arrival, "ms ago")
-            print("last run", Tasks.sched_clock2ms(thread.t_task.se.exec_start), "ms ago")
+            print(task.Ran_ago)
         except:
             pass
 
