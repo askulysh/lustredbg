@@ -926,7 +926,7 @@ def show_pid(pid, pattern) :
             print(readS64(addr - 0x38))
         if sys_info.kernel == "4.18.0" :
             work_start = search_stack_for_reg("R12", stack, "tgt_request_handle")
-            print(work_start, ktime_diff(work_start))
+            print(work_start, get_seconds() - work_start / 1000000000)
         show_ptlrpc_request(req)
         thread = req.rq_srv.sr_svc_thread
         jiffies = readSymbol("jiffies")
