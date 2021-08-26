@@ -9,6 +9,7 @@ import ldlm_lock as ldlm
 import osd as osd
 from LinuxDump.BTstack import *
 import LinuxDump.fregsapi as fregsapi
+import LinuxDump.KernLocks as kernlocks
 from LinuxDump import Tasks
 import re
 import lustrelib as ll
@@ -885,6 +886,21 @@ def search_for_rw_semaphore(stack) :
     sem = readSU("struct rw_semaphore", addr)
     print(sem, "counter: %lx owner: %x" % (sem.count.counter, sem.owner))
 
+def search_for_mutex(stack) :
+    addr = search_stack_for_reg("RDI", stack, "__mutex_lock_slowpath")
+    if addr == 0:
+        addr = search_stack_for_reg("RDI", stack, "__mutex_lock")
+    if addr == 0:
+        return
+    print()
+    mut = readSU("struct mutex", addr)
+    if sys_info.kernel == "4.18.0" :
+        print(mut, "counter: owner: %x %x" % (mut.owner.counter, readU64(addr) & (~0xf)))
+    try:
+        kernlocks.decode_mutex(mut)
+    except:
+        pass
+
 def show_io_time(lu_env) :
     oti = osd.osd_oti_get(lu_env)
     iobuf = oti.oti_iobuf
@@ -982,6 +998,7 @@ def show_pid(pid, pattern) :
                     "started", j_delay(start_lock, jiffies), "ago")
 
         search_for_rw_semaphore(stack)
+        search_for_mutex(stack)
 
     return req
 
