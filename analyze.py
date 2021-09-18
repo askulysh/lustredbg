@@ -20,6 +20,14 @@ try:
 except:
     cli_modules = False
 
+def cli_get_file(stack) :
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "do_dentry_open")
+    if addr != 0 :
+        file = readSU("struct file", addr)
+        return file
+
+    return None
+
 def cli_get_dentry(stack) :
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "notify_change")
     if addr != 0 :
@@ -150,7 +158,16 @@ def show_client_pid(pid, prefix) :
 
     print()
     inode  = None
-    dentry = cli_get_dentry(stack)
+    dentry = None
+    file = cli_get_file(stack)
+    if file :
+        it = readSU("struct lookup_intent", file.private_data)
+        print(prefix, it)
+        dentry = file.f_path.dentry
+        inode = file.f_inode
+
+    if dentry == None:
+        dentry = cli_get_dentry(stack)
     if dentry :
         print(prefix, dentry2path(dentry))
         cl_io.print_dentry(dentry)
