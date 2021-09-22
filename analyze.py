@@ -20,6 +20,29 @@ try:
 except:
     cli_modules = False
 
+def cli_get_fsync_io(stack) :
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "osc_io_fsync_start")
+    if addr != 0 :
+        io = readSU("struct cl_io_slice", addr)
+        return io
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "osc_io_fsync_end")
+    if addr != 0 :
+        io = readSU("struct cl_io_slice", addr)
+        return io
+    return None
+
+def cli_show_io(stack) :
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "vvp_io_write_start")
+    if addr != 0 :
+        io = readSU("struct cl_io_slice", addr)
+        wr = io.cis_io.u.ci_wr.wr
+        print("write: [", wr.crw_pos, "-", wr.crw_pos + wr.crw_count - 1, "]")
+
+    io = cli_get_fsync_io(stack)
+    if io :
+        fi = io.cis_io.u.ci_fsync
+        print("fsync: [", fi.fi_start, "-", fi.fi_end, "]")
+
 def cli_get_file(stack) :
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "do_dentry_open")
     if addr != 0 :
@@ -215,6 +238,8 @@ def show_client_pid(pid, prefix) :
         page = readSU("struct page", addr)
         cl_page = readSU("struct cl_page", page.private)
         cl_io.print_cl_page(cl_page, "")
+
+    cli_show_io(stack)
 
     req = cli_get_request(stack, prefix)
 
