@@ -414,9 +414,22 @@ def get_msg_buffer(msg, n) :
 
     return a
 
+def get_req_msg(req) :
+    try :
+        msg = req.rq_reqmsg
+    except:
+        msg = req.rq_pill.rc_reqmsg
+    return msg
+
 def get_req_buffer(req, n) :
-    msg = req.rq_reqmsg
-    return get_msg_buffer(msg, n)
+    return get_msg_buffer(get_req_msg(req), n)
+
+def get_rep_msg(req) :
+    try :
+        msg = req.rq_repmsg
+    except:
+        msg = req.rq_pill.rc_repmsg
+    return msg
 
 def fid2str(fid) :
     return "[0x%x:0x%x:0x%x]" % (fid.f_seq, fid.f_oid, fid.f_ver)
@@ -489,17 +502,14 @@ def show_request_loc(req, req_format, location) :
                 req_format.rf_fields[location].d[i])
         offset = req_msg_field.rmf_offset[req_format.rf_idx][location]
         if location == 0 :
-            msg = req.rq_reqmsg
+            msg = get_req_msg(req)
         else :
-            msg = req.rq_repmsg
+            msg = get_rep_msg(req)
             if msg == 0 :
                 print("no reply buffer");
                 return
 
-        if location == 0:
-            buf = get_msg_buffer(msg, i)
-        else:
-            buf = get_msg_buffer(msg, i)
+        buf = get_msg_buffer(msg, i)
 
         name = req_msg_field.rmf_name
         if name == "ptlrpc_body" :
