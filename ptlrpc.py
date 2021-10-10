@@ -1024,16 +1024,19 @@ def get_work_start_time_3_10(pid) :
 def get_work_start_time_4_18(pid) :
     return search_for_reg("R12", pid, "tgt_request_handle")
 
-def show_processing(pattern) :
-    print("Kernel version", sys_info.kernel)
-    (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
-    waiting_pids = funcsMatch(funcpids, "tgt_request_handle")
+def sort_pids_by_start_time(pids) :
     if sys_info.kernel == "3.10.0" :
         la = lambda pid : get_work_start_time_3_10(pid)
     else :
         la = lambda pid : get_work_start_time_4_18(pid)
 
-    waiting_pids_sorted = sorted(waiting_pids, key=la)
+    return sorted(pids, key=la)
+
+def show_processing(pattern) :
+    print("Kernel version", sys_info.kernel)
+    (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
+    waiting_pids = funcsMatch(funcpids, "tgt_request_handle")
+    waiting_pids_sorted = sort_pids_by_start_time(waiting_pids)
     for pid in waiting_pids_sorted :
         print()
         show_pid(pid, pattern)
