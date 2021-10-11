@@ -307,22 +307,23 @@ def show_resource(res) :
         print("waiting locks:")
         for lock in waiting :
             print_ldlm_lock(lock, "    ")
-            scans = 0
+            compatible = True
+            for ll in granted :
+                if not lock_compatible(lock, ll) :
+                    compatible = False
+                    print("\t\tconflicts with granted :")
+                    print_ldlm_lock(ll, "\t\t\t")
+                    break
+            if not compatible :
+                continue
             for l in waiting :
-                if l == lock :
-                    for ll in granted :
-                        if lock_compatible(lock, ll) == False :
-                            print("conflicts with granted :")
-                            print_ldlm_lock(ll, "\t\t\t")
-                    print("scans:", scans)
-                    break
-                elif lock_compatible(lock, l) == False :
-                    print("conflicts with waiting !!! :")
+                if l != lock and not lock_compatible(lock, l) :
+                    compatible = False
+                    print("\t\tconflicts with waiting !!! :")
                     print_ldlm_lock(l, "\t\t\t")
-                    print("scans:", scans)
                     break
-                else :
-                    scans += 1
+            if compatible:
+                print("\t\t ready to grant !!!")
 
 def get_ns_resources(ns) :
     offset = getStructInfo('struct ldlm_resource')['lr_hash'].offset
@@ -367,6 +368,19 @@ def lock_compatible(lock1, lock2) :
         elif lock1.l_resource.lr_type == ldlm_types.LDLM_EXTENT :
             pol1 = lock1.l_policy_data.l_extent
             pol2 = lock2.l_policy_data.l_extent
+            if pol1.end < pol2.start or pol1.start > pol2.end :
+                return True
+            else :
+                return False
+        elif lock1.l_resource.lr_type == ldlm_types.LDLM_FLOCK :
+            pol1 = lock1.l_policy_data.l_flock
+            pol2 = lock2.l_policy_data.l_flock
+            if pol1.owner == pol2.owner:
+                return True
+            if pol2.start < pol1.start :
+                t = pol1
+                pol1 = pol2
+                pol2 = t
             if pol1.end < pol2.start or pol1.start > pol2.end :
                 return True
             else :
