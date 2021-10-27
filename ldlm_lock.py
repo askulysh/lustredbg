@@ -205,7 +205,7 @@ def lock_refc(lock) :
     try :
         refc = lock.l_refc.counter
     except :
-        refc = lock.l_handle.h_ref.counter
+        refc = lock.l_handle.h_ref.refs.counter
     return refc
 
 def print_ldlm_lock(ldlm_lock, prefix) :
