@@ -282,14 +282,22 @@ def show_client_pid(pid, prefix) :
 
 def find_bl_handler(lock) :
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
-    pids = funcsMatch(funcpids, "ldlm_handle_bl_callback")
+    pids = funcsMatch(funcpids, "ldlm_bl_thread_main")
     for pid in pids :
         stack = ptlrpc.get_stacklist(pid)
         addr = ptlrpc.search_stack_for_reg("RDX", stack, "ldlm_handle_bl_callback")
         if addr == 0 :
             addr = ptlrpc.search_stack_for_reg("RDI", stack, "osc_ldlm_blocking_ast")
         if addr != Addr(lock) :
+            addr = ptlrpc.search_stack_for_reg("RDI", stack,
+                                               "ldlm_cli_cancel_list_local")
+            head = readSU("struct list_head", addr)
+            cancels = readSUListFromHead(head, "l_bl_ast", "struct ldlm_lock")
+            for l in cancels :
+                if l == lock:
+                    print("\n    Pid", pid, "has the lock in canceling list")
             continue
+
         print("\n    Pid", pid, "is serving BL callback")
         show_client_pid(pid, "    ")
         break
