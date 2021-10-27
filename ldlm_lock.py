@@ -208,6 +208,12 @@ def lock_refc(lock) :
         refc = lock.l_handle.h_ref.refs.counter
     return refc
 
+def lock_cb_time(lock) :
+    try:
+        return lock.l_callback_timeout
+    except:
+        return lock.l_callback_timestamp
+
 def print_ldlm_lock(ldlm_lock, prefix) :
     print(prefix, ldlm_lock)
     pid = ldlm_lock.l_pid
@@ -222,9 +228,10 @@ def print_ldlm_lock(ldlm_lock, prefix) :
     print(prefix, "flags:", dbits2str(ldlm_lock.l_flags, LDLM_flags))
     if ldlm_lock.l_req_mode == ldlm_lock.l_granted_mode :
         timeout = ""
-        if ldlm_lock.l_callback_timeout != 0 :
-            timeout = "will timeout in " + str(ldlm_lock.l_callback_timeout -
-                    ktime_get_seconds())
+        t = lock_cb_time(ldlm_lock)
+        if t != 0 :
+            timeout = "will timeout in " + str(t - ktime_get_seconds())
+
         print(prefix, "granted", ldlm_mode2str(ldlm_lock.l_granted_mode),
                 timeout)
 
