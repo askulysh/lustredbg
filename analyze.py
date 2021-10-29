@@ -259,26 +259,33 @@ def show_client_pid(pid, prefix) :
         ext = readSU("struct osc_extent", addr)
         print(ext)
 
+    cli_obd = None
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "obd_get_mod_rpc_slot")
     if addr != 0 :
         print()
         cli_obd = readSU("struct client_obd", addr)
-    elif req != None :
-        cli_obd = req.rq_import.imp_obd.u.cli
+        print("Waiting for mod slot !!!")
     else :
-        cli_obd = None
+        addr = ptlrpc.search_stack_for_reg("RAX", stack, "obd_get_request_slot")
+        if addr != 0 :
+            print()
+            obd = readSU("struct obd_device", addr)
+            cli_obd = obd.u.cli
+            print("Waiting for obd slot !!!")
+
+    if cli_obd == None and req != None :
+        cli_obd = req.rq_import.imp_obd.u.cli
 
     if cli_obd :
         print("\n%s %s rpcs in flight %d/%d" % (cli_obd, cli_obd.cl_import,
-            cli_obd.cl_max_rpcs_in_flight - cli_obd.cl_rpcs_in_flight,
-            cli_obd.cl_max_rpcs_in_flight))
+            cli_obd.cl_rpcs_in_flight, cli_obd.cl_max_rpcs_in_flight))
         print("\n%s %s mod slots %d/%d" % (cli_obd, cli_obd.cl_import,
             cli_obd.cl_mod_rpcs_in_flight, cli_obd.cl_max_mod_rpcs_in_flight))
-        if cli_obd.cl_mod_rpcs_in_flight == cli_obd.cl_max_mod_rpcs_in_flight :
+        if cli_obd.cl_mod_rpcs_in_flight == cli_obd.cl_max_mod_rpcs_in_flight or cli_obd.cl_rpcs_in_flight == cli_obd.cl_max_rpcs_in_flight :
             ptlrpc.show_import("", cli_obd.cl_import)
-            ptlrpc.imp_show_sending_requests(cli_obd.cl_import)
+            ptlrpc.imp_show_unreplied_requests(cli_obd.cl_import)
 
-    return req != None
+    return cli_obd != None
 
 def find_bl_handler(lock) :
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()

@@ -776,6 +776,21 @@ def imp_show_sending_requests(imp) :
     l = readSUListFromHead(imp.imp_sending_list, "rq_list", "struct ptlrpc_request")
     show_requests_from_list(l)
 
+def imp_show_unreplied_requests(imp) :
+    print("\n=== unreplied ===")
+    head = imp.imp_unreplied_list
+    rq_info = getStructInfo('struct ptlrpc_request')
+    cli_rq_info = getStructInfo('struct ptlrpc_cli_req')
+    offset = rq_info['rq_cli'].offset + cli_rq_info['cr_unreplied_list'].offset
+
+    entry = imp.imp_unreplied_list
+    while entry.prev != imp.imp_unreplied_list :
+        entry = entry.prev
+        req = readSU("struct ptlrpc_request", int(entry) - offset)
+        # RPC state
+        if req.rq_phase == -339681791 :
+            show_ptlrpc_request(req)
+
 def imp_show_requests(imp) :
     imp_show_sending_requests(imp)
 
@@ -783,13 +798,7 @@ def imp_show_requests(imp) :
     l = readSUListFromHead(imp.imp_delayed_list, "rq_list", "struct ptlrpc_request")
     show_requests_from_list(l)
 
-    print("\n=== unreplied ===")
-    head = imp.imp_unreplied_list
-    rq_info = getStructInfo('struct ptlrpc_request')
-    cli_rq_info = getStructInfo('struct ptlrpc_cli_req')
-    offset = rq_info['rq_cli'].offset + cli_rq_info['cr_unreplied_list'].offset
-
-    show_requests_from_list_reverse(imp.imp_unreplied_list, offset)
+    imp_show_unreplied_requests(imp)
 
 def imp_show_history(imp) :
     print("replay list:")
