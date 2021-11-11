@@ -437,8 +437,7 @@ def fid2str(fid) :
 def mtd_reint_show(reint) :
     if reint.rr_opcode == mds_reint.REINT_UNLINK :
         rec = readSU("struct mdt_rec_unlink", int(reint))
-        print("%s unlink %s/%s" % (rec, fid2str(rec.ul_fid1),
-            fid2str(rec.ul_fid2)))
+        print("%s unlink %s/name" % (rec, fid2str(rec.ul_fid1)))
     elif reint.rr_opcode == mds_reint.REINT_RENAME :
         rec = readSU("struct mdt_rec_rename", int(reint))
         print("%s rename %s/name -> %s/symtgt" % (rec, fid2str(rec.rn_fid1),
@@ -927,6 +926,10 @@ def show_io_time(lu_env) :
     if iobuf.dr_numreqs.counter != 0 :
         print("waiting for ", ktime_diff(iobuf.dr_start_time))
 
+def task_time_diff(task, t) :
+    d = task.se.cfs_rq.rq.clock-task.sched_info.last_arrival
+    return d/1000000000
+
 def show_pid(pid, pattern) :
     stack = get_stacklist(pid)
     if not stack:
@@ -955,8 +958,10 @@ def show_pid(pid, pattern) :
         except KeyError:
             touched = thread.t_touched
             print("watchdog touched", ktime_diff(touched), "ago")
-        print("last arrival", ktime_get_seconds() - thread.t_task.sched_info.last_arrival/1000000000,"sec ago")
-        print("exec start", ktime_get_seconds() - Tasks.sched_clock2ms(thread.t_task.se.exec_start)/1000, "sec ago")
+        print("last arrival", task_time_diff(thread.t_task,
+                    thread.t_task.sched_info.last_arrival), "sec ago")
+        print("exec start", task_time_diff(thread.t_task,
+                    thread.t_task.se.exec_start), "sec ago")
         try :
             T_table = TaskTable()
             task = Task(thread.t_task, T_table.getByPid(pid))
