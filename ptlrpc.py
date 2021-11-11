@@ -930,6 +930,9 @@ def task_time_diff(task, t) :
     d = task.se.cfs_rq.rq.clock-task.sched_info.last_arrival
     return d/1000000000
 
+def show_range_lock(rl) :
+    print(rl, '[',rl.rl_node.in_extent.start, '-', rl.rl_node.in_extent.end,']')
+
 def show_pid(pid, pattern) :
     stack = get_stacklist(pid)
     if not stack:
@@ -980,7 +983,20 @@ def show_pid(pid, pattern) :
         if addr != 0 :
             print()
             rlock = readSU("struct range_lock", addr)
-            print(rlock)
+            print("waiting on range lock:")
+            show_range_lock(rlock)
+
+        addr = search_stack_for_reg("RDI", stack, "ofd_commitrw")
+        if addr != 0 :
+            print()
+            env = readSU("struct lu_env", addr)
+            ofd_key = readSymbol("ofd_thread_key")
+            ofd_info = readSU("struct ofd_thread_info",
+                                      env.le_ctx.lc_value[ofd_key.lct_index])
+            if ofd_info.fti_range_locked :
+                print("owns range_lock :")
+                show_range_lock(ofd_info.fti_write_range)
+
 
         addr = search_stack_for_reg("RSI", stack, "__wait_on_bit_lock")
         if addr != 0 :
