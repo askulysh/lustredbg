@@ -63,8 +63,29 @@ def lookup_md(cookie) :
         for msg in active_msgs :
             if msg.msg_md.md_lh.lh_cookie == cookie:
                 return msg
+    else :
+        off = getStructInfo('struct lnet_libmd')['md_lh'].offset
+        md = readSU("struct lnet_libmd", lh - off)
+        return md
 
-    return lh
+    return 0
+
+def lookup_msg(cookie) :
+    cpt = lnet_cpt_of_cookie(cookie)
+    msg_container = the_lnet.ln_msg_containers[cpt]
+    active_msgs = readSUListFromHead(msg_container.msc_active,
+                "msg_activelist", "struct lnet_msg")
+    for msg in active_msgs :
+        if msg.msg_md.md_lh.lh_cookie == cookie:
+            return msg
+
+    resending_msgs = readSUListFromHead(msg_container.msc_resending,
+                "msg_list", "struct lnet_msg")
+    for msg in active_msgs :
+        if msg.msg_md.md_lh.lh_cookie == cookie:
+            return msg
+
+    return 0
 
 def print_nid(nid) :
     print(nid2str(nid))
@@ -75,12 +96,18 @@ if ( __name__ == '__main__'):
     parser = argparse.ArgumentParser()
     parser.add_argument("-n","--nid", dest="nid", default = 0)
     parser.add_argument("-m","--md", dest="md", default = 0)
+    parser.add_argument("-r", "--request", dest="req", default = 0)
     parser.add_argument("-b", "--bulk", dest="bulk", default = 0)
     args = parser.parse_args()
     if args.nid != 0 :
         print_nid(int(args.nid, 16))
     elif args.md != 0:
         print(lookup_md(int(args.md, 16)))
+    elif args.req != 0 :
+        req = readSU("struct ptlrpc_request", int(args.req, 16))
+        print("request md:", lookup_md(req.rq_cli.cr_req_md_h.cookie))
+        print("       msg:", lookup_msg(req.rq_cli.cr_req_md_h.cookie))
+        print("reply md:", lookup_md(req.rq_cli.cr_reply_md_h.cookie))
     elif args.bulk != 0 :
         desc = readSU("struct ptlrpc_bulk_desc", int(args.bulk, 16))
         for i in range(0, desc.bd_md_max_brw) :
