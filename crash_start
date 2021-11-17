@@ -14,4 +14,6 @@ fi
 export PYKDUMPPATH=$WDIR/pycrashext:$WDIR/lustredbg:$WDIR/pykdump
 export CRASH_EXTENSIONS=$WDIR/crash_ext
 
+[ -z $TMUX ] || tmux rename-window $(basename $(pwd))
+
 $crash -x -i ./load_modules ./vmlinux $*
