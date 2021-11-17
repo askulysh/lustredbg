@@ -198,19 +198,8 @@ def parse_mti(mti, opc, prefix):
         else :
             print(mti.mti_rr)
     for i in range(6) :
-        cookie = mti.mti_lh[i].mlh_pdo_lh.cookie
-        if cookie :
-            print("%d : pdo %x" % (i, cookie))
-            lock = ldlm.find_lock_by_cookie(cookie)
-            if lock :
-                ldlm.print_ldlm_lock(lock, prefix + "\t")
-
-        cookie = mti.mti_lh[i].mlh_reg_lh.cookie
-        if cookie :
-            print("%d : reg %x" % (i, cookie))
-            lock = ldlm.find_lock_by_cookie(cookie)
-            if lock :
-                ldlm.print_ldlm_lock(lock, prefix + "\t")
+        print(i, ":")
+        ldlm.show_mlh(mti.mti_lh[i], prefix)
 
 if ( __name__ == '__main__'):
     import argparse

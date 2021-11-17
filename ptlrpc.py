@@ -1040,6 +1040,10 @@ def show_pid(pid, pattern) :
         search_for_rw_semaphore(stack)
         search_for_mutex(stack)
 
+        addr = search_stack_for_reg("RDX", stack, "mdt_object_local_lock")
+        if addr != 0 :
+            print()
+            ldlm.show_mlh(readSU("struct mdt_lock_handle", addr), "")
     return req
 
 def get_work_arrived_time(pid) :

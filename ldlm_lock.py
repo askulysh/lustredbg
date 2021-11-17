@@ -269,6 +269,21 @@ def find_lock_by_cookie(cookie) :
         return readSU("struct ldlm_lock", Addr(handle))
     return None
 
+def show_mlh(mlh, prefix) :
+    cookie = mlh.mlh_pdo_lh.cookie
+    if cookie :
+        print("pdo %x" % cookie)
+        lock = find_lock_by_cookie(cookie)
+        if lock :
+            print_ldlm_lock(lock, prefix + "\t")
+
+    cookie = mlh.mlh_reg_lh.cookie
+    if cookie :
+        print("reg %x" % cookie)
+        lock = find_lock_by_cookie(cookie)
+        if lock :
+            print_ldlm_lock(lock, prefix + "\t")
+
 def get_hash_elements(hs) :
     buckets = hs.hs_buckets
     bucket_num = 1 << (hs.hs_cur_bits - hs.hs_bkt_bits)
