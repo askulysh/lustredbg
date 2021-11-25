@@ -1044,6 +1044,15 @@ def show_pid(pid, pattern) :
         if addr != 0 :
             print()
             ldlm.show_mlh(readSU("struct mdt_lock_handle", addr), "")
+
+    addr = search_stack_for_reg("RSI", stack, "osp_precreate_reserve")
+    if addr != 0 :
+        print()
+        osp = readSU("struct osp_device", addr)
+        imp = osp.opd_obd.u.cli.cl_import
+        print("waiting in osp_precreate_reserve", osp)
+        show_import("   ", imp)
+
     return req
 
 def get_work_arrived_time(pid) :
