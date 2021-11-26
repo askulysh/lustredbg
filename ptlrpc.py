@@ -993,9 +993,12 @@ def show_pid(pid, pattern) :
             ofd_key = readSymbol("ofd_thread_key")
             ofd_info = readSU("struct ofd_thread_info",
                                       env.le_ctx.lc_value[ofd_key.lct_index])
-            if ofd_info.fti_range_locked :
-                print("owns range_lock :")
-                show_range_lock(ofd_info.fti_write_range)
+            try :
+                if ofd_info.fti_range_locked :
+                    print("owns range_lock :")
+                    show_range_lock(ofd_info.fti_write_range)
+            except:
+                pass
 
 
         addr = search_stack_for_reg("RSI", stack, "__wait_on_bit_lock")
