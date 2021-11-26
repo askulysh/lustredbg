@@ -167,6 +167,25 @@ def cli_get_request(stack, prefix) :
 
     return None
 
+def page2cl_page(page) :
+    return readSU("struct cl_page", page.private)
+
+def cli_get_page(stack) :
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "__wait_on_bit_lock")
+    if addr != 0 :
+        wb = readSU("struct wait_bit_queue", addr)
+        return readSU("struct page", wb.key.flags)
+
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "wait_on_page_bit")
+    if addr != 0 :
+        return readSU("struct page", addr)
+
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "ll_readpage")
+    if addr != 0 :
+        return readSU("struct page", addr)
+
+    return None
+
 def dentry2path(de) :
     p = fs.get_dentry_name(de)
     while de.d_parent != 0 and de.d_parent != de:
@@ -224,19 +243,11 @@ def show_client_pid(pid, prefix) :
         lsm = readSU("struct lmv_stripe_md", addr)
         cl_io.print_lsm("", lsm)
 
-    addr = ptlrpc.search_stack_for_reg("RSI", stack, "__wait_on_bit_lock")
-    if addr != 0 :
-        print()
-        wb = readSU("struct wait_bit_queue", addr)
-        page = readSU("struct page", wb.key.flags)
-        cl_page = readSU("struct cl_page", page.private)
-        cl_io.print_cl_page(cl_page, "")
+    page = cli_get_page(stack)
 
-    addr = ptlrpc.search_stack_for_reg("RSI", stack, "ll_readpage")
-    if addr != 0 :
+    if page :
         print()
-        page = readSU("struct page", addr)
-        cl_page = readSU("struct cl_page", page.private)
+        cl_page = page2cl_page(page)
         cl_io.print_cl_page(cl_page, "")
 
     cli_show_io(stack)
