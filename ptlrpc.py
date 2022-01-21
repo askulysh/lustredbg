@@ -804,7 +804,7 @@ def imp_show_history(imp) :
     replay_list = readSUListFromHead(imp.imp_replay_list, "rq_replay_list", "struct ptlrpc_request")
     show_requests_from_list(replay_list)
 
-def show_export(prefix, exp) :
+def show_export_hdr(prefix, exp) :
     print(exp.exp_obd, exp.exp_obd.obd_name)
     print("%s %u.%u.%u.%u" % (exp_cl_str(exp),
         (exp.exp_connect_data.ocd_version >> 24) & 255,
@@ -822,6 +822,8 @@ def show_export(prefix, exp) :
     except:
         print("")
 
+def show_export(prefix, exp) :
+    show_export_hdr(prefix, exp)
     reply_list = readSUListFromHead(exp.u.eu_target_data.ted_reply_list,
             "trd_list", "struct tg_reply_data")
     for trd in reply_list :
