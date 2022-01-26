@@ -302,13 +302,20 @@ def show_bl_pid(pid, prefix) :
         return
     addr = ptlrpc.search_stack_for_reg("RDI", stack,
                                        "ldlm_cancel_lock_for_export")
-    exp = readSU("struct obd_export", addr)
-    addr = ptlrpc.search_stack_for_reg("RSI", stack,
+    if addr !=0 :
+        exp = readSU("struct obd_export", addr)
+        addr = ptlrpc.search_stack_for_reg("RSI", stack,
                                        "ldlm_cancel_lock_for_export")
-    lock = readSU("struct ldlm_lock", addr)
+        lock = readSU("struct ldlm_lock", addr)
 
-    ptlrpc.show_export_hdr(prefix, exp)
-    ldlm.print_ldlm_lock(lock, prefix)
+        ptlrpc.show_export_hdr(prefix, exp)
+        ldlm.print_ldlm_lock(lock, prefix)
+
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "osc_extent_wait")
+    if addr != 0 :
+        print()
+        ext = readSU("struct osc_extent", addr)
+        print(ext)
 
 def find_bl_handler(lock) :
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
