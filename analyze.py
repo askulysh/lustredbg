@@ -129,14 +129,12 @@ def cli_get_request(stack, prefix) :
 
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "ldlm_cli_enqueue")
     if addr != 0 :
-        print()
         addr = readU64(addr)
-        if addr != 0 :
-            req = readSU("struct ptlrpc_request", addr)
-            ptlrpc.show_ptlrpc_request(req)
-            return req
 
-    addr = ptlrpc.search_stack_for_reg("RSI", stack, "ldlm_cli_enqueue_fini")
+    if addr == 0:
+        addr = ptlrpc.search_stack_for_reg("RSI", stack, "ldlm_cli_enqueue_fini")
+    if addr == 0:
+        addr = ptlrpc.search_stack_for_reg("RDI", stack, "ptlrpc_get_mod_rpc_slot")
     if addr != 0 :
         print()
         req = readSU("struct ptlrpc_request", addr)
