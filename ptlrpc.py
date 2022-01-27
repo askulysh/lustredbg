@@ -715,8 +715,10 @@ def show_import(prefix, imp) :
         cur_nid = nid2str(imp.imp_connection.c_peer.nid)
     else :
         cur_nid = "null"
-    print("%simport %x %s inflight %d %s cur conn: %s next ping in %s" %
+    cli_obd = imp.imp_obd.u.cli
+    print("%simport %x %s inflight %d mod slots %d/%d %s cur conn: %s next ping in %s" %
           (prefix, imp, imp.imp_obd.obd_name, imp.imp_inflight.counter,
+           cli_obd.cl_mod_rpcs_in_flight, cli_obd.cl_max_mod_rpcs_in_flight,
            lustre_imp_state.__getitem__(imp.imp_state), cur_nid,
            imp.imp_next_ping - ktime_get_seconds()))
     if imp.imp_state != lustre_imp_state.LUSTRE_IMP_FULL :
