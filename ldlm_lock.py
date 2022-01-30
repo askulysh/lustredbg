@@ -310,6 +310,8 @@ def show_resource_hdr(res) :
     print("res %x %s %s refc %d %s %s" %
             (res, ldlm_types.__getitem__(res.lr_type), res2str(res),
             res.lr_refcount.counter, recent, inode))
+    if res.lr_waiting.next != res.lr_waiting.prev and res.lr_granted.next == res.lr_granted.prev :
+        print("Error: Empty granted list while locks are waiting !!!")
 
 def show_resource(res) :
     show_resource_hdr(res)
