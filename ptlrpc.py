@@ -901,12 +901,18 @@ def search_for_reg(r, pid, func) :
 def search_for_rw_semaphore(stack) :
     addr = search_stack_for_reg("RDI", stack, "call_rwsem_down_write_failed")
     if addr == 0:
+        addr = search_stack_for_reg("RDI", stack, "rwsem_down_write_slowpath")
+    if addr == 0:
         addr = search_stack_for_reg("RDI", stack, "down_read")
     if addr == 0:
         return
     print()
     sem = readSU("struct rw_semaphore", addr)
-    print(sem, "counter: %lx owner: %x" % (sem.count.counter, sem.owner))
+    if sys_info.kernel == "4.18.0" :
+        owner = sem.rh_kabi_hidden_39.owner & (~0xf)
+    else:
+        owner = sem.owner
+    print(sem, "counter: %lx owner: %x" % (sem.count.counter, owner))
 
 def search_for_mutex(stack) :
     addr = search_stack_for_reg("RDI", stack, "__mutex_lock_slowpath")

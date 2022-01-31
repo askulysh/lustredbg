@@ -253,6 +253,7 @@ def show_client_pid(pid, prefix) :
     req = cli_get_request(stack, prefix)
 
     ptlrpc.search_for_mutex(stack)
+    ptlrpc.search_for_rw_semaphore(stack)
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "__pv_queued_spin_lock_slowpath")
     if addr != 0 :
