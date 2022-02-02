@@ -6,6 +6,7 @@ from pykdump.API import *
 from LinuxDump.BTstack import *
 import LinuxDump.fregsapi
 from ktime import *
+import ptlrpc as ptlrpc
 
 def osd_oti_get(env) :
     osd_key = readSymbol("osd_key")
@@ -26,6 +27,25 @@ def search_for_reg(r, pid, func) :
                 if f.func == func :
                     return f.reg[r][0]
     return 0
+
+def show_bio(bio) :
+    try :
+        disk = bio.bi_disk
+    except :
+        disk = bio.bi_bdev.bd_disk
+    queue = disk.queue
+    mddev = readSU("struct mddev", queue.queuedata)
+    print(bio, disk, mddev)
+    print(disk.disk_name)
+
+def search_for_bio(stack) :
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "generic_make_request")
+    if addr == 0:
+        return
+    print()
+    bio = readSU("struct bio", addr)
+    print(bio)
+    show_bio(bio)
 
 def show_io() :
     res = dict()
@@ -62,6 +82,7 @@ if ( __name__ == '__main__'):
                         action='store_true')
     parser.add_argument("-e","--env", dest="env", default = 0)
     parser.add_argument("-k","--key", dest="key", default = "")
+    parser.add_argument("-b","--bio", dest="bio", default = "")
     args = parser.parse_args()
     if args.iowait != 0 :
         show_io()
@@ -74,4 +95,7 @@ if ( __name__ == '__main__'):
         else :
             val = env.le_ctx.lc_value[key.lct_index]
         print("%x" % val)
+    elif args.bio != 0:
+        bio = readSU("struct bio", int(args.bio, 16))
+        show_bio(bio)
 
