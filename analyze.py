@@ -252,8 +252,9 @@ def show_client_pid(pid, prefix) :
 
     req = cli_get_request(stack, prefix)
 
-    ptlrpc.search_for_mutex(stack)
-    ptlrpc.search_for_rw_semaphore(stack)
+    bl_task = ptlrpc.search_for_mutex(stack)
+    if not bl_task :
+        bl_task = ptlrpc.search_for_rw_semaphore(stack)
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "__pv_queued_spin_lock_slowpath")
     if addr != 0 :
@@ -295,6 +296,9 @@ def show_client_pid(pid, prefix) :
             ptlrpc.show_import("", cli_obd.cl_import)
             ptlrpc.imp_show_unreplied_requests(cli_obd.cl_import)
 
+    if bl_task  :
+        print("\nPid ", bl_task.pid)
+        return show_client_pid(bl_task.pid, prefix)
     return cli_obd != None
 
 def show_bl_pid(pid, prefix) :

@@ -908,7 +908,7 @@ def search_for_rw_semaphore(stack) :
     if addr == 0:
         addr = search_stack_for_reg("RDI", stack, "down_read")
     if addr == 0:
-        return
+        return None
     print()
     sem = readSU("struct rw_semaphore", addr)
     if sys_info.kernel == "4.18.0" :
@@ -917,20 +917,26 @@ def search_for_rw_semaphore(stack) :
         owner = sem.owner
     print(sem, "counter: %lx owner: %x" % (sem.count.counter, owner))
 
+    return readSU("struct task_struct", owner)
+
 def search_for_mutex(stack) :
     addr = search_stack_for_reg("RDI", stack, "__mutex_lock_slowpath")
     if addr == 0:
         addr = search_stack_for_reg("RDI", stack, "__mutex_lock")
     if addr == 0:
-        return
+        return None
     print()
     mut = readSU("struct mutex", addr)
     if sys_info.kernel == "4.18.0" :
-        print(mut, "counter: owner: %x %x" % (mut.owner.counter, readU64(addr) & (~0xf)))
+        owner = readU64(addr) & (~0xf)
+        print(mut, "counter: owner: %x %x" % (mut.owner.counter, owner))
     try:
+        owner = mut.owner
         kernlocks.decode_mutex(mut)
     except:
         pass
+
+    return readSU("struct task_struct", owner)
 
 def show_io_time(lu_env) :
     oti = osd.osd_oti_get(lu_env)
