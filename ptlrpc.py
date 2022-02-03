@@ -606,9 +606,12 @@ def show_ptlrpc_request_buf(req) :
             if it != -1 :
                 show_request_fmt(req, intent_fmts[it])
             else :
-                print(body)
-                print(ldlm_req)
-                print(intent)
+                try :
+                    show_request_fmt(req, "RQF_LDLM_INTENT")
+                except:
+                    print(body)
+                    print(ldlm_req)
+                    print(intent)
         else:
             show_request_fmt(req, "RQF_LDLM_ENQUEUE")
     elif body.pb_opc == opcodes.LDLM_CONVERT :
