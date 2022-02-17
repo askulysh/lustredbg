@@ -44,7 +44,9 @@ def cli_show_io(stack) :
         print("fsync: [", fi.fi_start, "-", fi.fi_end, "]")
 
 def cli_get_file(stack) :
-    addr = ptlrpc.search_stack_for_reg("RDI", stack, "do_dentry_open")
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "ll_file_open")
+    if addr == 0 :
+        addr = ptlrpc.search_stack_for_reg("RDI", stack, "do_dentry_open")
     if addr != 0 :
         file = readSU("struct file", addr)
         return file
