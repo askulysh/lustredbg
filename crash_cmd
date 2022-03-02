@@ -3,11 +3,13 @@
 core=$1
 crash=crash
 
+debug=$(ls ./vmlinux.debug 2>/dev/null)
+
 if [ -f ./crash ]; then
 	crash=./crash
 else
 	if [ -d ./lustre_kos ]; then
-		crash=crash_86_64.amk.sles15
+		crash=crash_sles
 	fi
 fi
 
@@ -19,4 +21,4 @@ else
 	done < "load_modules"
 fi
 
-printf "$mod_cmd $2 \n q" | $crash -s ./vmlinux $core
+printf "$mod_cmd $2 \n q" | $crash -s ./vmlinux $debug $core
