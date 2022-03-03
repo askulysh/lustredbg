@@ -593,6 +593,10 @@ def get_pid(req) :
     return get_req_body(req).pb_status
 
 def show_ptlrpc_request_buf(req) :
+    if req.rq_pill.rc_fmt == sym2addr("worker_format") :
+        print("osc worker request")
+        return
+
     body = readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
     print("opc %s transno %d tag %d conn %d %s pid/status %d job %s" %
           (opcodes.__getitem__(body.pb_opc), body.pb_transno, body.pb_tag,
