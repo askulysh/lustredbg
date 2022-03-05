@@ -963,6 +963,8 @@ def show_pid(pid, pattern) :
 
     addr = search_stack_for_reg("RDI", stack, "tgt_request_handle")
     if addr == 0 :
+        addr = search_stack_for_reg("RDI", stack, "ldlm_request_cancel")
+    if addr == 0 :
         return 0
 
     req = readSU("struct ptlrpc_request", addr)
@@ -970,8 +972,9 @@ def show_pid(pid, pattern) :
         print("PID", pid)
         if sys_info.kernel == "3.10.0" :
             addr = search_stack_for_reg("RBP", stack, "tgt_request_handle")
-            print(readS64(addr - 0x30))
-            print(readS64(addr - 0x38))
+            if addr != 0 :
+                print(readS64(addr - 0x30))
+                print(readS64(addr - 0x38))
         if sys_info.kernel == "4.18.0" :
             work_start = search_stack_for_reg("R12", stack, "tgt_request_handle")
             print(work_start, get_seconds() - work_start / 1000000000)
