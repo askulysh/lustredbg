@@ -136,6 +136,12 @@ download_lustre() {
 		else
 			build_id=$base_ver"-1.el7.centos.x86_64"
 		fi
+	elif [ $NEO_ver = "CSL6" ]; then
+		if [ $client_build -eq 1 ]; then
+			build_id="$base_ver"_"$kernel_ver"
+		else
+			build_id=$base_ver.x$X-"$build"_"$kernel_ver"_$githash".x86_64"
+		fi
 	else
 		m=$(expr match "$build" '\(^[0-9]*$\)')
 		if [ $client_build -eq 1 ] || [ -z $m ]; then
@@ -175,6 +181,11 @@ download_lustre() {
 			echo "mod -S ./lib/modules/$kernel_str/extra/kernel/fs/lustre" > load_modules
 			echo "mod -S ./lib/modules/$kernel_str/extra/kernel/net/lustre" >> load_modules
 		fi
+	fi
+	if [ $NEO_ver = "CSL6" ]; then
+		for f in ./lib/modules/$kernel_str/extra/lustre-client/*/*.debug; do
+			mv -- "$f" "${f%.ko*}.ko";
+		done
 	fi
 }
 
@@ -291,6 +302,11 @@ set_kernel() {
 			lustre_mod_prefix="lustre-client-debuginfo"
 			client_build=1
 			;;
+		el8_*)
+			lustre_mod_prefix="kmod-lustre-client-debuginfo"
+			client_build=1
+			;;
+
 	esac
 }
 
@@ -519,6 +535,16 @@ case ${v[0]} in
 		githash=`expr match "$base_ver" '.*_\(g.......\)'`
 		if [ $client_build -eq 0 ]; then
 			lustre_mod_prefix="lustre_ib-debuginfo"
+		fi
+		;;
+	2.15.*)
+		base_ver=${v[0]}
+		NEO_ver="CSL6"
+		githash=`expr match "$base_ver" '.*_\(g.......\)'`
+		if [ $client_build -eq 1 ]; then
+			lustre_mod_prefix="kmod-lustre-client-debuginfo"
+		else
+			lustre_mod_prefix="kmod-lustre_ib-debuginfo"
 		fi
 		;;
 esac
