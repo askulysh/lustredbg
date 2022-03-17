@@ -179,8 +179,7 @@ def print_ldlm_reply(prefix, rep) :
 
 def lock_client(lock) :
     if lock.l_export != 0 :
-        conn = lock.l_export.exp_imp_reverse.imp_connection
-        remote = ("%s@%s" % (conn.c_remote_uuid.uuid, nid2str(conn.c_peer.nid)))
+        remote = ptlrpc.exp_cl_str(lock.l_export)
     elif lock.l_conn_export != 0 :
         remote = lock.l_conn_export.exp_obd.obd_name
     else :
