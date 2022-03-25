@@ -645,6 +645,8 @@ def show_ptlrpc_request_buf(req) :
         show_request_fmt(req, "RQF_OST_BRW_WRITE")
     elif body.pb_opc == opcodes.OST_CREATE :
         show_request_fmt(req, "RQF_OST_CREATE")
+    elif body.pb_opc == opcodes.OST_DESTROY :
+        show_request_fmt(req, "RQF_OST_DESTROY")
     elif body.pb_opc == opcodes.OST_PUNCH :
         show_request_fmt(req, "RQF_OST_PUNCH")
     elif body.pb_opc == opcodes.FLD_QUERY :
