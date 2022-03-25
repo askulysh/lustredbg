@@ -963,15 +963,12 @@ def show_range_lock(rl) :
 def show_pid(pid, pattern) :
     stack = get_stacklist(pid)
     if not stack:
-        return 0
+        return None
 
-    addr = search_stack_for_reg("RDI", stack, "tgt_request_handle")
-    if addr == 0 :
-        addr = search_stack_for_reg("RDI", stack, "ldlm_request_cancel")
-    if addr == 0 :
-        return 0
+    req = get_request(stack)
+    if req == 0 :
+        return None
 
-    req = readSU("struct ptlrpc_request", addr)
     if pattern == None or pattern.match(req_client(req)) :
         print("PID", pid)
         if sys_info.kernel == "3.10.0" :
@@ -1090,23 +1087,29 @@ def show_pid(pid, pattern) :
 
     return req
 
+def get_request(stack) :
+    addr = search_stack_for_reg("RDI", stack, "tgt_request_handle")
+    if addr == 0 :
+        addr = search_stack_for_reg("RDI", stack, "ldlm_request_cancel")
+    if addr == 0 :
+        return 0
+    return readSU("struct ptlrpc_request", addr)
+
 def get_work_arrived_time(pid) :
-    addr = search_for_reg("RDI", pid, "tgt_request_handle")
-    req = readSU("struct ptlrpc_request", addr)
+    req = get_request(get_stacklist(pid))
 
     return req.rq_srv.sr_arrival_time.tv_sec
 
 def get_work_exec_time(pid) :
-    addr = search_for_reg("RDI", pid, "tgt_request_handle")
-    if addr == 0 :
-        return 0
-
-    req = readSU("struct ptlrpc_request", addr)
+    req = get_request(get_stacklist(pid))
     thread = req.rq_srv.sr_svc_thread
     return thread.t_task.se.exec_start
 
 def get_work_start_time_3_10(pid) :
-    return readU64(search_for_reg("RBP", pid, "tgt_request_handle")-0x38)
+    rbp = search_for_reg("RBP", pid, "tgt_request_handle")
+    if rbp == 0 :
+        rbp = search_for_reg("RBP", pid, "ldlm_request_cancel")
+    return readU64(rbp-0x38)
 
 def get_work_start_time_4_18(pid) :
     return search_for_reg("R12", pid, "tgt_request_handle")
@@ -1122,7 +1125,7 @@ def sort_pids_by_start_time(pids) :
 def show_processing(pattern) :
     print("Kernel version", sys_info.kernel)
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
-    waiting_pids = funcsMatch(funcpids, "tgt_request_handle")
+    waiting_pids = funcsMatch(funcpids, "ptlrpc_server_handle_request")
     pids=sorted(waiting_pids, key=get_work_exec_time)
     print(pids[0], get_work_exec_time(pids[0]))
     if get_work_exec_time(pids[0]) > 20 :
@@ -1131,8 +1134,8 @@ def show_processing(pattern) :
         print("Sorting by start time")
         pids=sort_pids_by_start_time(waiting_pids)
     for pid in pids :
-        print()
-        show_pid(pid, pattern)
+        if show_pid(pid, pattern) :
+            print()
 
 def show_cli_waiting() :
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
