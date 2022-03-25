@@ -7,7 +7,7 @@ from ktime import *
 from lnet import *
 import ldlm_lock as ldlm
 import osd as osd
-from LinuxDump.BTstack import *
+from LinuxDump.BTstack import (_get_threads_subroutines, exec_bt)
 import LinuxDump.fregsapi as fregsapi
 import LinuxDump.KernLocks as kernlocks
 from LinuxDump import Tasks
@@ -891,6 +891,7 @@ def search_stack_for_reg(r, stacklist, func) :
         return 0
     return 0
 
+@memoize_cond(CU_LIVE)
 def get_stacklist(pid) :
     #     with DisasmFlavor('att'):
     try:
@@ -966,7 +967,7 @@ def show_pid(pid, pattern) :
         return None
 
     req = get_request(stack)
-    if req == 0 :
+    if not req :
         return None
 
     if pattern == None or pattern.match(req_client(req)) :
@@ -1077,13 +1078,15 @@ def show_pid(pid, pattern) :
             print()
             ldlm.show_mlh(readSU("struct mdt_lock_handle", addr), "")
 
-    addr = search_stack_for_reg("RSI", stack, "osp_precreate_reserve")
-    if addr != 0 :
-        print()
-        osp = readSU("struct osp_device", addr)
-        imp = osp.opd_obd.u.cli.cl_import
-        print("waiting in osp_precreate_reserve", osp)
-        show_import("   ", imp)
+        addr = search_stack_for_reg("RSI", stack, "osp_precreate_reserve")
+        if addr != 0 :
+            print()
+            osp = readSU("struct osp_device", addr)
+            imp = osp.opd_obd.u.cli.cl_import
+            print("waiting in osp_precreate_reserve", osp)
+            show_import("   ", imp)
+    else :
+        return None
 
     return req
 
@@ -1092,16 +1095,20 @@ def get_request(stack) :
     if addr == 0 :
         addr = search_stack_for_reg("RDI", stack, "ldlm_request_cancel")
     if addr == 0 :
-        return 0
+        return None
     return readSU("struct ptlrpc_request", addr)
 
 def get_work_arrived_time(pid) :
     req = get_request(get_stacklist(pid))
+    if not req :
+        return 0
 
     return req.rq_srv.sr_arrival_time.tv_sec
 
 def get_work_exec_time(pid) :
     req = get_request(get_stacklist(pid))
+    if not req :
+        return get_seconds()
     thread = req.rq_srv.sr_svc_thread
     return thread.t_task.se.exec_start
 
@@ -1109,6 +1116,8 @@ def get_work_start_time_3_10(pid) :
     rbp = search_for_reg("RBP", pid, "tgt_request_handle")
     if rbp == 0 :
         rbp = search_for_reg("RBP", pid, "ldlm_request_cancel")
+    if rbp == 0 :
+        return 0
     return readU64(rbp-0x38)
 
 def get_work_start_time_4_18(pid) :
@@ -1122,24 +1131,29 @@ def sort_pids_by_start_time(pids) :
 
     return sorted(pids, key=la)
 
+def get_request_pids() :
+    (funcpids, functasks, alltaskaddrs) = _get_threads_subroutines()
+    return funcpids["ptlrpc_server_handle_request"]
+
 def show_processing(pattern) :
-    print("Kernel version", sys_info.kernel)
-    (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
-    waiting_pids = funcsMatch(funcpids, "ptlrpc_server_handle_request")
-    pids=sorted(waiting_pids, key=get_work_exec_time)
-    print(pids[0], get_work_exec_time(pids[0]))
-    if get_work_exec_time(pids[0]) > 20 :
-        print("Sorting by exec time")
-    else :
-        print("Sorting by start time")
+    waiting_pids = get_request_pids()
+    if pattern :
         pids=sort_pids_by_start_time(waiting_pids)
+    else :
+        pids=sorted(waiting_pids, key=get_work_exec_time)
+        req = get_request(get_stacklist(pids[0]))
+        thread = req.rq_srv.sr_svc_thread
+        if task_time_diff(thread.t_task, thread.t_task.se.exec_start) > 20 :
+            print("Sorting by exec time")
+        else :
+            pids=sort_pids_by_start_time(waiting_pids)
     for pid in pids :
         if show_pid(pid, pattern) :
             print()
 
 def show_cli_waiting() :
-    (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
-    waiting_pids = funcsMatch(funcpids, "ptlrpc_set_wait")
+    (funcpids, functasks, alltaskaddrs) = _get_threads_subroutines()
+    waiting_pids = funcpids["ptlrpc_set_wait"]
     for pid in waiting_pids :
         print("PID", pid)
         rqset = readSU("struct ptlrpc_request_set",
