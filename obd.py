@@ -126,14 +126,18 @@ def show_obd(dev) :
            dev.u.cli.cl_pending_r_pages.counter,
            dev.u.cli.cl_pending_w_pages.counter))
 
-def show_obds() :
+def all_obds() :
     obd_devs = readSymbol("obd_devs")
+    for i in range(0, 8192) :
+        if obd_devs[i] != 0 :
+            yield obd_devs[i]
+
+def show_obds() :
     print("        obd_device               name \t\t\t   lu_dev   \t  "
           "ina sta att set sto "
           "for fai rec r_inf w_inf")
-    for i in range(0, 8192) :
-        if obd_devs[i] != 0 :
-            show_obd(obd_devs[i])
+    for d in all_obds() :
+        show_obd(d)
 
 def show_imports() :
     obd_devs = readSymbol("obd_devs")
@@ -230,8 +234,15 @@ if ( __name__ == '__main__'):
         print(mdt_obj)
     elif args.fid_str != "" :
         fid = Fid(args.fid_str)
-        loh = lu_object_find(lu_dev, fid)
-        print(loh)
+        if args.device != 0 :
+            loh = lu_object_find(lu_dev, fid)
+            print(loh)
+        else :
+            for obd in all_obds() :
+                if obd.obd_lu_dev == 0 or obd.obd_lu_dev.ld_site == 0 :
+                    continue
+                loh = lu_object_find(obd.obd_lu_dev, fid)
+                print(obd.obd_name, obd, loh)
     elif args.seq != 0 :
         fld_lookup(lu_dev.ld_site.ld_seq_site.ss_server_fld, int(args.seq, 16))
     elif args.search_ptr != 0 :
