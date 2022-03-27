@@ -669,7 +669,7 @@ def req_client(req) :
     return ""
 
 def show_ptlrpc_request_header(req) :
-    print("%x x%d %s %4d %s %s" %
+    print("req@%x x%d %s %4d %s %s" %
           (req, req.rq_xid, req_sent(req), req.rq_status,
            phase2str(req.rq_phase), print_req_flags(req)))
 
@@ -1232,6 +1232,7 @@ if ( __name__ == '__main__'):
                        default = 0)
     parser.add_argument("-H","--history", dest="history",
                        default = 0)
+    parser.add_argument('object', nargs='?')
     args = parser.parse_args()
 
     if args.n != 0 :
@@ -1272,5 +1273,10 @@ if ( __name__ == '__main__'):
                 show_ptlrpc_request(req)
         else :
             print("Wrong service name", args.history)
+    elif args.object :
+        if args.object[:3] == "req" :
+            req = readSU("struct ptlrpc_request", int(args.object[4:], 16))
+            print(args.object[5:], req)
+            show_ptlrpc_request(req)
     else :
         show_ptlrpcds()
