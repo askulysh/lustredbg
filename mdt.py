@@ -6,6 +6,7 @@ from pykdump.API import *
 import obd as obd
 import ptlrpc as ptlrpc
 import ldlm_lock as ldlm
+import osd as osd
 
 mdd_lu_obj_ops = readSymbol("mdd_lu_obj_ops")
 lod_lu_obj_ops = readSymbol("lod_lu_obj_ops")
@@ -47,18 +48,6 @@ def attr2str(attr) :
     elif attr & 0xf000 == 0xa000 :
         ret = ret +"|S_IFLKN"
     return ret
-
-def print_osd_object(osd_obj, prefix) :
-    try :
-        if osd_obj.oo_inode != 0 :
-            inode = readSU("struct inode", osd_obj.oo_inode)
-            print(prefix, inode, "ino", osd_obj.oo_inode.i_ino,
-                "nlink", osd_obj.oo_inode.i_nlink)
-    except :
-        try :
-            print(prefix, "dnode", osd_obj.oo_dn)
-        except :
-            pass
 
 def print_link_ea(prefix, leh) :
     if leh.leh_magic == 0x11EAF1DF :
@@ -118,7 +107,7 @@ def print_generic_mdt_obj(layer, prefix) :
         elif layer.lo_ops == osd_lu_obj_ops :
             osd_obj = readSU("struct osd_object", layer)
             print(prefix, "osd", osd_obj)
-            print_osd_object(osd_obj, prefix + "\t")
+            osd.print_osd_object(osd_obj, prefix + "\t")
         elif layer.lo_ops == osp_lu_obj_ops :
             osp_obj = readSU("struct osp_object", layer - 0x50)
             print_osp_object(osp_obj, prefix)

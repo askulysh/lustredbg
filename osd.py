@@ -7,12 +7,35 @@ from LinuxDump.BTstack import *
 import LinuxDump.fregsapi
 from ktime import *
 import ptlrpc as ptlrpc
+import obd as obd
+import mdt as mdt
 
 def osd_oti_get(env) :
     osd_key = readSymbol("osd_key")
 
     return readSU("struct osd_thread_info",
             env.le_ctx.lc_value[osd_key.lct_index])
+
+def print_osd_object(osd_obj, prefix) :
+    try :
+        if osd_obj.oo_inode != 0 :
+            inode = readSU("struct inode", osd_obj.oo_inode)
+            print(prefix, inode, "ino", osd_obj.oo_inode.i_ino,
+                  "nlink", osd_obj.oo_inode.i_nlink,
+                  "size", osd_obj.oo_inode.i_size)
+    except :
+        try :
+            print(prefix, "dnode", osd_obj.oo_dn)
+        except :
+            pass
+
+def show_ofd(ofd, prefix) :
+    loh = ofd.ofo_header
+    print(prefix, "%s %s parent %s" % (ofd, obd.fid2str(loh.loh_fid),
+                                       obd.fid2str(ofd.ofo_ff.ff_parent)))
+    for layer in readSUListFromHead(loh.loh_layers, "lo_linkage",
+                                    "struct lu_object") :
+          mdt.print_generic_mdt_obj(layer, prefix + "    ")
 
 def search_for_reg(r, pid, func) :
     with DisasmFlavor('att'):
@@ -82,7 +105,8 @@ if ( __name__ == '__main__'):
                         action='store_true')
     parser.add_argument("-e","--env", dest="env", default = 0)
     parser.add_argument("-k","--key", dest="key", default = "")
-    parser.add_argument("-b","--bio", dest="bio", default = "")
+    parser.add_argument("-b","--bio", dest="bio", default = 0)
+    parser.add_argument("-f","--ofd", dest="ofd", default = 0)
     args = parser.parse_args()
     if args.iowait != 0 :
         show_io()
@@ -98,4 +122,7 @@ if ( __name__ == '__main__'):
     elif args.bio != 0:
         bio = readSU("struct bio", int(args.bio, 16))
         show_bio(bio)
+    elif args.ofd !=0 :
+        ofd = readSU("struct ofd_object", int(args.ofd, 16))
+        show_ofd(ofd, "")
 
