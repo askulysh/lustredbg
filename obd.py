@@ -6,6 +6,13 @@ from pykdump.API import *
 import lustrelib as ll
 import ptlrpc as ptlrpc
 
+lu_object_header_attr_c = '''
+#define LOHA_EXISTS             1
+#define LOHA_REMOTE             2
+#define LOHA_HAS_AGENT_ENTRY    4
+'''
+lu_object_header_attr = CDefine(lu_object_header_attr_c)
+
 class Fid:
     def __init__(self, desc):
         a = desc.split(':')
@@ -27,6 +34,30 @@ def fid2str(fid) :
     else :
         return "[0x%x:0x%x:0x%x]" % (fid.f_seq, fid.f_oid, fid.f_ver)
 
+def is_dir(attr) :
+    return attr & 0xf000 == 0x4000
+
+def attr2str(attr) :
+    ret = dbits2str(attr & 7, lu_object_header_attr)
+    if is_dir(attr) :
+        ret = ret +"|S_IFDIR"
+    elif attr & 0xf000 == 0x2000 :
+        ret = ret +"|S_IFCHR"
+    elif attr & 0xf000 == 0x6000 :
+        ret = ret +"|S_IFBLK"
+    elif attr & 0xf000 == 0x8000 :
+        ret = ret +"|S_IFREG"
+    elif attr & 0xf000 == 0x1000 :
+        ret = ret +"|S_IFIFO"
+    elif attr & 0xf000 == 0xa000 :
+        ret = ret +"|S_IFLKN"
+    return ret
+
+def print_loh(loh, prefix):
+    print(prefix, "%s %s flags: %x attr 0%o %s" % (loh, fid2str(loh.loh_fid),
+                                                   loh.loh_flags, loh.loh_attr,
+                                                   attr2str(loh.loh_attr)))
+
 def fid_be2str(f) :
     seq = (f[0]<<56)|(f[1]<<48)|(f[2]<<40)|(f[3]<<32)|(f[4]<<24)|(f[5]<<16)|(f[6]<<8)|f[7]
     oid = (f[8]<<24)|(f[9]<<16)|(f[10]<<8)|f[11]
@@ -39,7 +70,7 @@ def hash_long(val, bits) :
     h *= CFS_GOLDEN_RATIO_PRIME_64
     h = h & 0xffffffffffffffff
     return (h >> (64 - bits))
-    
+
 def CFS_HASH_NBKT(hs) :
     return 1 << (hs.hs_cur_bits - hs.hs_bkt_bits)
 
@@ -106,6 +137,16 @@ def lu_object_find(dev, fid) :
     if head == 0 :
         print("Can't find fid !")
         return 0
+    return loh
+
+def lu_object_find_by_objid(dev, objid) :
+    loh = None
+    hs = dev.ld_site.ls_obj_hash
+    off = member_offset('struct lu_object_header', 'loh_hash')
+    for hn in ll.cfs_hash_get_nodes(hs) :
+        loh = readSU("struct lu_object_header", hn - off)
+        if loh.loh_fid.f_oid == objid :
+            print_loh(loh, "")
     return loh
 
 def fld_lookup(fld, seq) :
@@ -220,6 +261,7 @@ if ( __name__ == '__main__'):
                         default=0)
     parser.add_argument("-H","--hash", dest="hash", default=0)
     parser.add_argument("-c","--cookie", dest="cookie", default=0)
+    parser.add_argument("-o","--objid", dest="objid", default=0)
     parser.add_argument("-p","--lprocfs_stats", dest="lprocfs_stats", default=0)
     parser.add_argument("-m","--mem", dest="meminfo", action='store_true')
     parser.add_argument("-i","--show_imports", dest="show_imports", action='store_true')
@@ -242,6 +284,16 @@ if ( __name__ == '__main__'):
                 if obd.obd_lu_dev == 0 or obd.obd_lu_dev.ld_site == 0 :
                     continue
                 loh = lu_object_find(obd.obd_lu_dev, fid)
+                print(obd.obd_name, obd, loh)
+    elif args.objid != 0 :
+        objid = int(args.objid, 16)
+        if args.device != 0 :
+            lu_object_find_by_objid(lu_dev, objid)
+        else :
+            for obd in all_obds() :
+                if obd.obd_lu_dev == 0 or obd.obd_lu_dev.ld_site == 0 :
+                    continue
+                loh = lu_object_find_by_objid(obd.obd_lu_dev, objid)
                 print(obd.obd_name, obd, loh)
     elif args.seq != 0 :
         fld_lookup(lu_dev.ld_site.ld_seq_site.ss_server_fld, int(args.seq, 16))

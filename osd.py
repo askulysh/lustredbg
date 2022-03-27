@@ -31,8 +31,8 @@ def print_osd_object(osd_obj, prefix) :
 
 def show_ofd(ofd, prefix) :
     loh = ofd.ofo_header
-    print(prefix, "%s %s parent %s" % (ofd, obd.fid2str(loh.loh_fid),
-                                       obd.fid2str(ofd.ofo_ff.ff_parent)))
+    obd.print_loh(loh, prefix)
+    print(prefix, "%s parent %s" % (ofd, obd.fid2str(ofd.ofo_ff.ff_parent)))
     for layer in readSUListFromHead(loh.loh_layers, "lo_linkage",
                                     "struct lu_object") :
           mdt.print_generic_mdt_obj(layer, prefix + "    ")

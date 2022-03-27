@@ -15,39 +15,12 @@ osp_lu_obj_ops = readSymbol("osp_lu_obj_ops")
 mdt_obj_ops = readSymbol("mdt_obj_ops")
 
 
-lu_object_header_attr_c = '''
-#define LOHA_EXISTS             1
-#define LOHA_REMOTE             2
-#define LOHA_HAS_AGENT_ENTRY    4
-'''
-lu_object_header_attr = CDefine(lu_object_header_attr_c)
-
-
 mod_flags_c = '''
 #define	DEAD_OBJ    1
 #define	ORPHAN_OBJ  2
 #define	VOLATILE_OBJ 16
 '''
 mod_flags = CDefine(mod_flags_c)
-
-def is_dir(attr) :
-    return attr & 0xf000 == 0x4000
-
-def attr2str(attr) :
-    ret = dbits2str(attr & 7, lu_object_header_attr)
-    if is_dir(attr) :
-        ret = ret +"|S_IFDIR"
-    elif attr & 0xf000 == 0x2000 :
-        ret = ret +"|S_IFCHR"
-    elif attr & 0xf000 == 0x6000 :
-        ret = ret +"|S_IFBLK"
-    elif attr & 0xf000 == 0x8000 :
-        ret = ret +"|S_IFREG"
-    elif attr & 0xf000 == 0x1000 :
-        ret = ret +"|S_IFIFO"
-    elif attr & 0xf000 == 0xa000 :
-        ret = ret +"|S_IFLKN"
-    return ret
 
 def print_link_ea(prefix, leh) :
     if leh.leh_magic == 0x11EAF1DF :
@@ -73,7 +46,7 @@ def print_osp_object(osp_obj, prefix) :
             print_link_ea(prefix, ea_header)
 
 def print_lod_object(lod, prefix) :
-    if is_dir(lod.ldo_obj.do_lu.lo_header.loh_attr) :
+    if obd.is_dir(lod.ldo_obj.do_lu.lo_header.loh_attr) :
         slave = lod.ldo_dir_slave_stripe & 4
         striped = lod.ldo_dir_striped & 2
         print(prefix, "striped dir", striped, "slave", slave,
@@ -141,10 +114,7 @@ def print_full_tree_mdt_obj(layer, prefix) :
         print_mdt_obj(mdt, prefix)
 
 def print_mdt_obj(mdt, prefix):
-    moh = mdt.mot_header
-    print(prefix, "%s %s flags: %x attr 0%o %s" % (mdt, obd.fid2str(moh.loh_fid),
-           moh.loh_flags, moh.loh_attr, attr2str(moh.loh_attr)))
-
+    obd.print_loh(mdt.mot_header, prefix)
     for layer in readSUListFromHead(mdt.mot_header.loh_layers, "lo_linkage",
             "struct lu_object") :
         print_generic_mdt_obj(layer, prefix + "    ")
