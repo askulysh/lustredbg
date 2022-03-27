@@ -485,10 +485,10 @@ def show_BL_AST_locks() :
     waiting = readSUListFromHead(waiting_locks_list,
                 "l_pending_chain", "struct ldlm_lock")
     for lock in waiting :
-        print_ldlm_lock(lock, "    ")
+        print_ldlm_lock(lock, "")
+        ptlrpc.show_export("    ", lock.l_export)
         remote = lock_client(lock)
         pattern = re.compile(remote)
-        ptlrpc.show_processing(pattern)
         for srv in services :
             ptlrpc.show_waiting(srv, pattern)
 

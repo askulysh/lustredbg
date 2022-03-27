@@ -771,12 +771,10 @@ def show_requests_from_list_reverse(head, offset):
         req = readSU("struct ptlrpc_request", int(entry) - offset)
         if req.rq_srv_req == 1 and req.rq_srv.sr_svc_thread != 0 :
             pid = req.rq_srv.sr_svc_thread.t_pid
-            if get_opc(req) == opcodes.LDLM_ENQUEUE :
-                show_tgt(pid)
-            else :
-                show_pid(pid, None)
+            show_pid(pid, None)
         else:
             show_ptlrpc_request(req)
+        print()
 
 def show_requests_from_list(l) :
     for req in l :
@@ -835,6 +833,9 @@ def show_export_hdr(prefix, exp) :
     except:
         print("")
 
+def list_empty(head) :
+    return head.prev == head
+
 def show_export(prefix, exp) :
     show_export_hdr(prefix, exp)
     reply_list = readSUListFromHead(exp.u.eu_target_data.ted_reply_list,
@@ -847,10 +848,12 @@ def show_export(prefix, exp) :
     srv_rq_info = getStructInfo('struct ptlrpc_srv_req')
     offset = rq_info['rq_srv'].offset + srv_rq_info['sr_exp_list'].offset
 
-    print("HP requests:")
-    show_requests_from_list_reverse(exp.exp_hp_rpcs, offset)
-    print("Regular requests:")
-    show_requests_from_list_reverse(exp.exp_reg_rpcs, offset)
+    if not list_empty(exp.exp_hp_rpcs) :
+        print("HP requests:")
+        show_requests_from_list_reverse(exp.exp_hp_rpcs, offset)
+    if not list_empty(exp.exp_reg_rpcs) :
+        print("Regular requests:")
+        show_requests_from_list_reverse(exp.exp_reg_rpcs, offset)
 
 #    print("\nlocks:")
 #    for hn in ll.cfs_hash_get_nodes(exp.exp_lock_hash) :
