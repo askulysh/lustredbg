@@ -484,6 +484,38 @@ def show_completition_waiting_locks() :
         print("%d threads are waiting (max %ss) for" % (res[l][0], res[l][1]))
         print_ldlm_lock(l, "")
 
+def req_has_cancel(req, handle) :
+    body = readSU("struct ptlrpc_body_v3", ptlrpc.get_req_buffer(req, 0))
+    if body.pb_opc != ptlrpc.opcodes.LDLM_ENQUEUE and body.pb_opc != ptlrpc.opcodes.LDLM_CANCEL :
+           return False
+    ldlm_req = readSU("struct ldlm_request", ptlrpc.get_req_buffer(req, 1))
+    n = ldlm_req.lock_count
+    if n == 0 :
+        n = 1
+    for i in range(n) :
+        if ldlm_req.lock_handle[i].cookie == handle :
+            return True
+    return False
+
+def exp_find_cancel(exp, handle) :
+    rq_info = getStructInfo('struct ptlrpc_request')
+    srv_rq_info = getStructInfo('struct ptlrpc_srv_req')
+    offset = rq_info['rq_srv'].offset + srv_rq_info['sr_exp_list'].offset
+
+    entry = exp.exp_hp_rpcs
+    while entry.prev != exp.exp_hp_rpcs :
+        entry = entry.prev
+        req = readSU("struct ptlrpc_request", int(entry) - offset)
+        if req_has_cancel(req, handle) :
+            return req
+    entry = exp.exp_reg_rpcs
+    while entry.prev != exp.exp_reg_rpcs :
+        entry = entry.prev
+        req = readSU("struct ptlrpc_request", int(entry) - offset)
+        if req_has_cancel(req, handle) :
+            return req
+    return None
+
 def show_BL_AST_locks() :
     ptlrpc_all_services = readSymbol("ptlrpc_all_services")
     services = readSUListFromHead(ptlrpc_all_services,
@@ -491,13 +523,32 @@ def show_BL_AST_locks() :
     waiting_locks_list = readSymbol("waiting_locks_list")
     waiting = readSUListFromHead(waiting_locks_list,
                 "l_pending_chain", "struct ldlm_lock")
+    bad = set()
     for lock in waiting :
         print_ldlm_lock(lock, "")
-        ptlrpc.show_export("    ", lock.l_export)
-        remote = lock_client(lock)
+        cancel = exp_find_cancel(lock.l_export, lock.l_handle.h_cookie)
+        if cancel :
+            print("Cancel has arrived")
+            ptlrpc.show_ptlrpc_request(cancel)
+        else :
+            if get_seconds() - get_bl_ast_seconds(lock) > 50 :
+                bad.add(lock.l_export)
+        print()
+
+    if len(bad) == 0 :
+        return
+
+    print(len(bad), "bad clients:")
+    print(*sorted([nid2str(e.exp_connection.c_peer.nid) for e in bad]))
+    print()
+
+    for exp in bad :
+        ptlrpc.show_export("    ", exp)
+        remote = ptlrpc.exp_cl_str(exp)
         pattern = re.compile(remote)
         for srv in services :
             ptlrpc.show_waiting(srv, pattern)
+        print()
 
 def analyze_deadlock(lock) :
     res = lock.l_resource
