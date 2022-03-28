@@ -1154,8 +1154,9 @@ def show_processing(pattern) :
     else :
         pids=sorted(waiting_pids, key=get_work_exec_time)
         req = get_request(get_stacklist(pids[0]))
-        thread = req.rq_srv.sr_svc_thread
-        if task_time_diff(thread.t_task, thread.t_task.se.exec_start) > 20 :
+        if req :
+            task = req.rq_srv.sr_svc_thread.t_task
+        if req and task_time_diff(task, task.se.exec_start) > 20 :
             print("Sorting by exec time")
         else :
             pids=sort_pids_by_start_time(waiting_pids)
