@@ -1127,7 +1127,7 @@ def get_work_exec_time(pid) :
 def get_work_start_time_3_10(pid) :
     rbp = search_for_reg("RBP", pid, "tgt_request_handle")
     if rbp == 0 :
-        rbp = search_for_reg("RBP", pid, "ldlm_request_cancel")
+        rbp = search_for_reg("RBP", pid, "ldlm_cancel_handler")
     if rbp == 0 :
         return 0
     return readU64(rbp-0x38)
