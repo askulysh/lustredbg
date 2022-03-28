@@ -454,16 +454,17 @@ def show_tgt(pid) :
         val = env.le_ses.lc_value[key.lct_index]
     else :
         val = env.le_ctx.lc_value[key.lct_index]
-    mti = readSU("struct mdt_thread_info", val)
-    print(mti)
-    mdt.parse_mti(mti, ptlrpc.get_opc(req), "")
+    if val != 0 :
+        mti = readSU("struct mdt_thread_info", val)
+        print(mti)
+        mdt.parse_mti(mti, ptlrpc.get_opc(req), "")
 
     return parse_ldlm_cp_ast(ptlrpc.get_stacklist(pid))
 
 def show_completition_waiting_locks() :
     res = dict()
-    (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
-    waiting_pids = funcsMatch(funcpids, "ldlm_completion_ast")
+    (funcpids, functasks, alltaskaddrs) = _get_threads_subroutines()
+    waiting_pids = funcpids["ldlm_completion_ast"]
     for pid in ptlrpc.sort_pids_by_start_time(waiting_pids) :
         lock = show_tgt(pid)
         conflict = find_conflicting_lock(lock)
