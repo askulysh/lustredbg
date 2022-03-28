@@ -894,6 +894,13 @@ def search_stack_for_reg(r, stacklist, func) :
         return 0
     return 0
 
+def stack_has_func(stacklist, func) :
+    for s in stacklist:
+        for f in s.frames:
+            if f.func == func :
+                return True
+    return False
+
 @memoize_cond(CU_LIVE)
 def get_stacklist(pid) :
     #     with DisasmFlavor('att'):
@@ -1075,6 +1082,8 @@ def show_pid(pid, pattern) :
         search_for_mutex(stack)
 
         osd.search_for_bio(stack)
+
+        ldlm.parse_ldlm_cp_ast(stack)
 
         addr = search_stack_for_reg("RDX", stack, "mdt_object_local_lock")
         if addr != 0 :

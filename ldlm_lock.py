@@ -431,6 +431,19 @@ def find_conflicting_lock(lock) :
 
     return None
 
+def parse_ldlm_cp_ast(stack) :
+    if ptlrpc.stack_has_func(stack, "ldlm_completion_ast") :
+        addr = ptlrpc.search_stack_for_reg("RBX", stack, "schedule_timeout")
+        if addr == 0 :
+            addr = ptlrpc.search_stack_for_reg("RBX", stack, "__schedule")
+        if addr == 0 :
+            addr = ptlrpc.search_stack_for_reg("RBX", stack, "schedule")
+        if addr != 0 :
+            lock = readSU("struct ldlm_lock", addr)
+            print_ldlm_lock(lock, "")
+            return lock
+    return None
+
 def show_tgt(pid) :
     req = ptlrpc.show_pid(pid, None)
     if req == 0:
@@ -444,15 +457,8 @@ def show_tgt(pid) :
     mti = readSU("struct mdt_thread_info", val)
     print(mti)
     mdt.parse_mti(mti, ptlrpc.get_opc(req), "")
-    addr = ptlrpc.search_for_reg("RBX", pid, "schedule_timeout")
-    if addr == 0 :
-        addr = ptlrpc.search_for_reg("RBX", pid, "__schedule")
-    if addr == 0 :
-        addr = ptlrpc.search_for_reg("RBX", pid, "schedule")
-    lock = readSU("struct ldlm_lock", addr)
-    if lock != 0 :
-        print_ldlm_lock(lock, "")
-    return lock
+
+    return parse_ldlm_cp_ast(ptlrpc.get_stacklist(pid))
 
 def show_completition_waiting_locks() :
     res = dict()
