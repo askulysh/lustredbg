@@ -144,8 +144,9 @@ def lu_object_find_by_objid(dev, objid) :
     hs = dev.ld_site.ls_obj_hash
     off = member_offset('struct lu_object_header', 'loh_hash')
     for hn in ll.cfs_hash_get_nodes(hs) :
-        loh = readSU("struct lu_object_header", hn - off)
-        if loh.loh_fid.f_oid == objid :
+        h = readSU("struct lu_object_header", hn - off)
+        if h.loh_fid.f_oid == objid :
+            loh = h
             print_loh(loh, "")
     return loh
 
@@ -294,7 +295,8 @@ if ( __name__ == '__main__'):
                 if obd.obd_lu_dev == 0 or obd.obd_lu_dev.ld_site == 0 :
                     continue
                 loh = lu_object_find_by_objid(obd.obd_lu_dev, objid)
-                print(obd.obd_name, obd, loh)
+                if loh :
+                    print(obd.obd_name, obd, loh)
     elif args.seq != 0 :
         fld_lookup(lu_dev.ld_site.ld_seq_site.ss_server_fld, int(args.seq, 16))
     elif args.search_ptr != 0 :
