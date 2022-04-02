@@ -8,12 +8,26 @@ import ptlrpc as ptlrpc
 import ldlm_lock as ldlm
 import osd as osd
 
-mdd_lu_obj_ops = readSymbol("mdd_lu_obj_ops")
-lod_lu_obj_ops = readSymbol("lod_lu_obj_ops")
-osd_lu_obj_ops = readSymbol("osd_lu_obj_ops")
-osp_lu_obj_ops = readSymbol("osp_lu_obj_ops")
-mdt_obj_ops = readSymbol("mdt_obj_ops")
-
+if sym2addr("mdt_lu_obj_ops") :
+    mdt_lu_obj_ops = readSymbol("mdt_lu_obj_ops")
+else :
+    mdt_lu_obj_ops = 0
+if sym2addr("mdd_lu_obj_ops") :
+    mdd_lu_obj_ops = readSymbol("mdd_lu_obj_ops")
+else :
+    mdd_lu_obj_ops = 0
+if sym2addr("lod_lu_obj_ops") :
+    lod_lu_obj_ops = readSymbol("lod_lu_obj_ops")
+else :
+    lod_lu_obj_ops = 0
+if sym2addr("osp_lu_obj_ops") :
+    osp_lu_obj_ops = readSymbol("osp_lu_obj_ops")
+else :
+    osp_lu_obj_ops = 0
+if sym2addr("osd_lu_obj_ops") :
+    osd_lu_obj_ops = readSymbol("osd_lu_obj_ops")
+else :
+    osd_lu_obj_ops = 0
 
 mod_flags_c = '''
 #define	DEAD_OBJ    1
@@ -64,7 +78,7 @@ def print_lod_object(lod, prefix) :
                 print_osp_object(osp_obj, prefix + "\t")
 
 def print_generic_mdt_obj(layer, prefix) :
-        if layer.lo_ops == mdt_obj_ops :
+        if layer.lo_ops == mdt_lu_obj_ops :
             print(prefix, "mdt", layer)
         elif layer.lo_ops == mdd_lu_obj_ops :
             mdd_obj = readSU("struct mdd_object", layer)
