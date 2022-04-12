@@ -958,6 +958,14 @@ def search_for_mutex(stack) :
 
     return readSU("struct task_struct", owner)
 
+def get_lu_env(stack) :
+    addr = search_stack_for_reg("RDI", stack, "osd_trans_stop")
+    if addr == 0 :
+        addr = search_stack_for_reg("RDI", stack, "ofd_commitrw")
+    if addr == 0 :
+        return None
+    return readSU("struct lu_env", addr)
+
 def show_io_time(lu_env) :
     oti = osd.osd_oti_get(lu_env)
     iobuf = oti.oti_iobuf
@@ -1012,10 +1020,10 @@ def show_pid(pid, pattern) :
         except:
             pass
 
-        addr = search_stack_for_reg("RDI", stack, "osd_trans_stop")
-        if addr != 0 :
+        lu_env = get_lu_env(stack)
+
+        if lu_env and stack_has_func(stack, "osd_trans_stop") :
             print()
-            lu_env = readSU("struct lu_env", addr)
             show_io_time(lu_env)
 
         addr = search_stack_for_reg("RSI", stack, "range_lock")
@@ -1025,13 +1033,11 @@ def show_pid(pid, pattern) :
             print("waiting on range lock:")
             show_range_lock(rlock)
 
-        addr = search_stack_for_reg("RDI", stack, "ofd_commitrw")
-        if addr != 0 :
+        if lu_env and stack_has_func(stack, "ofd_commitrw") :
             print()
-            env = readSU("struct lu_env", addr)
             ofd_key = readSymbol("ofd_thread_key")
             ofd_info = readSU("struct ofd_thread_info",
-                                      env.le_ctx.lc_value[ofd_key.lct_index])
+                                      lu_env.le_ctx.lc_value[ofd_key.lct_index])
             try :
                 if ofd_info.fti_range_locked :
                     print("owns range_lock :")
