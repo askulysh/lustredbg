@@ -61,6 +61,19 @@ def show_bio(bio) :
     print(bio, disk, mddev)
     print(disk.disk_name)
 
+def buffer_head2bio(bh):
+    from LinuxDump.Slab import get_slab_addrs
+    try:
+        (alloc, free) = get_slab_addrs("kmalloc-256")
+    except crash.error as val:
+        print (val)
+        return
+    for o in alloc:
+        bio = readSU("struct bio", o)
+        if bio.bi_private == bh :
+            return bio
+    return None
+
 def search_for_bio(stack) :
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "generic_make_request")
     if addr == 0:
@@ -106,6 +119,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-e","--env", dest="env", default = 0)
     parser.add_argument("-k","--key", dest="key", default = "")
     parser.add_argument("-b","--bio", dest="bio", default = 0)
+    parser.add_argument("-B","--buffer_head", dest="buffer_head", default = 0)
     parser.add_argument("-f","--ofd", dest="ofd", default = 0)
     args = parser.parse_args()
     if args.iowait != 0 :
@@ -122,6 +136,12 @@ if ( __name__ == '__main__'):
     elif args.bio != 0:
         bio = readSU("struct bio", int(args.bio, 16))
         show_bio(bio)
+    elif args.buffer_head != 0 :
+        bh = readSU("struct buffer_head", int(args.buffer_head, 16))
+        bio = buffer_head2bio(bh)
+        print(bio)
+        show_bio(bio)
+
     elif args.ofd !=0 :
         ofd = readSU("struct ofd_object", int(args.ofd, 16))
         show_ofd(ofd, "")
