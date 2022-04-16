@@ -591,7 +591,11 @@ def analyze_deadlock(lock) :
 def show_ns_info(ns_list) :
     namespaces = readSUListFromHead(ns_list, "ns_list_chain", "struct ldlm_namespace")
     for ns in namespaces :
-        print(ns, ns.ns_name, "lock count", obd.stats_couter_sum(ns.ns_stats, 0))
+        try :
+            name = ns.ns_name
+        except:
+            name = ns.ns_rs_hash.hs_name
+        print(ns, name, "lock count", obd.stats_couter_sum(ns.ns_stats, 0))
 
 def list_namespaces() :
     print("SRV namespaces:")
