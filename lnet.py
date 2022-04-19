@@ -5,7 +5,13 @@ from __future__ import print_function
 from pykdump.API import *
 
 def nid2str(nid) :
-    lnd = nid >> 48
+    if struct_exists("struct lnet_nid") :
+        lnd = nid.nid_type
+        nid = nid.nid_addr[0]
+        nid = int.from_bytes(nid.to_bytes(4, byteorder="little"),
+                             byteorder="big")
+    else :
+        lnd = (nid >> 48) & 0xff
     if lnd == 2 :
         return ("%d.%d.%d.%d" % ((nid >>24) & 0xff, (nid >> 16) & 0xff,
                                 (nid >> 8) & 0xff, nid & 0xff))
