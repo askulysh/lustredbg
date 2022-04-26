@@ -435,9 +435,9 @@ def parse_ldlm_cp_ast(stack) :
     if ptlrpc.stack_has_func(stack, "ldlm_completion_ast") :
         addr = ptlrpc.search_stack_for_reg("RBX", stack, "schedule_timeout")
         if addr == 0 :
-            addr = ptlrpc.search_stack_for_reg("RBX", stack, "__schedule")
-        if addr == 0 :
             addr = ptlrpc.search_stack_for_reg("RBX", stack, "schedule")
+        if addr == 0 :
+            addr = ptlrpc.search_stack_for_reg("RBX", stack, "__schedule")
         if addr != 0 :
             lock = readSU("struct ldlm_lock", addr)
             print_ldlm_lock(lock, "")
