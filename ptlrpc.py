@@ -968,6 +968,8 @@ def get_lu_env(stack) :
     if addr == 0 :
         addr = search_stack_for_reg("RDI", stack, "ofd_commitrw")
     if addr == 0 :
+        addr = search_stack_for_reg("RDI", stack, "ofd_commitrw_write")
+    if addr == 0 :
         return None
     return readSU("struct lu_env", addr)
 
