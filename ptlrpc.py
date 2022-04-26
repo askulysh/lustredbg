@@ -1097,6 +1097,7 @@ def show_pid(pid, pattern) :
         search_for_mutex(stack)
 
         osd.search_for_bio(stack)
+        osd.search_for_transaction(stack)
 
         ldlm.parse_ldlm_cp_ast(stack)
 

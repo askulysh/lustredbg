@@ -83,6 +83,14 @@ def search_for_bio(stack) :
     print(bio)
     show_bio(bio)
 
+def search_for_transaction(stack) :
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "start_this_handle")
+    if addr == 0:
+        return
+    print()
+    journal = readSU("struct journal_s", addr)
+    print(journal, journal.j_running_transaction)
+
 def show_io() :
     res = dict()
     count = 0
