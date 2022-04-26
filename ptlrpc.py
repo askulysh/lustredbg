@@ -980,7 +980,10 @@ def task_time_diff(task, t) :
     return d/1000000000
 
 def show_range_lock(rl) :
-    print(rl, '[',rl.rl_node.in_extent.start, '-', rl.rl_node.in_extent.end,']')
+    try :
+        print(rl, '[',rl.rl_start, '-', rl.rl_end,']')
+    except:
+        print(rl, '[',rl.rl_node.in_extent.start, '-', rl.rl_node.in_extent.end,']')
 
 def show_pid(pid, pattern) :
     stack = get_stacklist(pid)
