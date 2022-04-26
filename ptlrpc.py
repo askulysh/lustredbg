@@ -111,7 +111,8 @@ enum {
         OST_SET_INFO   = 17,
         OST_QUOTACHECK = 18,
         OST_QUOTACTL   = 19,
-	OST_QUOTA_ADJUST_QUNIT = 20,
+        OST_QUOTA_ADJUST_QUNIT = 20,
+        OST_FALLOCATE  = 22,
 	MDS_GETATTR		= 33,
 	MDS_GETATTR_NAME	= 34,
 	MDS_CLOSE		= 35,
@@ -651,6 +652,8 @@ def show_ptlrpc_request_buf(req) :
         show_request_fmt(req, "RQF_OST_DESTROY")
     elif body.pb_opc == opcodes.OST_PUNCH :
         show_request_fmt(req, "RQF_OST_PUNCH")
+    elif body.pb_opc == opcodes.OST_FALLOCATE :
+            show_request_fmt(req, "RQF_OST_FALLOCATE")
     elif body.pb_opc == opcodes.FLD_QUERY :
         show_request_fmt(req, "RQF_FLD_QUERY")
     elif body.pb_opc == opcodes.FLD_READ :
