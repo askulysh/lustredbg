@@ -931,6 +931,8 @@ def search_for_rw_semaphore(stack) :
     if addr == 0:
         addr = search_stack_for_reg("RDI", stack, "rwsem_down_write_slowpath")
     if addr == 0:
+        addr = search_stack_for_reg("RDI", stack, "rwsem_down_read_slowpath")
+    if addr == 0:
         addr = search_stack_for_reg("RDI", stack, "down_read")
     if addr == 0:
         return None
