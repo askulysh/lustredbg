@@ -310,8 +310,12 @@ if ( __name__ == '__main__'):
         stats = readSU("struct lprocfs_stats", int(args.lprocfs_stats, 16))
         print("Sum:",stats_couter_sum(stats, 0))
     elif args.meminfo :
+        try :
+            libcfs_kmem = readSymbol("libcfs_kmem")
+        except:
+            libcfs_kmem = readSymbol("libcfs_kmemory")
         print("libcfs_kmemory %uk obd_max_alloc %uk obd_memory %uk" %
-                (readSymbol("libcfs_kmemory").counter/1024,
+                (libcfs_kmem.counter/1024,
                  readSymbol("obd_max_alloc")/1024, obd_memory_sum()/1024))
     elif args.show_imports :
         show_imports()
