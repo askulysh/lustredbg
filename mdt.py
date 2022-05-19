@@ -43,7 +43,7 @@ def print_link_ea(prefix, leh) :
             lee = readSU("struct link_ea_entry", addr)
             reclen = (lee.lee_reclen[0] << 8) + lee.lee_reclen[1]
             name  = readmem(lee.lee_name,  reclen - 16 - 2)
-            print(prefix, lee, name, fid_be2str(lee.lee_parent_fid))
+            print(prefix, lee, name, obd.fid_be2str(lee.lee_parent_fid))
             addr = addr + reclen 
     else :
         print("leh magic error !", leh.leh_magic)
