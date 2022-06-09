@@ -51,9 +51,13 @@ def print_link_ea(prefix, leh) :
 def print_osp_object(osp_obj, prefix) :
     print(prefix, "osp", osp_obj)
     prefix += "\t"
+    oxe_name_exists = member_size("struct osd_xattr_entry", "oxe_name")
     for oxe in readSUListFromHead(osp_obj.opo_xattr_list, "oxe_list",
             "struct osp_xattr_entry") :
-        name = readmem(oxe.oxe_buf, oxe.oxe_namelen)
+        if oxe_name_exists :
+            name = readmem(oxe.oxe_name, oxe.oxe_namelen)
+        else :
+            name = readmem(oxe.oxe_buf, oxe.oxe_namelen)
         print(prefix, name, oxe)
         if name == b'trusted.link' :
             ea_header = readSU("struct link_ea_header", oxe.oxe_value)
