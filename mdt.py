@@ -100,7 +100,8 @@ def print_generic_mdt_obj(layer, prefix) :
             print(prefix, "osd", osd_obj)
             osd.print_osd_object(osd_obj, prefix + "\t")
         elif layer.lo_ops == osp_lu_obj_ops :
-            osp_obj = readSU("struct osp_object", layer - 0x50)
+            osp_obj = readSU("struct osp_object", layer -
+                             member_offset('struct osp_object', 'opo_obj'))
             print_osp_object(osp_obj, prefix)
         else :
             print(prefix, "unknown", layer)
@@ -122,7 +123,9 @@ def print_full_tree_mdt_obj(layer, prefix) :
         mdt = readSU("struct mdt_object",
                 Addr(osd_obj.oo_dt.do_lu.lo_header))
     elif layer.lo_ops == osp_lu_obj_ops :
-        osp_obj = readSU("struct osp_object", layer - 0x50)
+        osp_obj = readSU("struct osp_object", layer -
+                         member_offset('struct osp_object', 'opo_obj'))
+
         mdt = readSU("struct mdt_object",
                 Addr(osp_obj.opo_obj.do_lu.lo_header))
     else :
