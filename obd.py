@@ -119,7 +119,47 @@ def hash_for_each_hd2(hs, func) :
     for hn in ll.cfs_hash_get_nodes(hs) :
         func(hn)
 
-def lu_object_find(dev, fid) :
+def loh_cmp_fid(loh, fid) :
+    return loh.loh_fid.f_seq == fid.f_seq and loh.loh_fid.f_oid == fid.f_oid and loh.loh_fid.f_ver == fid.f_ver
+
+def cfs_hash_32(val, bits) :
+    GOLDEN_RATIO_32 = 0x61C88647
+    return (val * GOLDEN_RATIO_32) >> (32 - bits)
+
+def cfs_hash_64(val, bits) :
+    GOLDEN_RATIO_64 = 0x61C8864680B583EB
+    return val * GOLDEN_RATIO_64 >> (64 - bits)
+
+def lu_fid_hash(fid, seed) :
+    seed = cfs_hash_32(seed ^ fid.f_oid, 32)
+    seed ^= cfs_hash_64(fid.f_seq, 32)
+    return seed
+
+def lu_bkt_hash(s, fid) :
+    return lu_fid_hash(fid, s.ls_bkt_seed) & (s.ls_bkt_cnt - 1)
+
+def rht_bucket(tbl, i) :
+    return tbl.buckets[i]
+    #    return readSU("struct rhash_head", tbl.buckets+i*8)
+
+def rhashtable_lookup(ht, key) :
+    off = member_offset('struct lu_object_header', 'loh_hash')
+    for i in range(ht.tbl.size) :
+        pos = ht.tbl.buckets[i]
+        while pos&1 == 0 :
+            loh = readSU("struct lu_object_header", pos - off)
+            if loh_cmp_fid(loh, key) :
+                return loh
+            pos = pos.next
+    return None
+
+def lu_object_find_rh(dev, fid) :
+    s  = dev.ld_site
+    hs = s.ls_obj_hash
+#    bkt = s.ls_bkts[lu_bkt_hash(s, fid)]
+    return rhashtable_lookup(hs, fid)
+
+def lu_object_find_cfs_hash(dev, fid) :
     hs = dev.ld_site.ls_obj_hash
     (bd_bucket, bd_offset) = (cfs_hash_bd_from_key(hs, hs.hs_buckets,
                               hs.hs_cur_bits, fid))
@@ -131,13 +171,19 @@ def lu_object_find(dev, fid) :
     off = member_offset('struct lu_object_header', 'loh_hash')
     while head != 0 :
         loh = readSU("struct lu_object_header", head - off)
-        if loh.loh_fid.f_seq == fid.f_seq and loh.loh_fid.f_oid == fid.f_oid and loh.loh_fid.f_ver == fid.f_ver :
+        if loh_cmp_fid(loh, fid) :
                break
         head = head.next
     if head == 0 :
         print("Can't find fid !")
         return 0
     return loh
+
+def lu_object_find(dev, fid) :
+    if symbol_exists("obj_hash_params"):
+        return lu_object_find_rh(dev, fid)
+    else :
+        return lu_object_find_cfs_hash(dev, fid)
 
 def lu_object_find_by_objid(dev, objid) :
     loh = None
