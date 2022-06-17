@@ -320,6 +320,15 @@ def get_vvp_obj_from_hash(hs) :
         vvp = readSU("struct vvp_object", hn - off)
         print_vvp_object("", vvp)
 
+def print_osc_extent(prefix, ext) :
+    print(prefix, ext, "state", ext.oe_state, "npages", ext.oe_nr_pages,
+          ext.oe_dlmlock)
+    off = member_offset('struct osc_page', 'ops_oap')
+    for oap in readSUListFromHead(ext.oe_pages, "oap_pending_item",
+                                  "struct osc_async_page") :
+        osc_page = readSU("struct osc_page", oap - off)
+        print_osc_page(osc_page, "")
+
 from crash import mem2long
 
 def ffs(x):
@@ -387,6 +396,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-p","--page", dest="page", default = 0)
     parser.add_argument("-c","--cl_page", dest="cl_page", default = 0)
     parser.add_argument("-s","--osc_page", dest="osc", default = 0)
+    parser.add_argument("-E","--extent", dest="ext", default = 0)
     parser.add_argument("-V","--vvp_object", dest="vvp_object", default = 0)
     parser.add_argument("-S","--osc_object", dest="osc_object", default = 0)
     parser.add_argument("-l","--ldlm_lock", dest="ldlm_lock", default = 0)
@@ -440,6 +450,9 @@ if ( __name__ == '__main__'):
         for p in walk_page_tree2(osc_object.oo_tree) :
             osc_page = readSU("struct osc_page", p)
             print_osc_page(osc_page, "    ")
+    elif args.ext != 0 :
+        ext = readSU("struct osc_extent", int(args.ext, 16))
+        print_osc_extent("", ext)
     elif args.ldlm_lock != 0 :
         lock = readSU("struct ldlm_lock", int(args.ldlm_lock, 16))
         if lock.l_ast_data != 0:
