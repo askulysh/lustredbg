@@ -632,6 +632,8 @@ def show_ptlrpc_request_buf(req) :
         show_request_fmt(req, reint_fmts[reint.rr_opcode])
     elif body.pb_opc == opcodes.MDS_CONNECT :
         show_request_fmt(req, "RQF_MDS_CONNECT")
+    elif body.pb_opc == opcodes.OST_CONNECT :
+        show_request_fmt(req, "RQF_OST_CONNECT")
     elif body.pb_opc == opcodes.MDS_GETATTR :
         show_request_fmt(req, "RQF_MDS_GETATTR")
     elif body.pb_opc == opcodes.MDS_GETXATTR :
