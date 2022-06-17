@@ -598,7 +598,8 @@ def show_ns_info(ns_list) :
             name = ns.ns_name
         except:
             name = ns.ns_rs_hash.hs_name
-        print(ns, name, "lock count", obd.stats_couter_sum(ns.ns_stats, 0))
+        print(ns, name, "lock count", obd.stats_couter_sum(ns.ns_stats, 0),
+              "granted", ns.ns_pool.pl_granted.counter)
 
 def list_namespaces() :
     print("SRV namespaces:")
