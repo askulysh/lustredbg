@@ -145,8 +145,8 @@ def rht_bucket(tbl, i) :
 def rhashtable_lookup(ht, key) :
     off = member_offset('struct lu_object_header', 'loh_hash')
     for i in range(ht.tbl.size) :
-        pos = ht.tbl.buckets[i]
-        while pos&1 == 0 :
+        pos = readSU('struct rhash_head', ht.tbl.buckets[i])
+        while pos != 0 and pos&1 == 0 :
             loh = readSU("struct lu_object_header", pos - off)
             if loh_cmp_fid(loh, key) :
                 return loh
