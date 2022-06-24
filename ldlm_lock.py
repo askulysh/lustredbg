@@ -188,9 +188,9 @@ def lock_client(lock) :
 
 def get_bl_ast_seconds(lock) :
     try :
-         sec = lock.l_blast_sent
+         sec = ktime_get_seconds() - lock.l_blast_sent
     except :
-         sec = lock.l_last_activity
+         sec = get_seconds() - lock.l_last_activity
     return sec
 
 def get_last_activity_seconds(lock) :
@@ -248,7 +248,7 @@ def print_ldlm_lock(ldlm_lock, prefix) :
 
         if ldlm_lock.l_flags & LDLM_flags.LDLM_FL_WAITED :
             print(prefix, "BL AST sent",
-                    get_seconds() - get_bl_ast_seconds(ldlm_lock), "sec ago")
+                  get_bl_ast_seconds(ldlm_lock), "sec ago")
     else :
         print("%s req_mode: %s enqueued %us ago" % (prefix,
               ldlm_mode2str(ldlm_lock.l_req_mode),
@@ -534,7 +534,7 @@ def show_BL_AST_locks() :
             print("Cancel has arrived")
             ptlrpc.show_ptlrpc_request(cancel)
         else :
-            if get_seconds() - get_bl_ast_seconds(lock) > 50 :
+            if get_bl_ast_seconds(lock) > 50 :
                 bad.add(lock.l_export)
         print()
 
