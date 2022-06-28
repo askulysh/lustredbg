@@ -28,6 +28,15 @@ def print_osd_object(osd_obj, prefix) :
             print(prefix, "dnode", osd_obj.oo_dn)
         except :
             pass
+    prefix += "\t"
+    oxe_name_exists = member_size("struct osd_xattr_entry", "oxe_name")
+    for oxe in readSUListFromHead(osd_obj.oo_xattr_list,
+                                  "oxe_list", "struct osd_xattr_entry") :
+        if oxe_name_exists == -1:
+            name = readmem(oxe.oxe_buf, oxe.oxe_namelen)
+        else :
+            name = readmem(oxe.oxe_name, oxe.oxe_namelen)
+        print(prefix, name, oxe)
 
 def show_ofd(ofd, prefix) :
     loh = ofd.ofo_header
