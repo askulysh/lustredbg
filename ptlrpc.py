@@ -673,7 +673,7 @@ def exp_cl_str(exp) :
 def req_client(req) :
     if req.rq_export != 0:
         return exp_cl_str(req.rq_export)
-    return ""
+    return "@%s" % nid2str(req.rq_peer.nid)
 
 def show_ptlrpc_request_header(req) :
     print("req@%x x%d %s %4d %s %s" %
@@ -684,7 +684,7 @@ def show_ptlrpc_request(req) :
     show_ptlrpc_request_header(req)
     if req.rq_import != 0:
         show_import("  ", req.rq_import)
-    if req.rq_export != 0:
+    else :
         print(req_client(req))
         print("arrived",
               get_seconds() - req.rq_srv.sr_arrival_time.tv_sec, "sec ago")
