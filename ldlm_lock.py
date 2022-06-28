@@ -551,6 +551,9 @@ def show_BL_AST_locks() :
         pattern = re.compile(remote)
         for srv in services :
             ptlrpc.show_waiting(srv, pattern)
+            for req in ptlrpc.get_history_reqs(srv) :
+                if exp.exp_connection.c_peer.nid == req.rq_peer.nid :
+                    ptlrpc.show_ptlrpc_request(req)
         print()
 
 def analyze_deadlock(lock) :
