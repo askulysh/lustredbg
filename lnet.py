@@ -6,10 +6,13 @@ from pykdump.API import *
 
 def nid2str(nid) :
     if struct_exists("struct lnet_nid") :
-        lnd = nid.nid_type
-        nid = nid.nid_addr[0]
-        nid = int.from_bytes(nid.to_bytes(4, byteorder="little"),
-                             byteorder="big")
+        try :
+            lnd = nid.nid_type
+            nid = nid.nid_addr[0]
+            nid = int.from_bytes(nid.to_bytes(4, byteorder="little"),
+                                 byteorder="big")
+        except :
+            lnd = (nid >> 48) & 0xff
     else :
         lnd = (nid >> 48) & 0xff
     if lnd == 2 :
