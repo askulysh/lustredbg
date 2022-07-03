@@ -157,7 +157,8 @@ if ( __name__ == '__main__'):
         bh = readSU("struct buffer_head", int(args.buffer_head, 16))
         bio = buffer_head2bio(bh)
         print(bio)
-        show_bio(bio)
+        if bio :
+            show_bio(bio)
 
     elif args.ofd !=0 :
         ofd = readSU("struct ofd_object", int(args.ofd, 16))
