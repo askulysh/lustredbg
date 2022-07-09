@@ -174,6 +174,8 @@ enum {
 	QUOTA_DQACQ	= 601,
 	QUOTA_DQREL	= 602,
 
+    SEQ_QUERY   = 700,
+
 	FLD_QUERY	= 900,
 	FLD_READ	= 901,
 
@@ -1240,7 +1242,8 @@ def get_history_reqs(service):
 
     for i in range(service.srv_ncpts) :
         svcpt = service.srv_parts[i]
-        for req in readStructNext(svcpt.scp_hist_reqs.next, "next") :
+        for req in readStructNext(svcpt.scp_hist_reqs.next, "next",
+                                  maxel=40000) :
             if req == svcpt.scp_hist_reqs :
                 break
             yield readSU("struct ptlrpc_request", int(req) - offset)

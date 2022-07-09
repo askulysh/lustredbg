@@ -519,6 +519,15 @@ def exp_find_cancel(exp, handle) :
             return req
     return None
 
+def find_enqueue_req(lock, history) :
+    for req in history :
+        nid = lock.l_export.exp_connection.c_peer.nid
+        if req.rq_peer.nid == nid and ptlrpc.get_opc(req) == ptlrpc.opcodes.LDLM_ENQUEUE :
+            ldlm_req = readSU("struct ldlm_request", ptlrpc.get_req_buffer(req, 1))
+            if ldlm_req.lock_handle[0].cookie == lock.l_remote_handle.cookie :
+                return req
+    return None
+
 def show_BL_AST_locks() :
     ptlrpc_all_services = readSymbol("ptlrpc_all_services")
     services = readSUListFromHead(ptlrpc_all_services,
@@ -526,6 +535,15 @@ def show_BL_AST_locks() :
     waiting_locks_list = readSymbol("waiting_locks_list")
     waiting = readSUListFromHead(waiting_locks_list,
                 "l_pending_chain", "struct ldlm_lock")
+
+    if not waiting :
+        return
+
+    srv = ptlrpc.find_service("mdt")
+    if not srv :
+        srv = ptlrpc.find_service("ost")
+    mdt_history = list(ptlrpc.get_history_reqs(srv))
+
     bad = set()
     for lock in waiting :
         print_ldlm_lock(lock, "")
@@ -535,7 +553,21 @@ def show_BL_AST_locks() :
             ptlrpc.show_ptlrpc_request(cancel)
         else :
             if get_bl_ast_seconds(lock) > 50 :
-                bad.add(lock.l_export)
+                enq_req = find_enqueue_req(lock, mdt_history)
+                if enq_req :
+                    enq_pid = ptlrpc.get_pid(enq_req)
+                    print("Enqueue pid: ", enq_pid, " request :")
+                    ptlrpc.show_ptlrpc_request(enq_req)
+                    enq_nid = lock.l_export.exp_connection.c_peer.nid
+                    print(nid2str(enq_nid), " pid ", enq_pid, " requests:")
+                    for req in mdt_history :
+                        if req.rq_peer.nid == enq_nid and ptlrpc.get_pid(req) == enq_pid :
+                            ptlrpc.show_ptlrpc_request(req)
+                    print("\n", lock.l_export)
+                    ptlrpc.show_export_hdr("\t", lock.l_export)
+
+                else :
+                    bad.add(lock.l_export)
         print()
 
     if len(bad) == 0 :
@@ -550,7 +582,7 @@ def show_BL_AST_locks() :
         remote = ptlrpc.exp_cl_str(exp)
         pattern = re.compile(remote)
         for srv in services :
-            ptlrpc.show_waiting(srv, pattern)
+            print(srv.srv_name, " history:")
             for req in ptlrpc.get_history_reqs(srv) :
                 if exp.exp_connection.c_peer.nid == req.rq_peer.nid :
                     ptlrpc.show_ptlrpc_request(req)
