@@ -676,9 +676,9 @@ def req_client(req) :
     return "@%s" % nid2str(req.rq_peer.nid)
 
 def show_ptlrpc_request_header(req) :
-    print("req@%x x%d %s %4d %s %s" %
+    print("req@%x x%d %s %4d %s %s hp:%d" %
           (req, req.rq_xid, req_sent(req), req.rq_status,
-           phase2str(req.rq_phase), print_req_flags(req)))
+           phase2str(req.rq_phase), print_req_flags(req), req.rq_hp))
 
 def show_ptlrpc_request(req) :
     show_ptlrpc_request_header(req)
