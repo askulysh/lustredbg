@@ -142,15 +142,23 @@ def rht_bucket(tbl, i) :
     return tbl.buckets[i]
     #    return readSU("struct rhash_head", tbl.buckets+i*8)
 
-def rhashtable_lookup(ht, key) :
+def get_rhashtable_nodes(ht) :
     off = member_offset('struct lu_object_header', 'loh_hash')
     for i in range(ht.tbl.size) :
         pos = readSU('struct rhash_head', ht.tbl.buckets[i])
         while pos != 0 and pos&1 == 0 :
-            loh = readSU("struct lu_object_header", pos - off)
-            if loh_cmp_fid(loh, key) :
-                return loh
+            yield pos
             pos = pos.next
+
+def get_rhashtable_objs(ht) :
+    off = member_offset('struct lu_object_header', 'loh_hash')
+    for n in get_rhashtable_nodes(ht) :
+        yield readSU("struct lu_object_header", n - off)
+
+def rhashtable_lookup(ht, key) :
+    for loh in get_rhashtable_objs(ht) :
+        if loh_cmp_fid(loh, key) :
+            return loh
     return None
 
 def lu_object_find_rh(dev, fid) :
@@ -186,15 +194,18 @@ def lu_object_find(dev, fid) :
         return lu_object_find_cfs_hash(dev, fid)
 
 def lu_object_find_by_objid(dev, objid) :
-    loh = None
     hs = dev.ld_site.ls_obj_hash
+    if symbol_exists("obj_hash_params"):
+        gen = get_rhashtable_nodes(hs)
+    else :
+        gen = ll.cfs_hash_get_nodes(hs)
     off = member_offset('struct lu_object_header', 'loh_hash')
-    for hn in ll.cfs_hash_get_nodes(hs) :
-        h = readSU("struct lu_object_header", hn - off)
-        if h.loh_fid.f_oid == objid :
-            loh = h
+    for hn in gen :
+        loh = readSU("struct lu_object_header", hn - off)
+        if loh.loh_fid.f_oid == objid :
             print_loh(loh, "")
-    return loh
+            return loh
+    return None
 
 def fld_lookup(fld, seq) :
     fld_cache_entries = readSUListFromHead(fld.lsf_cache.fci_entries_head,
