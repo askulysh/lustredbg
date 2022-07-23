@@ -556,6 +556,7 @@ def show_BL_AST_locks() :
                 enq_req = find_enqueue_req(lock, mdt_history)
                 if enq_req :
                     enq_pid = ptlrpc.get_pid(enq_req)
+                    enq_xid = enq_req.rq_xid
                     print("Enqueue pid: ", enq_pid, " request :")
                     ptlrpc.show_ptlrpc_request(enq_req)
                     enq_nid = lock.l_export.exp_connection.c_peer.nid
@@ -563,6 +564,9 @@ def show_BL_AST_locks() :
                     for req in mdt_history :
                         if req.rq_peer.nid == enq_nid and ptlrpc.get_pid(req) == enq_pid :
                             ptlrpc.show_ptlrpc_request(req)
+                            if req.rq_xid == enq_xid and req.rq_phase != -339681788 :
+                                print("Enqueue xid not COMPLETED likely LUS-9444")
+                                break
                     print("\n", lock.l_export)
                     ptlrpc.show_export_hdr("\t", lock.l_export)
 
