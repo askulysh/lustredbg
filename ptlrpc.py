@@ -852,7 +852,8 @@ def show_export(prefix, exp) :
             "trd_list", "struct tg_reply_data")
     for trd in reply_list :
         print("tag: ", trd.trd_tag, "xid:", trd.trd_reply.lrd_xid,
-              "transno", trd.trd_reply.lrd_transno, fid2str(trd.trd_object),
+              "transno", trd.trd_reply.lrd_transno,
+              "gen", trd.trd_reply.lrd_client_gen, fid2str(trd.trd_object),
               trd.trd_pre_versions)
 
     rq_info = getStructInfo('struct ptlrpc_request')
