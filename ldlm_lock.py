@@ -567,11 +567,7 @@ def show_BL_AST_locks() :
                             if req.rq_xid == enq_xid and req.rq_phase != -339681788 :
                                 print("Enqueue xid not COMPLETED likely LUS-9444")
                                 break
-                    print("\n", lock.l_export)
-                    ptlrpc.show_export_hdr("\t", lock.l_export)
-
-                else :
-                    bad.add(lock.l_export)
+                bad.add(lock.l_export)
         print()
 
     if len(bad) == 0 :
