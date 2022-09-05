@@ -312,7 +312,7 @@ def show_resource_hdr(res) :
     if res.lr_waiting.next != res.lr_waiting.prev and res.lr_granted.next == res.lr_granted.prev :
         print("Error: Empty granted list while locks are waiting !!!")
 
-def show_resource(res) :
+def show_resource(res, check_conflicts) :
     show_resource_hdr(res)
     granted = readSUListFromHead(res.lr_granted,
                 "l_res_link", "struct ldlm_lock", maxel=res.lr_refcount.counter)
@@ -330,6 +330,8 @@ def show_resource(res) :
         print("waiting locks:")
         for lock in waiting :
             print_ldlm_lock(lock, "    ")
+            if not check_conflicts :
+                continue
             compatible = True
             for ll in granted :
                 if not lock_compatible(lock, ll) :
@@ -358,7 +360,7 @@ def show_ns_locks(ns) :
     print("ns %x %s total granted %d" % (ns, ns.ns_obd.obd_name,
         ns.ns_pool.pl_granted.counter))
     for res in get_ns_resources(ns) :
-        show_resource(res)
+        show_resource(res, False)
 
 def ns_list(l, regexp) :
     nss = readSUListFromHead(l, "ns_list_chain", "struct ldlm_namespace")
@@ -593,7 +595,7 @@ def analyze_deadlock(lock) :
     print("starting lock", lock)
     print()
 
-    show_resource(lock.l_resource)
+    show_resource(lock.l_resource, False)
 
     if lock.l_req_mode == lock.l_granted_mode :
         conflict = find_conflicting_in_list(lock, lock.l_resource.lr_waiting)
@@ -624,7 +626,7 @@ def analyze_deadlock(lock) :
 
     if not conflict :
         print("\nError: no conflict")
-        show_resource(lock.l_resource)
+        show_resource(lock.l_resource, False)
 
 def show_ns_info(ns_list) :
     namespaces = readSUListFromHead(ns_list, "ns_list_chain", "struct ldlm_namespace")
@@ -651,6 +653,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-r","--res", dest="res", default = 0)
     parser.add_argument("-R","--show-res", dest="show_res",
                         action='store_true')
+    parser.add_argument("-V","--verbose", dest="verbose", action='store_true')
     parser.add_argument("-n","--ns", dest="ns", default = 0)
     parser.add_argument("-g","--grep", dest="g", default = 0)
     parser.add_argument("-w","--compwait", dest="compl_waiting",
@@ -670,7 +673,7 @@ if ( __name__ == '__main__'):
     if args.lock != 0 :
         l = readSU("struct ldlm_lock", int(args.lock, 16))
         if args.show_res :
-            show_resource(l.l_resource)
+            show_resource(l.l_resource, args.verbose)
         else:
             print_ldlm_lock(l, "")
     elif args.cookie != 0 :
@@ -679,7 +682,7 @@ if ( __name__ == '__main__'):
             print_ldlm_lock(lock, "")
     elif args.res != 0 :
         res = readSU("struct ldlm_resource", int(args.res, 16))
-        show_resource(res)
+        show_resource(res, args.verbose)
     elif args.show_namespaces :
         list_namespaces()
     elif args.ns != 0 :
