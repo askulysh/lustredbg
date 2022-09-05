@@ -45,15 +45,15 @@ def lustre_log_dump(log_file):
 
     def walk(m_nr_pages, m_page_list):
         if m_nr_pages == 0:
-            return  
+            return
         for tage in readSUListFromHead(m_page_list, "linkage",
                                        "struct cfs_trace_page",
-                                       m_nr_pages + 1) :
+                                       maxel=m_nr_pages + 1) :
             addr = page_to_virt(tage.page)
             buf = readmem(addr, tage.used)
             log_file.write(buf)
 
-    for p in cfs_trace_data: 
+    for p in cfs_trace_data:
         if p == 0:
             continue
         v = readSU("union cfs_trace_data_union", p)
@@ -61,13 +61,13 @@ def lustre_log_dump(log_file):
             tcd = v[cpu].tcd
             print(tcd)
             print("dumping %d pages from cpu %d" %
-                    (tcd.tcd_cur_pages, cpu)) 
+                    (tcd.tcd_cur_pages, cpu))
             walk(tcd.tcd_cur_pages, tcd.tcd_pages)
-            print("dumping %d daemon pages from cpu %d" %
-                    (tcd.tcd_cur_daemon_pages, cpu)) 
-            walk(tcd.tcd_cur_daemon_pages, tcd.tcd_daemon_pages)
+#            print("dumping %d daemon pages from cpu %d" %
+#                    (tcd.tcd_cur_daemon_pages, cpu))
+#            walk(tcd.tcd_cur_daemon_pages, tcd.tcd_daemon_pages)
             print("dumping %d stock pages from cpu %d" %
-                    (tcd.tcd_cur_stock_pages, cpu)) 
+                    (tcd.tcd_cur_stock_pages, cpu))
             walk(tcd.tcd_cur_stock_pages, tcd.tcd_stock_pages)
 
 if ( __name__ == '__main__'):
