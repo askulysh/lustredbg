@@ -25,7 +25,8 @@ def nid2str(nid) :
         return "lo"
     elif lnd == 13 :
         return ("%d@gni" % (nid & 0xffffffff))
-
+    elif lnd == 16 :
+                return ("%d@kfi" % (nid & 0xffffffff))
 
 LNET_COOKIE_TYPE_BITS = 2
 LNET_COOKIE_MASK = (1 << LNET_COOKIE_TYPE_BITS) - 1
