@@ -947,7 +947,7 @@ def search_for_rw_semaphore(stack) :
     if sys_info.kernel == "4.18.0" :
         owner = sem.rh_kabi_hidden_39.owner & (~0xf)
     else:
-        owner = sem.owner
+        owner = sem.owner & (~1)
     print(sem, "counter: %lx owner: %x" % (sem.count.counter, owner))
 
     return readSU("struct task_struct", owner)
