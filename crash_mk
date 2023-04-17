@@ -162,7 +162,7 @@ download_lustre() {
 	url="$APPD/$NEO_ver/job/$lustre_ver/$build/artifact/rpmbuild/RPMS/$lustre_modules"
 	echo $url
 	download_and_extract $url $rpmdir/$lustre_modules
-	if [ $NEO_ver = "CSL6" ]; then
+	if [ $client_build -eq 0 -a  $NEO_ver = "CSL6" ]; then
 		ldiskfs="kmod-lustre_ib-osd-ldiskfs-debuginfo-"$build_id".rpm"
 		download_and_extract $APPD/$ldiskfs $rpmdir/$ldiskfs
 	fi
