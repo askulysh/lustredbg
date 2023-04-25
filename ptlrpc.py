@@ -1153,8 +1153,11 @@ def get_work_exec_time(pid) :
     req = get_request(get_stacklist(pid))
     if not req :
         return get_seconds()
-    thread = req.rq_srv.sr_svc_thread
-    return thread.t_task.se.exec_start
+    try :
+        thread = req.rq_srv.sr_svc_thread
+        return thread.t_task.se.exec_start
+    except:
+        return 0
 
 def get_work_start_time_3_10(pid) :
     rbp = search_for_reg("RBP", pid, "tgt_request_handle")
@@ -1186,9 +1189,13 @@ def show_processing(pattern) :
     else :
         pids=sorted(waiting_pids, key=get_work_exec_time)
         req = get_request(get_stacklist(pids[0]))
-        if req :
-            task = req.rq_srv.sr_svc_thread.t_task
-        if req and task_time_diff(task, task.se.exec_start) > 20 :
+        task = False
+        try :
+            if req :
+                task = req.rq_srv.sr_svc_thread.t_task
+        except:
+            pass
+        if task and task_time_diff(task, task.se.exec_start) > 20 :
             print("Sorting by exec time")
         else :
             pids=sort_pids_by_start_time(waiting_pids)
