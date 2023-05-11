@@ -96,9 +96,10 @@ def page_list_sanity_check(obj, queue) :
 
 def print_osc_page(osc_page, prefix) :
     try :
-        index = osc_page.ops_cl.cpl_page.cp_osc_index
+        index = osc_page.ops_cl.cpl_page.cp_page_index
     except:
-        index = osc_page.ops_cl.cpl_index
+        index = osc_page.ops_cl.cpl_page.cp_osc_index
+        #index = osc_page.ops_cl.cpl_index
     oap = osc_page.ops_oap
     print(prefix, # osc_page,
           "idx:", index,
