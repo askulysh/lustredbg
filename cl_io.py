@@ -178,7 +178,11 @@ def lu2osc_dev(d) :
     return readSU("struct osc_device", d)
 
 def osc_export(obj) :
-    return lu2osc_dev(obj.oo_cl.co_lu.lo_dev).osc_exp;
+    dev = lu2osc_dev(obj.oo_cl.co_lu.lo_dev)
+    try:
+        return dev.osc_exp
+    except:
+        return dev.od_exp
 
 def osc_cli(obj) :
     return osc_export(obj).exp_obd.u.cli;
