@@ -47,6 +47,8 @@ def cli_get_file(stack) :
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "ll_file_open")
     if addr == 0 :
         addr = ptlrpc.search_stack_for_reg("RDI", stack, "do_dentry_open")
+    if addr == 0 :
+        addr = ptlrpc.search_stack_for_reg("RDX", stack, "ll_atomic_open")
     if addr != 0 :
         file = readSU("struct file", addr)
         return file
@@ -207,6 +209,9 @@ def show_client_pid(pid, prefix) :
         print(prefix, it)
         dentry = file.f_path.dentry
         inode = file.f_inode
+
+    if dentry == 0xffffffffffffffff :
+        dentry = None
 
     if dentry == None:
         dentry = cli_get_dentry(stack)
