@@ -429,6 +429,9 @@ def get_req_msg(req) :
 def get_req_buffer(req, n) :
     return get_msg_buffer(get_req_msg(req), n)
 
+def get_rep_buffer(req, n) :
+    return get_msg_buffer(get_rep_msg(req), n)
+
 def get_rep_msg(req) :
     try :
         msg = req.rq_repmsg

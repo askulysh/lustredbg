@@ -15,6 +15,7 @@ try :
 except TypeError :
     pass
 
+import struct
 import re
 
 __LDLM_flags_c = '''
@@ -522,11 +523,16 @@ def exp_find_cancel(exp, handle) :
     return None
 
 def find_enqueue_req(lock, history) :
+    peer = lock.l_export.exp_connection.c_peer
+    v = readU64(peer)
+    nid = struct.unpack("<Q", struct.pack(">Q", v))[0]
     for req in history :
-        nid = lock.l_export.exp_connection.c_peer.nid
         if req.rq_peer.nid == nid and ptlrpc.get_opc(req) == ptlrpc.opcodes.LDLM_ENQUEUE :
             ldlm_req = readSU("struct ldlm_request", ptlrpc.get_req_buffer(req, 1))
             if ldlm_req.lock_handle[0].cookie == lock.l_remote_handle.cookie :
+                return req
+            ldlm_rep = readSU("struct ldlm_reply", ptlrpc.get_rep_buffer(req, 1))
+            if ldlm_rep.lock_handle.cookie == lock.l_handle.h_cookie :
                 return req
     return None
 
