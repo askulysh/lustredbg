@@ -676,6 +676,22 @@ if ( __name__ == '__main__'):
             show_resource(l.l_resource, args.verbose)
         else:
             print_ldlm_lock(l, "")
+            if args.verbose :
+                cancel = exp_find_cancel(l.l_export, l.l_handle.h_cookie)
+                if cancel :
+                    print("Cancel has arrived")
+                    ptlrpc.show_ptlrpc_request(cancel)
+                else :
+                    srv = ptlrpc.find_service("mdt")
+                    if not srv :
+                        srv = ptlrpc.find_service("ost")
+                    mdt_history = list(ptlrpc.get_history_reqs(srv))
+
+                    enq_req = find_enqueue_req(l, mdt_history)
+                    if enq_req :
+                        enq_pid = ptlrpc.get_pid(enq_req)
+                        print("Enqueue pid: ", enq_pid, " request :")
+                        ptlrpc.show_ptlrpc_request(enq_req)
     elif args.cookie != 0 :
         lock = find_lock_by_cookie(int(args.cookie, 16))
         if lock :
