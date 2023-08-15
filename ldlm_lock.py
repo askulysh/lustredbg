@@ -189,7 +189,7 @@ def lock_client(lock) :
 
 def get_bl_ast_seconds(lock) :
     try :
-         sec = ktime_get_seconds() - lock.l_blast_sent
+         sec = get_seconds() - lock.l_blast_sent
     except :
          sec = get_seconds() - lock.l_last_activity
     return sec
