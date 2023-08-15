@@ -495,11 +495,10 @@ def req_has_cancel(req, handle) :
     n = ldlm_req.lock_count
     if n == 0 :
         n = 1
-    if n > 2 :
-        n = 2
-        print(ldlm_req, ldlm_req.lock_count-2, "handles skipped")
+    p = int(ldlm_req) + getStructInfo('struct ldlm_request')['lock_handle'].offset
     for i in range(n) :
-        if ldlm_req.lock_handle[i].cookie == handle :
+        cookie =  readU64(p + i*8)
+        if cookie == handle :
             return True
     return False
 
