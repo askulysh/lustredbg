@@ -675,6 +675,8 @@ def show_ptlrpc_request_buf(req) :
         show_request_fmt(req, "RQF_OUT_UPDATE")
 
 def exp_cl_str(exp) :
+    if not exp :
+        return ""
     if exp.exp_imp_reverse != 0 :
         conn = exp.exp_imp_reverse.imp_connection
     else :

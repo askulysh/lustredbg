@@ -144,8 +144,16 @@ def policy_data2str(lr_type, data) :
         return "[%d-%d]" % (data.l_extent.start, data.l_extent.end)
     elif lr_type == ldlm_types.LDLM_FLOCK :
         try :
-            return "[%d-%d] pid: %d owner: %x" % (data.l_flock.start,
-                data.l_flock.end, data.l_flock.pid, data.l_flock.owner)
+            bl_str = ""
+            if data.l_flock.blocking_export :
+                bl_str = "bl_exp: %x %s bl_owner: %x" % (
+                    data.l_flock.blocking_export,
+                    ptlrpc.exp_cl_str(data.l_flock.blocking_export),
+                    data.l_flock.blocking_owner)
+
+            return "[%d-%d] pid: %d owner: %x %s" % (
+                data.l_flock.start, data.l_flock.end, data.l_flock.pid,
+                data.l_flock.owner, bl_str)
         except KeyError :
             return "[%d-%d] pid: %d owner: %x" % (data.l_flock.lfw_start,
                 data.l_flock.lfw_end, data.l_flock.lfw_pid,
