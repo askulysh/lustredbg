@@ -1248,10 +1248,12 @@ def find_service(name) :
 
 def show_waiting(service, pattern) :
     for i in range(service.srv_ncpts) :
-        srv_part = service.srv_parts[i]
-#        print(srv_part)
-        show_policy(srv_part.scp_nrs_reg.nrs_policy_primary, pattern)
-        show_policy(srv_part.scp_nrs_reg.nrs_policy_fallback, pattern)
+        svcpt = service.srv_parts[i]
+        print(svcpt, "incoming:", svcpt.scp_nreqs_incoming,
+              "active:", svcpt.scp_nreqs_active,
+              "hp active:", svcpt.scp_nhreqs_active)
+        show_policy(svcpt.scp_nrs_reg.nrs_policy_primary, pattern)
+        show_policy(svcpt.scp_nrs_reg.nrs_policy_fallback, pattern)
 
 def get_history_reqs(service):
     rq_info = getStructInfo('struct ptlrpc_request')
@@ -1279,7 +1281,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-u","--running", dest="running",
                         action='store_true')
     parser.add_argument("-w","--waiting", dest="waiting",
-                       default = 0)
+                       default = "")
     parser.add_argument("-W","--cli-waiting", dest="cli_waiting",
                        action='store_true')
     parser.add_argument("-c","--client", dest="client", default = "")
@@ -1314,9 +1316,8 @@ if ( __name__ == '__main__'):
         show_export("", exp)
     elif args.running != 0 :
         show_processing(pattern)
-    elif args.waiting != 0 :
-        service = readSU("struct ptlrpc_service", int(args.waiting, 16))
-        show_waiting(service, pattern)
+    elif args.waiting != "" :
+        show_waiting(find_service(args.waiting), pattern)
     elif args.cli_waiting != 0 :
         show_cli_waiting()
     elif args.pid != 0 :
