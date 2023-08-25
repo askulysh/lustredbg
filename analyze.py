@@ -331,6 +331,17 @@ def show_bl_pid(pid, prefix) :
         ext = readSU("struct osc_extent", addr)
         print(ext)
 
+def show_cb_pid(pid, prefix) :
+    stack = ptlrpc.get_stacklist(pid)
+    if stack == None :
+        return
+    addr = ptlrpc.search_stack_for_reg("RDI", stack,
+                                       "ldlm_callback_handler")
+    if addr == 0:
+        return
+    req = readSU("struct ptlrpc_request", addr)
+    ptlrpc.show_ptlrpc_request(req)
+
 def find_bl_handler(lock) :
     (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
     pids = funcsMatch(funcpids, "ldlm_bl_thread_main")
@@ -486,6 +497,7 @@ if ( __name__ == '__main__'):
     parser =  argparse.ArgumentParser()
     parser.add_argument("-p","--pid", dest="pid", default = 0)
     parser.add_argument("-B","--bl_pid", dest="bl_pid", default = 0)
+    parser.add_argument("-C","--cb_pid", dest="cb_pid", default = 0)
     parser.add_argument("-i","--import", dest="imp", default = 0)
     args = parser.parse_args()
 
@@ -493,6 +505,8 @@ if ( __name__ == '__main__'):
         show_client_pid(int(args.pid), "")
     elif args.bl_pid != 0 :
         show_bl_pid(int(args.bl_pid), "")
+    elif args.cb_pid != 0 :
+        show_cb_pid(int(args.cb_pid), "")
     elif args.imp != 0 :
         imp = readSU("struct obd_import", int(args.imp, 16))
         parse_import_eviction(imp)
