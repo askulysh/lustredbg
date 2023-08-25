@@ -138,6 +138,8 @@ def cli_get_request(stack, prefix) :
     if addr == 0:
         addr = ptlrpc.search_stack_for_reg("RSI", stack, "ldlm_cli_enqueue_fini")
     if addr == 0:
+        addr = ptlrpc.search_stack_for_reg("R12", stack, "ldlm_cli_enqueue_fini")
+    if addr == 0:
         addr = ptlrpc.search_stack_for_reg("RDI", stack, "ptlrpc_get_mod_rpc_slot")
     if addr != 0 :
         print()
