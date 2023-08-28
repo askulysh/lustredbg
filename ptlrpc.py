@@ -1269,6 +1269,22 @@ def get_history_reqs(service):
                 break
             yield readSU("struct ptlrpc_request", int(req) - offset)
 
+def show_resends(req) :
+    exp = req.rq_export
+    rq_info = getStructInfo('struct ptlrpc_request')
+    srv_rq_info = getStructInfo('struct ptlrpc_srv_req')
+    offset = rq_info['rq_srv'].offset + srv_rq_info['sr_exp_list'].offset
+
+    for r in readStructNext(exp.exp_reg_rpcs.next, "next", maxel=40000) :
+        rr = readSU("struct ptlrpc_request", int(r) - offset)
+        if rr != req and rr.rq_xid == req.rq_xid :
+            show_ptlrpc_request(rr)
+
+    for r in readStructNext(exp.exp_hp_rpcs.next, "next", maxel=40000) :
+        rr = readSU("struct ptlrpc_request", int(r) - offset)
+        if rr != req and rr.rq_xid == req.rq_xid :
+            show_ptlrpc_request(rr)
+
 if ( __name__ == '__main__'):
     import argparse
 
@@ -1289,6 +1305,7 @@ if ( __name__ == '__main__'):
                        default = 0)
     parser.add_argument("-H","--history", dest="history",
                        default = 0)
+    parser.add_argument("-V","--verbose", dest="verbose", action='store_true')
     parser.add_argument('object', nargs='?')
     args = parser.parse_args()
 
@@ -1302,6 +1319,8 @@ if ( __name__ == '__main__'):
     if args.req != 0 :
         req = readSU("struct ptlrpc_request", int(args.req, 16))
         show_ptlrpc_request(req)
+        if args.verbose :
+            show_resends(req)
     elif args.set != 0 :
         s = readSU("struct ptlrpc_request_set", int(args.set, 16))
         show_ptlrpc_set(s)
