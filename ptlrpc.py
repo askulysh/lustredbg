@@ -1220,7 +1220,7 @@ def show_cli_waiting() :
 def show_policy(policy, pattern) :
     if (policy == 0) :
         return
-#    print(policy, policy.pol_desc.pd_name)
+    print(policy, policy.pol_desc.pd_name, policy.pol_req_queued)
     fifo_head = readSU("struct nrs_fifo_head", policy.pol_private)
 #    print(fifo_head)
     rq_info = getStructInfo('struct ptlrpc_request')
