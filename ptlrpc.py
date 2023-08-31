@@ -411,6 +411,8 @@ def req_sent(req) :
         return "Waiting...                  "
 
 def get_msg_buffer(msg, n) :
+    if msg == 0 :
+        return None
     bufcount = msg.lm_bufcount
     offset = (8*4 + (bufcount )*4 + 7) & (~0x7)
     a = int(msg) + offset
@@ -605,7 +607,10 @@ def show_ptlrpc_request_buf(req) :
         print("osc worker request")
         return
 
-    body = readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
+    b = get_req_buffer(req, 0)
+    if not b :
+        return
+    body = readSU("struct ptlrpc_body_v3", b)
     print("opc %s transno %d tag %d conn %d %s pid/status %d job %s" %
           (opcodes.__getitem__(body.pb_opc), body.pb_transno, body.pb_tag,
            body.pb_conn_cnt, dbits2str(body.pb_flags, pb_flags),

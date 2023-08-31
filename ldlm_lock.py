@@ -495,11 +495,29 @@ def show_completition_waiting_locks() :
         print("%d threads are waiting (max %ss) for" % (res[l][0], res[l][1]))
         print_ldlm_lock(l, "")
 
-def req_has_cancel(req, handle) :
-    body = readSU("struct ptlrpc_body_v3", ptlrpc.get_req_buffer(req, 0))
+def req_has_handle(req, lock) :
+    b = ptlrpc.get_req_buffer(req, 0)
+    if not  b :
+        print("Bad request: ", req)
+        return False
+    body = readSU("struct ptlrpc_body_v3", b)
     if body.pb_opc != ptlrpc.opcodes.LDLM_ENQUEUE and body.pb_opc != ptlrpc.opcodes.LDLM_CANCEL :
            return False
     ldlm_req = readSU("struct ldlm_request", ptlrpc.get_req_buffer(req, 1))
+    handle = lock.l_handle.h_cookie
+    if body.pb_opc == ptlrpc.opcodes.LDLM_ENQUEUE :
+        if ldlm_req.lock_handle[0].cookie == lock.l_remote_handle.cookie :
+            return True
+        rep = ptlrpc.get_rep_buffer(req, 1)
+        if not rep :
+            return False
+        ldlm_rep = readSU("struct ldlm_reply", rep)
+        if ldlm_rep.lock_handle.cookie == lock.l_handle.h_cookie :
+            return True
+    else :
+        if ldlm_req.lock_handle[0].cookie == handle :
+            return True
+
     n = ldlm_req.lock_count
     if n == 0 :
         n = 1
@@ -510,7 +528,7 @@ def req_has_cancel(req, handle) :
             return True
     return False
 
-def exp_find_cancel(exp, handle) :
+def exp_find_cancel(exp, lock) :
     rq_info = getStructInfo('struct ptlrpc_request')
     srv_rq_info = getStructInfo('struct ptlrpc_srv_req')
     offset = rq_info['rq_srv'].offset + srv_rq_info['sr_exp_list'].offset
@@ -519,13 +537,13 @@ def exp_find_cancel(exp, handle) :
     while entry.prev != exp.exp_hp_rpcs :
         entry = entry.prev
         req = readSU("struct ptlrpc_request", int(entry) - offset)
-        if req_has_cancel(req, handle) :
+        if req_has_handle(req, lock) :
             return req
     entry = exp.exp_reg_rpcs
     while entry.prev != exp.exp_reg_rpcs :
         entry = entry.prev
         req = readSU("struct ptlrpc_request", int(entry) - offset)
-        if req_has_cancel(req, handle) :
+        if req_has_handle(req, lock) :
             return req
     return None
 
@@ -538,10 +556,28 @@ def find_enqueue_req(lock, history) :
             ldlm_req = readSU("struct ldlm_request", ptlrpc.get_req_buffer(req, 1))
             if ldlm_req.lock_handle[0].cookie == lock.l_remote_handle.cookie :
                 return req
-            ldlm_rep = readSU("struct ldlm_reply", ptlrpc.get_rep_buffer(req, 1))
+            msg = ptlrpc.get_rep_msg(req)
+
+            rep = ptlrpc.get_rep_buffer(req, 1)
+            if not rep :
+                continue
+            ldlm_rep = readSU("struct ldlm_reply", rep)
             if ldlm_rep.lock_handle.cookie == lock.l_handle.h_cookie :
                 return req
     return None
+
+def show_lock_requests(lock, history) :
+    peer = lock.l_export.exp_connection.c_peer
+    v = readU64(peer)
+    nid = struct.unpack("<Q", struct.pack(">Q", v))[0]
+    for req in history :
+        if req.rq_peer.nid == nid and req_has_handle(req, lock) :
+            ptlrpc.show_ptlrpc_request(req)
+    cancel_history = list(ptlrpc.get_history_reqs(
+        ptlrpc.find_service("ldlm_canceld")))
+    for req in cancel_history :
+        if req.rq_peer.nid == nid and req_has_handle(req, lock) :
+            ptlrpc.show_ptlrpc_request(req)
 
 def show_BL_AST_locks() :
     ptlrpc_all_services = readSymbol("ptlrpc_all_services")
@@ -562,7 +598,7 @@ def show_BL_AST_locks() :
     bad = set()
     for lock in waiting :
         print_ldlm_lock(lock, "")
-        cancel = exp_find_cancel(lock.l_export, lock.l_handle.h_cookie)
+        cancel = exp_find_cancel(lock.l_export, lock)
         if cancel :
             print("Cancel has arrived")
             ptlrpc.show_ptlrpc_request(cancel)
@@ -690,7 +726,7 @@ if ( __name__ == '__main__'):
         else:
             print_ldlm_lock(l, "")
             if args.verbose :
-                cancel = exp_find_cancel(l.l_export, l.l_handle.h_cookie)
+                cancel = exp_find_cancel(l.l_export, l)
                 if cancel :
                     print("Cancel has arrived")
                     ptlrpc.show_ptlrpc_request(cancel)
@@ -705,6 +741,7 @@ if ( __name__ == '__main__'):
                         enq_pid = ptlrpc.get_pid(enq_req)
                         print("Enqueue pid: ", enq_pid, " request :")
                         ptlrpc.show_ptlrpc_request(enq_req)
+                    show_lock_requests(l, mdt_history)
     elif args.cookie != 0 :
         lock = find_lock_by_cookie(int(args.cookie, 16))
         if lock :
