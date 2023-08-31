@@ -1,6 +1,7 @@
 # ptlrpc functions
 
 from __future__ import print_function
+from functools import lru_cache
 
 from pykdump.API import *
 from ktime import *
@@ -1269,10 +1270,14 @@ def get_history_reqs(service):
     for i in range(service.srv_ncpts) :
         svcpt = service.srv_parts[i]
         for req in readStructNext(svcpt.scp_hist_reqs.next, "next",
-                                  maxel=40000) :
+                                  maxel=500000) :
             if req == svcpt.scp_hist_reqs :
                 break
             yield readSU("struct ptlrpc_request", int(req) - offset)
+
+@lru_cache(maxsize=None)
+def get_history_list(service):
+    return list(get_history_reqs(service))
 
 def show_resends(req) :
     exp = req.rq_export
@@ -1280,12 +1285,12 @@ def show_resends(req) :
     srv_rq_info = getStructInfo('struct ptlrpc_srv_req')
     offset = rq_info['rq_srv'].offset + srv_rq_info['sr_exp_list'].offset
 
-    for r in readStructNext(exp.exp_reg_rpcs.next, "next", maxel=40000) :
+    for r in readStructNext(exp.exp_reg_rpcs.next, "next", maxel=60000) :
         rr = readSU("struct ptlrpc_request", int(r) - offset)
         if rr != req and rr.rq_xid == req.rq_xid :
             show_ptlrpc_request(rr)
 
-    for r in readStructNext(exp.exp_hp_rpcs.next, "next", maxel=40000) :
+    for r in readStructNext(exp.exp_hp_rpcs.next, "next", maxel=60000) :
         rr = readSU("struct ptlrpc_request", int(r) - offset)
         if rr != req and rr.rq_xid == req.rq_xid :
             show_ptlrpc_request(rr)

@@ -573,8 +573,8 @@ def show_lock_requests(lock, history) :
     for req in history :
         if req.rq_peer.nid == nid and req_has_handle(req, lock) :
             ptlrpc.show_ptlrpc_request(req)
-    cancel_history = list(ptlrpc.get_history_reqs(
-        ptlrpc.find_service("ldlm_canceld")))
+    cancel_history = ptlrpc.get_history_list(
+        ptlrpc.find_service("ldlm_canceld"))
     for req in cancel_history :
         if req.rq_peer.nid == nid and req_has_handle(req, lock) :
             ptlrpc.show_ptlrpc_request(req)
@@ -593,7 +593,7 @@ def show_BL_AST_locks() :
     srv = ptlrpc.find_service("mdt")
     if not srv :
         srv = ptlrpc.find_service("ost")
-    mdt_history = list(ptlrpc.get_history_reqs(srv))
+    mdt_history = ptlrpc.get_history_list(srv)
 
     bad = set()
     for lock in waiting :
@@ -632,10 +632,13 @@ def show_BL_AST_locks() :
         ptlrpc.show_export("    ", exp)
         remote = ptlrpc.exp_cl_str(exp)
         pattern = re.compile(remote)
+        peer = exp.exp_connection.c_peer
+        v = readU64(peer)
+        nid = struct.unpack("<Q", struct.pack(">Q", v))[0]
         for srv in services :
             print(srv.srv_name, " history:")
-            for req in ptlrpc.get_history_reqs(srv) :
-                if exp.exp_connection.c_peer.nid == req.rq_peer.nid :
+            for req in ptlrpc.get_history_list(srv) :
+                if nid == req.rq_peer.nid :
                     ptlrpc.show_ptlrpc_request(req)
         print()
 
@@ -734,7 +737,7 @@ if ( __name__ == '__main__'):
                     srv = ptlrpc.find_service("mdt")
                     if not srv :
                         srv = ptlrpc.find_service("ost")
-                    mdt_history = list(ptlrpc.get_history_reqs(srv))
+                    mdt_history = ptlrpc.get_history_list(srv)
 
                     enq_req = find_enqueue_req(l, mdt_history)
                     if enq_req :
