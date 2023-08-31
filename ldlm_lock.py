@@ -629,7 +629,7 @@ def show_BL_AST_locks() :
     print()
 
     for exp in bad :
-        ptlrpc.show_export("    ", exp)
+        ptlrpc.show_export("    ", exp, False)
         remote = ptlrpc.exp_cl_str(exp)
         pattern = re.compile(remote)
         peer = exp.exp_connection.c_peer
@@ -670,7 +670,7 @@ def analyze_deadlock(lock) :
                 print_ldlm_lock(conflict, "")
             print("\nexport", conflict.l_export, ":")
             if conflict.l_export != 0 :
-                ptlrpc.show_export("", conflict.l_export)
+                ptlrpc.show_export("", conflict.l_export, False)
             return
 
         print("lock", lock);

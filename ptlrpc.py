@@ -863,15 +863,19 @@ def show_export_hdr(prefix, exp) :
 def list_empty(head) :
     return head.prev == head
 
-def show_export(prefix, exp) :
+def show_export(prefix, exp, verbose) :
     show_export_hdr(prefix, exp)
     reply_list = readSUListFromHead(exp.u.eu_target_data.ted_reply_list,
             "trd_list", "struct tg_reply_data")
+    history = get_history_reqs(find_service("mdt"))
     for trd in reply_list :
         print("tag: ", trd.trd_tag, "xid:", trd.trd_reply.lrd_xid,
               "transno", trd.trd_reply.lrd_transno,
               "gen", trd.trd_reply.lrd_client_gen, fid2str(trd.trd_object),
               trd.trd_pre_versions)
+        for req in history :
+            if req.rq_xid == trd.trd_reply.lrd_xid :
+                show_ptlrpc_request(req)
 
     rq_info = getStructInfo('struct ptlrpc_request')
     srv_rq_info = getStructInfo('struct ptlrpc_srv_req')
@@ -1315,6 +1319,7 @@ if ( __name__ == '__main__'):
                        default = 0)
     parser.add_argument("-H","--history", dest="history",
                        default = 0)
+    parser.add_argument("-x","--xid", dest="xid", default = 0)
     parser.add_argument("-V","--verbose", dest="verbose", action='store_true')
     parser.add_argument('object', nargs='?')
     args = parser.parse_args()
@@ -1342,7 +1347,7 @@ if ( __name__ == '__main__'):
         imp_show_history(imp)
     elif args.exp != 0 :
         exp = readSU("struct obd_export", int(args.exp, 16))
-        show_export("", exp)
+        show_export("", exp, args.verbose)
     elif args.running != 0 :
         show_processing(pattern)
     elif args.waiting != "" :
@@ -1358,6 +1363,14 @@ if ( __name__ == '__main__'):
                 show_ptlrpc_request(req)
         else :
             print("Wrong service name", args.history)
+    elif args.xid != 0 :
+        ptlrpc_all_services = readSymbol("ptlrpc_all_services")
+        services = readSUListFromHead(ptlrpc_all_services, "srv_list",
+                                      "struct ptlrpc_service")
+        for svc in services :
+            for req in get_history_list(svc) :
+                if req.rq_xid == int(args.xid) :
+                    show_ptlrpc_request(req)
     elif args.object :
         if args.object[:3] == "req" :
             req = readSU("struct ptlrpc_request", int(args.object[4:], 16))
