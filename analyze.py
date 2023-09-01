@@ -160,6 +160,7 @@ def cli_get_request(stack, prefix) :
         print(res)
         off = getStructInfo('struct ptlrpc_request')['rq_cli'].offset
         off += getStructInfo('struct ptlrpc_cli_req')['cr_async_args'].offset
+        off += getStructInfo('struct osc_setattr_args')['sa_cookie'].offset
         for s in res.splitlines():
             m = obd.__re_search.match(s)
             if (m) :
