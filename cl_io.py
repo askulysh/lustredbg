@@ -304,6 +304,12 @@ def print_lsm(prefix, lsm) :
             print(prefix, "  stripe[%d] %s MDS %d %s" %
                     (i, obd.fid2str(oi.lmo_fid), oi.lmo_mds, oi.lmo_root))
 
+def lli2lsm(lli) :
+    if lli.hasField('lli_lsm_obj') :
+        return lli.lli_lsm_obj.lso_lsm
+    else :
+        return lli.lli_lsm_md
+
 def print_inode(prefix, inode) :
     lli = readSU("struct ll_inode_info", inode -
             member_offset('struct ll_inode_info', 'lli_vfs_inode'))
@@ -312,8 +318,11 @@ def print_inode(prefix, inode) :
     except :
         inode_lock = inode.i_rwsem
     print(inode, inode_lock, lli, obd.fid2str(lli.lli_fid), lli.lli_clob)
-    if S_ISDIR(inode.i_mode) and lli.lli_lsm_md != 0 :
-        print_lsm(prefix + '   ', lli.lli_lsm_md)
+
+    if S_ISDIR(inode.i_mode) :
+        lsm = lli2lsm(lli)
+        if lsm != 0 :
+            print_lsm(prefix + '   ', lsm)
 
     if lli.lli_clob :
         vvp_object = readSU("struct vvp_object", lli.lli_clob.co_lu.lo_header)
