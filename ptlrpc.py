@@ -1321,6 +1321,8 @@ if ( __name__ == '__main__'):
                        default = 0)
     parser.add_argument("-x","--xid", dest="xid", default = 0)
     parser.add_argument("-V","--verbose", dest="verbose", action='store_true')
+    parser.add_argument("-E","--show-export", dest="show_export",
+                        action='store_true')
     parser.add_argument('object', nargs='?')
     args = parser.parse_args()
 
@@ -1333,9 +1335,12 @@ if ( __name__ == '__main__'):
 
     if args.req != 0 :
         req = readSU("struct ptlrpc_request", int(args.req, 16))
-        show_ptlrpc_request(req)
-        if args.verbose :
-            show_resends(req)
+        if args.show_export :
+            show_export("", exp, args.verbose)
+        else :
+            show_ptlrpc_request(req)
+            if args.verbose :
+                show_resends(req)
     elif args.set != 0 :
         s = readSU("struct ptlrpc_request_set", int(args.set, 16))
         show_ptlrpc_set(s)
