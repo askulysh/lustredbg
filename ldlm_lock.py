@@ -164,10 +164,11 @@ def policy_data2str(lr_type, data) :
 def print_ldlm_request(prefix, req) :
     res = req.lock_desc.l_resource
     if res.lr_type != 0 :
-        print("%s %s %s %s %s" %
+        print("%s %s %s %s %s %s" %
                 (prefix, ldlm_types.__getitem__(res.lr_type), res2str(res),
                 ldlm_mode2str(req.lock_desc.l_req_mode),
-                policy_data2str(res.lr_type, req.lock_desc.l_policy_data)))
+                policy_data2str(res.lr_type, req.lock_desc.l_policy_data),
+                dbits2str(req.lock_flags, LDLM_flags)))
     n = req.lock_count
     if n == 0 :
         n = 1
