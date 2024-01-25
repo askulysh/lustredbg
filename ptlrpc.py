@@ -953,6 +953,19 @@ def search_for_reg(r, pid, func) :
         return search_stack_for_reg(r, stacklist, func)
     return None
 
+def rw_sem_owner(sem) :
+    if sys_info.kernel == "4.18.0" :
+        owner = sem.rh_kabi_hidden_39.owner & (~0xf)
+    else:
+        if sem.owner.hasField('counter') :
+            owner = sem.owner.counter & (~0xf)
+        else :
+            owner = sem.owner & (~1)
+    owner = owner & 0xffffffffffffffff
+    print(sem, "counter: 0x%lx owner: %lx" % (sem.count.counter, owner))
+
+    return readSU("struct task_struct", owner)
+
 def search_for_rw_semaphore(stack) :
     addr = search_stack_for_reg("RDI", stack, "call_rwsem_down_write_failed")
     if addr == 0:
@@ -965,13 +978,8 @@ def search_for_rw_semaphore(stack) :
         return None
     print()
     sem = readSU("struct rw_semaphore", addr)
-    if sys_info.kernel == "4.18.0" :
-        owner = sem.rh_kabi_hidden_39.owner & (~0xf)
-    else:
-        owner = sem.owner & (~1)
-    print(sem, "counter: %lx owner: %x" % (sem.count.counter, owner))
 
-    return readSU("struct task_struct", owner)
+    return rw_sem_owner(sem)
 
 def search_for_mutex(stack) :
     addr = search_stack_for_reg("RDI", stack, "__mutex_lock_slowpath")

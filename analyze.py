@@ -272,6 +272,12 @@ def show_client_pid(pid, prefix) :
     bl_task = ptlrpc.search_for_mutex(stack)
     if not bl_task :
         bl_task = ptlrpc.search_for_rw_semaphore(stack)
+    if not bl_task and  inode :
+        lli = readSU("struct ll_inode_info", inode -
+            member_offset('struct ll_inode_info', 'lli_vfs_inode'))
+        bl_task = ptlrpc.rw_sem_owner(lli.lli_lsm_sem)
+        if bl_task and bl_task.pid == pid :
+            bl_task = None
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "__pv_queued_spin_lock_slowpath")
     if addr != 0 :
