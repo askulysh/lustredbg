@@ -759,6 +759,9 @@ def show_import(prefix, imp) :
            lustre_imp_state.__getitem__(imp.imp_state), cur_nid,
            get_seconds() - imp.imp_last_reply_time,
            imp.imp_next_ping - ktime_get_seconds()))
+    print("%slast committed %d last checked %d" %
+          (prefix, imp.imp_peer_committed_transno,
+           imp.imp_last_transno_checked))
     if imp.imp_state != lustre_imp_state.LUSTRE_IMP_FULL :
         idx = imp.imp_state_hist_idx
         size = 16
