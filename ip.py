@@ -20,6 +20,8 @@ import kiblnd as kiblnd
 #import cl_lock as cl_lock
 #import cl_io as cl_io
 
+sys.path.append('../pykdump/LinuxDump/')
+
 def exit():
     sys.exit()
 

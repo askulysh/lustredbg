@@ -680,14 +680,19 @@ def show_ptlrpc_request_buf(req) :
     elif body.pb_opc == opcodes.OUT_UPDATE :
         show_request_fmt(req, "RQF_OUT_UPDATE")
 
-def exp_cl_str(exp) :
+def exp_cl_nid(exp) :
     if not exp :
         return ""
     if exp.exp_imp_reverse != 0 :
         conn = exp.exp_imp_reverse.imp_connection
     else :
         conn = exp.exp_connection
-    return "%s@%s" % (exp.exp_client_uuid.uuid, nid2str(conn.c_peer.nid))
+    return nid2str(conn.c_peer.nid)
+
+def exp_cl_str(exp) :
+    if not exp :
+        return ""
+    return "%s@%s" % (exp.exp_client_uuid.uuid, exp_cl_nid(exp))
 
 def req_client(req) :
     if req.rq_export != 0:
@@ -705,8 +710,10 @@ def show_ptlrpc_request(req) :
         show_import("  ", req.rq_import)
     else :
         print(req_client(req))
-        print("arrived",
-              get_seconds() - req.rq_srv.sr_arrival_time.tv_sec, "sec ago")
+        print("arrived %d sec ago %u.%09u" %
+              (get_seconds() - req.rq_srv.sr_arrival_time.tv_sec,
+              req.rq_srv.sr_arrival_time.tv_sec,
+              req.rq_srv.sr_arrival_time.tv_nsec))
 
     show_ptlrpc_request_buf(req)
 
@@ -870,7 +877,7 @@ def show_export(prefix, exp, verbose) :
     show_export_hdr(prefix, exp)
     reply_list = readSUListFromHead(exp.u.eu_target_data.ted_reply_list,
             "trd_list", "struct tg_reply_data")
-    history = get_history_reqs(find_service("mdt"))
+    history = get_history_list(find_service("mdt"))
     for trd in reply_list :
         print("tag: ", trd.trd_tag, "xid:", trd.trd_reply.lrd_xid,
               "transno", trd.trd_reply.lrd_transno,
@@ -890,6 +897,15 @@ def show_export(prefix, exp, verbose) :
     if not list_empty(exp.exp_reg_rpcs) :
         print("Regular requests:")
         show_requests_from_list_reverse(exp.exp_reg_rpcs, offset)
+
+    if verbose :
+        nid = exp_cl_nid(exp)
+        print("History requests for nid %s:" % nid)
+        for req in history :
+#            print(nid, nid2str(req.rq_peer.nid), nid ==
+#                  nid2str(req.rq_peer.nid))
+           if nid == nid2str(req.rq_peer.nid) :
+               show_ptlrpc_request(req)
 
 #    print("\nlocks:")
 #    for hn in ll.cfs_hash_get_nodes(exp.exp_lock_hash) :
@@ -1347,7 +1363,11 @@ if ( __name__ == '__main__'):
     if args.req != 0 :
         req = readSU("struct ptlrpc_request", int(args.req, 16))
         if args.show_export :
-            show_export("", exp, args.verbose)
+            exp = req.rq_export
+            if exp :
+                show_export("", exp, args.verbose)
+            else :
+                print('Zero request export')
         else :
             show_ptlrpc_request(req)
             if args.verbose :
