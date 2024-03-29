@@ -706,6 +706,8 @@ if ( __name__ == '__main__'):
     parser.add_argument("-r","--res", dest="res", default = 0)
     parser.add_argument("-R","--show-res", dest="show_res",
                         action='store_true')
+    parser.add_argument("-E","--show-export", dest="show_exp",
+                        action='store_true')
     parser.add_argument("-V","--verbose", dest="verbose", action='store_true')
     parser.add_argument("-n","--ns", dest="ns", default = 0)
     parser.add_argument("-g","--grep", dest="g", default = 0)
@@ -727,6 +729,8 @@ if ( __name__ == '__main__'):
         l = readSU("struct ldlm_lock", int(args.lock, 16))
         if args.show_res :
             show_resource(l.l_resource, args.verbose)
+        elif args.show_exp :
+            ptlrpc.show_export("", l.l_export, args.verbose)
         else:
             print_ldlm_lock(l, "")
             if args.verbose :
