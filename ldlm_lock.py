@@ -186,6 +186,9 @@ def print_ldlm_reply(prefix, rep) :
                 policy_data2str(res.lr_type, rep.lock_desc.l_policy_data),
                 rep.lock_handle.cookie, dbits2str(rep.lock_flags, LDLM_flags),
                 rep.lock_policy_res1, rep.lock_policy_res2))
+        lock = find_lock_by_cookie(rep.lock_handle.cookie)
+        if lock :
+            print_ldlm_lock(lock, prefix)
 
 def lock_client(lock) :
     if lock.l_export != 0 :
