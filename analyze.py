@@ -328,6 +328,13 @@ def show_bl_pid(pid, prefix) :
     stack = ptlrpc.get_stacklist(pid)
     if stack == None :
         return
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "ldlm_bl_thread_main")
+    if addr != 0 :
+        bltd = readSU("struct ldlm_bl_thread_data", addr)
+        print("bl pool:", bltd.bltd_blp,
+              "total locks:", bltd.bltd_blp.blp_total_locks,
+              "blwis:", bltd.bltd_blp.blp_total_blwis);
+
     addr = ptlrpc.search_stack_for_reg("RDI", stack,
                                        "ldlm_cancel_lock_for_export")
     if addr !=0 :
