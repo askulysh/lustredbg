@@ -877,7 +877,12 @@ def show_export(prefix, exp, verbose) :
     show_export_hdr(prefix, exp)
     reply_list = readSUListFromHead(exp.u.eu_target_data.ted_reply_list,
             "trd_list", "struct tg_reply_data")
-    history = get_history_list(find_service("mdt"))
+    if "OST" in exp.exp_obd.obd_name :
+        svc = find_service('ost')
+    else :
+        svc = find_service('mdt')
+
+    history = get_history_list(svc)
     for trd in reply_list :
         print("tag: ", trd.trd_tag, "xid:", trd.trd_reply.lrd_xid,
               "transno", trd.trd_reply.lrd_transno,
