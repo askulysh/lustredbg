@@ -398,7 +398,7 @@ def parse_import_eviction(imp) :
             if lock.l_flags & ldlm.LDLM_flags.LDLM_FL_BL_AST != 0:
                 print()
                 ldlm.print_ldlm_lock(lock, "")
-                if lock.l_activity < 100 :
+                if  ktime.get_seconds() - lock.l_activity < 100 :
                     continue
                 if lock.l_readers != 0 or lock.l_writers != 0 :
                     if show_client_pid(lock.l_pid, "") :
