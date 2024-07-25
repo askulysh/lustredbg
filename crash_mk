@@ -170,11 +170,9 @@ download_lustre() {
 	rm -rf ./usr
 
 	echo "mod -S ./lib/" > load_modules
-	if [ $NEO_ver = "CSL6" ]; then
-		for f in ./lib/modules/$kernel_str/extra/*/*/*.debug; do
-			mv -- "$f" "${f%.ko*}.ko";
-		done
-	fi
+	for f in ./lib/modules/$kernel_str/extra/*/*/*.debug; do
+		mv -- "$f" "${f%.ko*}.ko";
+	done
 }
 
 yaml_get() {
@@ -562,11 +560,9 @@ if [[ -n $2 ]]; then
 	rpm2cpio $2 | cpio -idmv
 	mv ./usr/lib/debug/lib .
 	rm -rf ./usr
-        if [ $NEO_ver = "CSL6" ]; then
-		for f in ./lib/modules/$kernel_str/extra/*/*/*.debug; do
-			mv -- "$f" "${f%.ko*}.ko";
-		done
-	fi
+	for f in ./lib/modules/$kernel_str/extra/*/*/*.debug; do
+		mv -- "$f" "${f%.ko*}.ko";
+	done
 	parse
 	exit
 fi
