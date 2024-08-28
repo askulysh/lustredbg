@@ -7,6 +7,7 @@ import ktime as ktime
 import obd as obd
 import ptlrpc as ptlrpc
 import ldlm_lock as ldlm
+import cl_io as cl_io
 
 try:
     import mdt as mdt
@@ -351,6 +352,7 @@ def show_bl_pid(pid, prefix) :
         print()
         ext = readSU("struct osc_extent", addr)
         print(ext)
+        cl_io.print_osc_extent(prefix, ext)
 
 def show_cb_pid(pid, prefix) :
     stack = ptlrpc.get_stacklist(pid)
