@@ -36,6 +36,21 @@ mod_flags_c = '''
 '''
 mod_flags = CDefine(mod_flags_c)
 
+def lod_parse_striping(prefix, addr) :
+    lmm = readSU("struct lov_mds_md_v1", addr)
+    print(lmm, hex(lmm.lmm_magic))
+    comp = readSU("struct lov_comp_md_v1", addr)
+    print(comp, comp.lcm_entry_count)
+    for i in range(comp.lcm_entry_count) :
+        lod_comp = readSU("struct lod_layout_component",
+                          comp.lcm_entries[i])
+        print(lod_comp)
+        lmm = readSU("struct lov_mds_md_v1",
+                     addr+comp.lcm_entries[i].lcme_offset)
+        print(lmm, hex(lmm.lmm_magic))
+        for j in range(lmm.lmm_stripe_count) :
+            print(lmm.lmm_objects[j])
+
 def print_link_ea(prefix, leh) :
     if leh.leh_magic == 0x11EAF1DF :
         addr = leh + 1
@@ -44,7 +59,7 @@ def print_link_ea(prefix, leh) :
             reclen = (lee.lee_reclen[0] << 8) + lee.lee_reclen[1]
             name  = readmem(lee.lee_name,  reclen - 16 - 2)
             print(prefix, lee, name, obd.fid_be2str(lee.lee_parent_fid))
-            addr = addr + reclen 
+            addr = addr + reclen
     else :
         print("leh magic error !", leh.leh_magic)
 
@@ -189,6 +204,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-d","--mdd", dest="mdd", default = 0)
     parser.add_argument("-s","--osd", dest="osd", default = 0)
     parser.add_argument("-i","--mti", dest="mti", default = 0)
+    parser.add_argument("-l","--lov", dest="lov", default = 0)
     args = parser.parse_args()
     if args.mdt != 0 :
         mdt_obj = readSU("struct mdt_object", int(args.mdt, 16))
@@ -204,4 +220,6 @@ if ( __name__ == '__main__'):
     elif args.mti != 0 :
         mti = readSU("struct mdt_thread_info", int(args.mti, 16))
         parse_mti(mti, 0, "")
+    elif args.lov != 0 :
+        lod_parse_striping("", int(args.lov, 16))
 
