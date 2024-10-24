@@ -483,21 +483,22 @@ if ( __name__ == '__main__'):
     elif args.osc_object != 0 :
         osc_object = readSU("struct osc_object", int(args.osc_object, 16))
         print_osc_obj("", osc_object)
-        if 'xarray' in str(getStructInfo("struct osc_object")["oo_tree"]) :
-             lines = exec_crash_command("tree -t xarray {:x}"
+        if osc_object.oo_npages != 0 :
+            if 'xarray' in str(getStructInfo("struct osc_object")["oo_tree"]) :
+                lines = exec_crash_command("tree -t xarray {:x}"
                                     .format(long(osc_object.oo_tree)))
-             for line in lines.splitlines():
-                osc_page = readSU("struct osc_page", long(line[0:16], 16))
+                for line in lines.splitlines():
+                    osc_page = readSU("struct osc_page", long(line[0:16], 16))
                 print_osc_page(osc_page, "    ")
 
 #            for p in walk_xarray_tree(osc_object.oo_tree, osc_object.oo_npages) :
 #                osc_page = readSU("struct osc_page", p)
 #                print(p, osc_page)
 #                print_osc_page(osc_page, "    ")
-        else :
-            for p in walk_page_tree2(osc_object.oo_tree) :
-                osc_page = readSU("struct osc_page", p)
-                print_osc_page(osc_page, "    ")
+            else :
+                for p in walk_page_tree2(osc_object.oo_tree) :
+                    osc_page = readSU("struct osc_page", p)
+                    print_osc_page(osc_page, "    ")
     elif args.ext != 0 :
         ext = readSU("struct osc_extent", int(args.ext, 16))
         print_osc_extent("", ext)
