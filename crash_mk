@@ -288,7 +288,7 @@ set_kernel() {
 			lustre_mod_prefix="lustre-client-debuginfo"
 			client_build=1
 			;;
-		el8_*)
+		el[8-9]_*)
 			lustre_mod_prefix="kmod-lustre-client-debuginfo"
 			client_build=1
 			;;
