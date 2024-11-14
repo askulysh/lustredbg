@@ -691,9 +691,15 @@ def show_ns_info(ns_list) :
             name = ns.ns_name
         except:
             name = ns.ns_rs_hash.hs_name
+        if ns.ns_nr_unused == 0:
+            slv_time = 0
+        else :
+            slv_time = ns.ns_pool.pl_server_lock_volume//(ns.ns_nr_unused*
+                    ns.ns_pool.pl_lock_volume_factor.counter/256)
         print(ns, name, "lock count", obd.stats_couter_sum(ns.ns_stats, 0),
               "granted", ns.ns_pool.pl_granted.counter,
-              "unused", ns.ns_nr_unused, "max_unused", ns.ns_max_unused)
+              "unused", ns.ns_nr_unused, "max_unused", ns.ns_max_unused,
+              "lru cancel older", slv_time, "sec")
 
 def list_namespaces() :
     print("SRV namespaces:")
