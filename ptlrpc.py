@@ -1051,6 +1051,14 @@ def show_range_lock(rl) :
     except:
         print(rl, '[',rl.rl_node.in_extent.start, '-', rl.rl_node.in_extent.end,']')
 
+def show_journal(journal) :
+    jiffies = readSymbol("jiffies")
+    print("journal:", journal, "running:", journal.j_running_transaction)
+    t = journal.j_running_transaction
+    if t :
+        print("started", j_delay(t.t_start, jiffies),
+              "udates:", t.t_updates.counter)
+
 def show_pid(pid, pattern) :
     stack = get_stacklist(pid)
     if not stack:
@@ -1103,6 +1111,13 @@ def show_pid(pid, pattern) :
             rlock = readSU("struct range_lock", addr)
             print("waiting on range lock:")
             show_range_lock(rlock)
+
+        addr = search_stack_for_reg("RDI", stack, "jbd2_log_wait_commit")
+        if addr != 0 :
+            print()
+            journal = readSU("struct journal_s", addr)
+            print("waiting on journal commit:", journal)
+            show_journal(journal)
 
         if lu_env and stack_has_func(stack, "ofd_commitrw") :
             print()
