@@ -226,11 +226,34 @@ def show_obd(dev) :
            dev.u.cli.cl_pending_w_pages.counter,
            dev.obd_num_exports))
 
+def xarray_entry(xarray, index):
+    node = xarray.xa_head
+    if (not (long(node) & 2)):
+        if index:
+            return 0
+        else:
+            return node
+    node = readSU("struct xa_node", node & ~3)
+    if ((index >> node.shift) > 63):
+        #raise IndexError('index bigger than xarray')
+        return 0
+    while (node):
+        offset = (index >> node.shift) & 63
+        node = node.slots[offset]
+        if (not node or not (long(node) & 2)):
+                return node
+        node = readSU("struct xa_node", node & ~3)
+
 def all_obds() :
     obd_devs = readSymbol("obd_devs")
     for i in range(0, 8192) :
-        if obd_devs[i] != 0 :
-            yield obd_devs[i]
+        try :
+            e = xarray_entry(obd_devs, i)
+            if e :
+                yield readSU("struct obd_device", e)
+        except :
+            if obd_devs[i] != 0 :
+                yield obd_devs[i]
 
 def show_obds() :
     print("        obd_device               name \t\t\t   lu_dev   \t  "
@@ -240,10 +263,8 @@ def show_obds() :
         show_obd(d)
 
 def show_imports() :
-    obd_devs = readSymbol("obd_devs")
-    for i in range(0, 8192) :
-        obd = obd_devs[i]
-        if obd and obd.obd_lu_dev and obd_devs[i].u.cli.cl_import :
+    for obd in all_obds() :
+        if obd and obd.obd_lu_dev and obd.u.cli.cl_import :
             ptlrpc.show_import("", obd.u.cli.cl_import)
 
 __re_search = re.compile(r'^([a-f0-9]+):')
