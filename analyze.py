@@ -282,6 +282,9 @@ def show_client_pid(pid, prefix) :
         if bl_task and bl_task.pid == pid :
             bl_task = None
 
+    print("ll_trunc_readers:", lli.lli_trunc_sem.ll_trunc_readers.counter,
+          "ll_trunc_waiters:", lli.lli_trunc_sem.ll_trunc_waiters.counter)
+
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "__pv_queued_spin_lock_slowpath")
     if addr != 0 :
         print()
