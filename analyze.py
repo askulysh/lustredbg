@@ -147,13 +147,14 @@ def cli_get_request(stack, prefix) :
 
     if addr == 0:
         addr = ptlrpc.search_stack_for_reg("RSI", stack, "ldlm_cli_enqueue_fini")
-    if addr == 0:
-        addr = ptlrpc.search_stack_for_reg("R12", stack, "ldlm_cli_enqueue_fini")
+#    if addr == 0:
+#        addr = ptlrpc.search_stack_for_reg("R12", stack, "ldlm_cli_enqueue_fini")
     if addr == 0:
         addr = ptlrpc.search_stack_for_reg("RDI", stack, "ptlrpc_get_mod_rpc_slot")
     if addr != 0 :
         print()
         req = readSU("struct ptlrpc_request", addr)
+        print(req)
         ptlrpc.show_ptlrpc_request(req)
         return req
 
@@ -207,6 +208,27 @@ def dentry2path(de) :
         de = de.d_parent
         p = fs.get_dentry_name(de) + "/" + p
     return p
+
+def cli_guess_inode(stack) :
+    inode = cli_get_inode(stack)
+    if inode :
+        return inode
+
+    dentry = None
+    file = cli_get_file(stack)
+    if file :
+        dentry = file.f_path.dentry
+        inode = file.f_inode
+
+    if inode :
+        return inode
+
+    dentry = cli_get_dentry(stack)
+    if dentry :
+        if int(dentry.d_inode) != 0 :
+            inode = dentry.d_inode
+
+    return inode
 
 def show_client_pid(pid, prefix) :
     stack = ptlrpc.get_stacklist(pid)
@@ -328,6 +350,9 @@ def show_client_pid(pid, prefix) :
     if bl_task  :
         print("\nPid ", bl_task.pid)
         return show_client_pid(bl_task.pid, prefix)
+    elif inode :
+        find_inode_handler(inode.i_ino)
+
     return cli_obd != None
 
 def show_bl_pid(pid, prefix) :
@@ -391,6 +416,16 @@ def find_bl_handler(lock) :
         print("\n    Pid", pid, "is serving BL callback")
         show_bl_pid(pid, "    ")
         break
+
+def find_inode_handler(ino) :
+    (funcpids, functasks, alltaskaddrs) = get_threads_subroutines_slow()
+    pids = funcsMatch(funcpids, "do_syscall_64")
+    for pid in pids :
+        stack = ptlrpc.get_stacklist(pid)
+        i = cli_guess_inode(stack)
+#        print(pid, i)
+        if i and i.i_ino == ino :
+            print(pid)
 
 def parse_import_eviction(imp) :
     ptlrpc.show_import("", imp)
@@ -527,6 +562,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-B","--bl_pid", dest="bl_pid", default = 0)
     parser.add_argument("-C","--cb_pid", dest="cb_pid", default = 0)
     parser.add_argument("-i","--import", dest="imp", default = 0)
+    parser.add_argument("-I","--inode", dest="inode", default = 0)
     args = parser.parse_args()
 
     if args.pid != 0 :
@@ -535,6 +571,8 @@ if ( __name__ == '__main__'):
         show_bl_pid(int(args.bl_pid), "")
     elif args.cb_pid != 0 :
         show_cb_pid(int(args.cb_pid), "")
+    elif args.inode != 0 :
+        find_inode_handler(int(args.inode))
     elif args.imp != 0 :
         imp = readSU("struct obd_import", int(args.imp, 16))
         parse_import_eviction(imp)
