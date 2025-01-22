@@ -308,6 +308,12 @@ def get_hash_elements(hs) :
                 if hlist != 0 :
                     yield hlist
 
+def res_refcnt(res) :
+    try:
+        return res.lr_refcount.refs.counter
+    except:
+        return res.lr_refcount.counter
+
 def show_resource_hdr(res) :
     try:
         recent = "recent lock " + ldlm_mode2str(res.lr_most_restr)
@@ -321,14 +327,14 @@ def show_resource_hdr(res) :
         inode = ""
     print("res %x %s %s refc %d %s %s" %
             (res, ldlm_types.__getitem__(res.lr_type), res2str(res),
-            res.lr_refcount.counter, recent, inode))
+            res_refcnt(res), recent, inode))
     if res.lr_waiting.next != res.lr_waiting.prev and res.lr_granted.next == res.lr_granted.prev :
         print("Error: Empty granted list while locks are waiting !!!")
 
 def show_resource(res, check_conflicts) :
     show_resource_hdr(res)
     granted = readSUListFromHead(res.lr_granted,
-                "l_res_link", "struct ldlm_lock", maxel=res.lr_refcount.counter)
+                "l_res_link", "struct ldlm_lock", maxel=res_refcnt(res))
     for lock in granted :
         if (not args.active) or lock.l_readers != 0 or lock.l_writers != 0:
                 print_ldlm_lock(lock, "    ")
@@ -338,7 +344,7 @@ def show_resource(res, check_conflicts) :
 #                        print_ldlm_lock(l, "         ")
 
     waiting = readSUListFromHead(res.lr_waiting,
-                "l_res_link", "struct ldlm_lock", maxel=res.lr_refcount.counter)
+                "l_res_link", "struct ldlm_lock", maxel=res_refcnt(res))
     if len(waiting) > 0 :
         print("waiting locks:")
         for lock in waiting :
@@ -775,7 +781,7 @@ if ( __name__ == '__main__'):
             print("ns %x %s total granted %d" % (ns, ns.ns_obd.obd_name,
                 ns.ns_pool.pl_granted.counter))
             res_sorted = sorted(get_ns_resources(ns),
-                    key = lambda res : res.lr_refcount.counter,  reverse=True)
+                    key = lambda res : res_refcnt(res),  reverse=True)
             for res in res_sorted :
                 show_resource_hdr(res)
         else:
