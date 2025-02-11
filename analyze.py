@@ -200,6 +200,11 @@ def cli_get_page(stack) :
     if addr != 0 :
         return readSU("struct page", addr)
 
+    addr = ptlrpc.search_stack_for_reg("RDX", stack, "ll_io_read_page")
+    if addr != 0 :
+        cl_page = readSU("struct cl_page", addr)
+        return cl_page.cp_vmpage
+
     return None
 
 def dentry2path(de) :
