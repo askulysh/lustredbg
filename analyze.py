@@ -33,11 +33,19 @@ def cli_get_fsync_io(stack) :
     return None
 
 def cli_show_io(stack) :
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "vvp_io_read_start")
+    if addr != 0 :
+        io = readSU("struct cl_io_slice", addr)
+        rd = io.cis_io.u.ci_rd.rd
+        print("read: [", rd.crw_pos, "-", rd.crw_pos + rd.crw_count - 1, "]")
+        return
+
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "vvp_io_write_start")
     if addr != 0 :
         io = readSU("struct cl_io_slice", addr)
         wr = io.cis_io.u.ci_wr.wr
         print("write: [", wr.crw_pos, "-", wr.crw_pos + wr.crw_count - 1, "]")
+        return
 
     io = cli_get_fsync_io(stack)
     if io :
