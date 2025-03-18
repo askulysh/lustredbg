@@ -274,6 +274,8 @@ def show_client_pid(pid, prefix) :
 
     if inode :
         cl_io.print_inode(prefix, inode)
+        lli = readSU("struct ll_inode_info", inode -
+            member_offset('struct ll_inode_info', 'lli_vfs_inode'))
 
     try :
         addr = ptlrpc.search_stack_for_reg("RDX", stack, "cl_lock_request")
@@ -311,14 +313,13 @@ def show_client_pid(pid, prefix) :
     if not bl_task :
         bl_task = ptlrpc.search_for_rw_semaphore(stack)
     if not bl_task and  inode :
-        lli = readSU("struct ll_inode_info", inode -
-            member_offset('struct ll_inode_info', 'lli_vfs_inode'))
         bl_task = ptlrpc.rw_sem_owner(lli.lli_lsm_sem)
         if bl_task and bl_task.pid == pid :
             bl_task = None
 
-    print("ll_trunc_readers:", lli.lli_trunc_sem.ll_trunc_readers.counter,
-          "ll_trunc_waiters:", lli.lli_trunc_sem.ll_trunc_waiters.counter)
+    if inode :
+        print("ll_trunc_readers:", lli.lli_trunc_sem.ll_trunc_readers.counter,
+              "ll_trunc_waiters:", lli.lli_trunc_sem.ll_trunc_waiters.counter)
 
     addr = ptlrpc.search_stack_for_reg("RDI", stack, "__pv_queued_spin_lock_slowpath")
     if addr != 0 :
