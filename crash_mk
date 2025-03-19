@@ -536,7 +536,7 @@ case ${v[0]} in
 			lustre_mod_prefix="lustre_ib-debuginfo"
 		fi
 		;;
-	2.15.*)
+	2.1[5-6].*)
 		base_ver=${v[0]}
 		NEO_ver="CSL6"
 		githash=`expr match "$base_ver" '.*_\(g.......\)'`
