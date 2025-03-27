@@ -317,9 +317,13 @@ def stats_couter_sum(stats, idx) :
         if stats.ls_percpu[i] == 0 :
             continue
         cntr = lprocfs_stats_counter_get(stats, i, idx)
-        sum = sum + cntr.lc_array_sum
-        if stats.ls_flags & 0x0002 != 0 :
-            sum = sum + readS64(Addr(cntr)+5*8)
+        try :
+            sum = sum + cntr.lc_array_sum
+            if stats.ls_flags & 0x0002 != 0 :
+                sum = sum + readS64(Addr(cntr)+5*8)
+        except:
+            sum = sum + cntr.lc_sum
+
     return sum
 
 def obd_memory_sum() :
