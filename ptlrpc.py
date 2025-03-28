@@ -145,6 +145,10 @@ enum {
 	MDS_HSM_CT_REGISTER	= 59,
 	MDS_HSM_CT_UNREGISTER	= 60,
 	MDS_SWAP_LAYOUTS	= 61,
+    MDS_RMFID               = 62,
+    MDS_BATCH               = 63,
+    MDS_HSM_DATA_VERSION    = 64,
+
 
         LDLM_ENQUEUE     = 101,
         LDLM_CONVERT     = 102,
@@ -411,6 +415,17 @@ def req_sent(req) :
     else :
         return "Waiting...                  "
 
+def msg_buffer_size(msg) :
+    if msg == 0 :
+        return 0
+    bufcount = msg.lm_bufcount
+    offset = (8*4 + (bufcount )*4 + 7) & (~0x7)
+    a = offset
+    for i in range(0, msg.lm_bufcount) :
+        a += ((msg.lm_buflens[i] + 7) & (~7))
+
+    return a
+
 def get_msg_buffer(msg, n) :
     if msg == 0 :
         return None
@@ -506,18 +521,11 @@ def print_update_req(fmt, our) :
     print_update(fmt, ou)
 #    for i in range(0, our.ourq_count) :
 
-def show_request_loc(req, req_format, location) :
+def show_msg_loc(msg, req_format, location) :
     for i in range(0, req_format.rf_fields[location].nr) :
         req_msg_field = readSU("struct req_msg_field",
                 req_format.rf_fields[location].d[i])
         offset = req_msg_field.rmf_offset[req_format.rf_idx][location]
-        if location == 0 :
-            msg = get_req_msg(req)
-        else :
-            msg = get_rep_msg(req)
-            if msg == 0 :
-                print("no reply buffer");
-                return
 
         buf = get_msg_buffer(msg, i)
 
@@ -587,6 +595,17 @@ def show_request_loc(req, req_format, location) :
                     field.ouh_inline_data)
             print_update_req("   ", our)
 
+def show_request_loc(req, req_format, location) :
+    if location == 0 :
+        msg = get_req_msg(req)
+    else :
+        msg = get_rep_msg(req)
+        if msg == 0 :
+            print("no reply buffer");
+            return
+
+    show_msg_loc(msg, req_format, location)
+
 def show_request_fmt(req, fmt) :
     req_format = readSymbol(fmt)
     print("request:")
@@ -616,6 +635,7 @@ def show_ptlrpc_request_buf(req) :
           (opcodes.__getitem__(body.pb_opc), body.pb_transno, body.pb_tag,
            body.pb_conn_cnt, dbits2str(body.pb_flags, pb_flags),
            body.pb_status, body.pb_jobid))
+    print("async data:", req.rq_cli.cr_async_args)
     if body.pb_opc == opcodes.LDLM_ENQUEUE :
         ldlm_req = readSU("struct ldlm_request", get_req_buffer(req, 1))
         if ldlm_req.lock_desc.l_resource.lr_type == ldlm.ldlm_types.LDLM_IBITS and ldlm_req.lock_flags & ldlm.LDLM_flags.LDLM_FL_HAS_INTENT :
@@ -655,6 +675,38 @@ def show_ptlrpc_request_buf(req) :
         show_request_fmt(req, "RQF_MDS_CLOSE")
     elif body.pb_opc == opcodes.MDS_HSM_PROGRESS :
         show_request_fmt(req, "RQF_MDS_HSM_PROGRESS")
+    elif body.pb_opc == opcodes.MDS_BATCH :
+        show_request_fmt(req, "RQF_MDS_BATCH")
+        buh = readSU("struct but_update_header ", get_req_buffer(req, 1))
+        print(buh)
+        if buh.buh_inline_data :
+            burq = readSU("struct batch_update_request", buh.buh_inline_data)
+            reqmsg = burq.burq_reqmsg
+            for i in range(burq.burq_count) :
+                print("\nrequest:", reqmsg, reqmsg.lm_opc)
+                if reqmsg.lm_opc == 1:
+                    show_msg_loc(reqmsg, readSymbol("RQF_BUT_GETATTR"), 0)
+                else :
+                    for j in range(reqmsg.lm_bufcount) :
+                        print("%x" % get_msg_buffer(reqmsg, j))
+                reqmsg = readSU("struct lustre_msg_v2",
+                                  int(reqmsg)+msg_buffer_size(reqmsg))
+
+        buh = readSU("struct but_update_header ", get_req_buffer(req, 1))
+        print(buh)
+        if buh.buh_inline_data :
+            burp = readSU("struct batch_update_reply", buh.buh_inline_data)
+            repmsg = burp.burp_repmsg
+            for i in range(burp.burp_count) :
+                print("\nreply:", repmsg, repmsg.lm_opc)
+                if repmsg.lm_opc == 1:
+                    show_msg_loc(repmsg, readSymbol("RQF_BUT_GETATTR"), 1)
+                else :
+                    for j in range(repmsg.lm_bufcount) :
+                        print("%x" % get_msg_buffer(repmsg, j))
+                repmsg = readSU("struct lustre_msg_v2",
+                                  int(repmsg)+msg_buffer_size(repmsg))
+
     elif body.pb_opc == opcodes.OST_SETATTR :
         show_request_fmt(req, "RQF_OST_SETATTR")
     elif body.pb_opc == opcodes.OST_READ :

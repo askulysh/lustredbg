@@ -243,10 +243,31 @@ def cli_guess_inode(stack) :
 
     return inode
 
+def show_sa_pid(stack, prefix) :
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "ll_statahead_thread")
+    if addr == 0 :
+        return False
+
+    sai = readSU("struct ll_statahead_info", addr)
+    print(sai)
+    lbh = readSU("struct lmv_batch", sai.sai_bh)
+    print(lbh)
+    if lbh == 0:
+        return True
+
+    for sbh in readSUListFromHead(lbh.lbh_sub_batch_list, "sbh_sub_item",
+                                  "struct lmvsub_batch") :
+        print(sbh)
+
+    return True
+
 def show_client_pid(pid, prefix) :
     stack = ptlrpc.get_stacklist(pid)
     if stack == None :
-        return
+        return False
+
+    if show_sa_pid(stack, prefix) :
+        return True
 
     print()
     inode  = None
@@ -441,6 +462,22 @@ def find_inode_handler(ino) :
         if i and i.i_ino == ino :
             print(pid)
 
+def parse_blast_lock(lock) :
+    cli_waits = False
+    ldlm.print_ldlm_lock(lock, "")
+    if ktime.get_seconds() - lock.l_activity < 100 :
+        return False
+    if lock.l_readers != 0 or lock.l_writers != 0 :
+        if show_client_pid(lock.l_pid, "") :
+            cli_waits = True
+        else :
+            find_bl_handler(lock)
+        if lock.l_resource.lr_type == ldlm.ldlm_types.LDLM_EXTENT :
+            if lock.l_ast_data != 0 :
+                osc_obj = readSU("struct osc_object", lock.l_ast_data)
+                print("osc obj in l_ast_data", osc_obj)
+    return cli_waits
+
 def parse_import_eviction(imp) :
     ptlrpc.show_import("", imp)
     ptlrpc.imp_show_state_history("", imp)
@@ -453,19 +490,8 @@ def parse_import_eviction(imp) :
         for lock in sorted(granted, key = lambda l : l.l_activity) :
             if lock.l_flags & ldlm.LDLM_flags.LDLM_FL_BL_AST != 0:
                 print()
-                ldlm.print_ldlm_lock(lock, "")
-                if  ktime.get_seconds() - lock.l_activity < 100 :
-                    continue
-                if lock.l_readers != 0 or lock.l_writers != 0 :
-                    if show_client_pid(lock.l_pid, "") :
+                if parse_blast_lock(lock) :
                         cli_waits = True
-                else :
-                    find_bl_handler(lock)
-                if lock.l_resource.lr_type == ldlm.ldlm_types.LDLM_EXTENT :
-                    if lock.l_ast_data != 0 :
-                        osc_obj = readSU("struct osc_object", lock.l_ast_data)
-                        print("osc obj in l_ast_data", osc_obj)
-
     if not cli_waits :
         ptlrpc.imp_show_requests(imp)
 #       ptlrpc.imp_show_history(imp)
@@ -577,6 +603,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-C","--cb_pid", dest="cb_pid", default = 0)
     parser.add_argument("-i","--import", dest="imp", default = 0)
     parser.add_argument("-I","--inode", dest="inode", default = 0)
+    parser.add_argument("-l","--lock", dest="lock", default = 0)
     args = parser.parse_args()
 
     if args.pid != 0 :
@@ -586,10 +613,13 @@ if ( __name__ == '__main__'):
     elif args.cb_pid != 0 :
         show_cb_pid(int(args.cb_pid), "")
     elif args.inode != 0 :
-        find_inode_handler(int(args.inode))
+        find_inode_handler(int(args.inode, 16))
     elif args.imp != 0 :
         imp = readSU("struct obd_import", int(args.imp, 16))
         parse_import_eviction(imp)
+    elif args.lock != 0 :
+        lock = readSU("struct ldlm_lock", int(args.lock, 16))
+        parse_blast_lock(lock)
     else :
         analyze_eviction()
 
