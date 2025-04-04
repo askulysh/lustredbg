@@ -1165,6 +1165,8 @@ def show_pid(pid, pattern) :
             show_range_lock(rlock)
 
         addr = search_stack_for_reg("RDI", stack, "jbd2_log_wait_commit")
+        if addr == 0 :
+            addr = search_stack_for_reg("RDI", stack, "add_transaction_credits")
         if addr != 0 :
             print()
             journal = readSU("struct journal_s", addr)
