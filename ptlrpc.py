@@ -1185,6 +1185,15 @@ def show_pid(pid, pattern) :
             except:
                 pass
 
+        addr = search_stack_for_reg("RDI", stack, "osd_trunc_lock")
+        if addr != 0 :
+            print()
+            osd_obj = readSU("struct osd_object", addr)
+            print("osd", osd_obj)
+            osd.print_osd_object(osd_obj, "\t")
+            bl_task = rw_sem_owner(osd_obj.oo_ext_idx_sem)
+            print("waiting in osd_trunc_lock for", bl_task)
+
 
         addr = search_stack_for_reg("RSI", stack, "__wait_on_bit_lock")
         if addr != 0 :
