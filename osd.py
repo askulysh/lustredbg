@@ -100,6 +100,14 @@ def search_for_transaction(stack) :
     journal = readSU("struct journal_s", addr)
     print(journal, journal.j_running_transaction)
 
+def search_for_dynlock(stack) :
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "dynlock_lock")
+    if addr == 0:
+        return
+    print()
+    dynlock = readSU("struct dynlock", addr)
+    print(dynlock)
+
 def show_io() :
     res = dict()
     count = 0
