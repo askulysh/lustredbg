@@ -261,7 +261,15 @@ def show_sa_pid(stack, prefix) :
 
     return True
 
-def show_client_pid(pid, prefix) :
+def req_has_cookie(req, cookie):
+
+    if ptlrpc.get_opc(req) == ptlrpc.opcodes.LDLM_ENQUEUE :
+        ldlm_req = readSU("struct ldlm_request", ptlrpc.get_req_buffer(req, 1))
+        return ldlm_req.lock_handle[0].cookie == cookie
+
+    return False
+
+def show_client_pid(pid, cookie, prefix) :
     stack = ptlrpc.get_stacklist(pid)
     if stack == None :
         return False
@@ -373,6 +381,10 @@ def show_client_pid(pid, prefix) :
     if cli_obd == None and req != None :
         cli_obd = req.rq_import.imp_obd.u.cli
 
+    if req :
+        if req_has_cookie(req, cookie) :
+            return True
+
     if cli_obd :
         print("\n%s %s rpcs in flight %d/%d" % (cli_obd, cli_obd.cl_import,
             cli_obd.cl_rpcs_in_flight, cli_obd.cl_max_rpcs_in_flight))
@@ -384,7 +396,7 @@ def show_client_pid(pid, prefix) :
 
     if bl_task  :
         print("\nPid ", bl_task.pid)
-        return show_client_pid(bl_task.pid, prefix)
+        return show_client_pid(bl_task.pid, 0, prefix)
     elif inode :
         find_inode_handler(inode.i_ino)
 
@@ -467,8 +479,8 @@ def parse_blast_lock(lock) :
     ldlm.print_ldlm_lock(lock, "")
     if ktime.get_seconds() - lock.l_activity < 100 :
         return False
-    if lock.l_readers != 0 or lock.l_writers != 0 :
-        if show_client_pid(lock.l_pid, "") :
+    if lock.l_granted_mode == ldlm.ldlm_modes.LCK_MINMODE or lock.l_readers != 0 or lock.l_writers != 0 :
+        if show_client_pid(lock.l_pid, lock.l_handle.h_cookie, "") :
             cli_waits = True
         else :
             find_bl_handler(lock)
@@ -549,7 +561,7 @@ def show_bl_ast_lock(lock) :
     if cli_pid != 0 :
         print("client PID", cli_pid)
         if cli_modules :
-            show_client_pid(cli_pid, "    ")
+            show_client_pid(cli_pid, 0, "    ")
 
 def parse_srv_eviction(stack) :
     addr = ptlrpc.search_stack_for_reg("R13", stack, "panic")
@@ -604,10 +616,11 @@ if ( __name__ == '__main__'):
     parser.add_argument("-i","--import", dest="imp", default = 0)
     parser.add_argument("-I","--inode", dest="inode", default = 0)
     parser.add_argument("-l","--lock", dest="lock", default = 0)
+    parser.add_argument("-c","--cookie", dest="cookie", default = 0)
     args = parser.parse_args()
 
     if args.pid != 0 :
-        show_client_pid(int(args.pid), "")
+        show_client_pid(int(args.pid), 0, "")
     elif args.bl_pid != 0 :
         show_bl_pid(int(args.bl_pid), "")
     elif args.cb_pid != 0 :
@@ -620,6 +633,10 @@ if ( __name__ == '__main__'):
     elif args.lock != 0 :
         lock = readSU("struct ldlm_lock", int(args.lock, 16))
         parse_blast_lock(lock)
+    elif args.cookie != 0 :
+        lock = ldlm.find_lock_by_cookie(int(args.cookie, 16))
+        if lock :
+            parse_blast_lock(lock)
     else :
         analyze_eviction()
 
