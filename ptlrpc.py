@@ -1030,8 +1030,10 @@ def search_for_reg(r, pid, func) :
     return None
 
 def rw_sem_owner(sem) :
-    if sys_info.kernel == "4.18.0" :
+    if sem.hasField('rh_kabi_hidden_39') :
         owner = sem.rh_kabi_hidden_39.owner & (~0xf)
+    elif sem.hasField('rh_kabi_hidden_53') :
+        owner = sem.rh_kabi_hidden_53.owner & (~0xf)
     else:
         if sem.owner.hasField('counter') :
             owner = sem.owner.counter & (~0xf)
