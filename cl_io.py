@@ -306,7 +306,10 @@ def print_lsm(prefix, lsm) :
 
 def lli2lsm(lli) :
     if lli.hasField('lli_lsm_obj') :
-        return lli.lli_lsm_obj.lso_lsm
+        if lli.lli_lsm_obj :
+            return lli.lli_lsm_obj.lso_lsm
+        else :
+            return 0
     else :
         return lli.lli_lsm_md
 
