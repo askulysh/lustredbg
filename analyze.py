@@ -482,12 +482,12 @@ def parse_blast_lock(lock) :
     if lock.l_granted_mode == ldlm.ldlm_modes.LCK_MINMODE or lock.l_readers != 0 or lock.l_writers != 0 :
         if show_client_pid(lock.l_pid, lock.l_handle.h_cookie, "") :
             cli_waits = True
-        else :
-            find_bl_handler(lock)
-        if lock.l_resource.lr_type == ldlm.ldlm_types.LDLM_EXTENT :
-            if lock.l_ast_data != 0 :
-                osc_obj = readSU("struct osc_object", lock.l_ast_data)
-                print("osc obj in l_ast_data", osc_obj)
+    else :
+        find_bl_handler(lock)
+    if lock.l_resource.lr_type == ldlm.ldlm_types.LDLM_EXTENT :
+        if lock.l_ast_data != 0 :
+            osc_obj = readSU("struct osc_object", lock.l_ast_data)
+            print("osc obj in l_ast_data", osc_obj)
     return cli_waits
 
 def parse_import_eviction(imp) :
