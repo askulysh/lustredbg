@@ -749,7 +749,7 @@ if ( __name__ == '__main__'):
             ptlrpc.show_export("", l.l_export, args.verbose)
         else:
             print_ldlm_lock(l, "")
-            if args.verbose :
+            if args.verbose and l.l_export != 0 :
                 cancel = exp_find_cancel(l.l_export, l)
                 if cancel :
                     print("Cancel has arrived")
