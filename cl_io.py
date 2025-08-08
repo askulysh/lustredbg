@@ -313,6 +313,11 @@ def lli2lsm(lli) :
     else :
         return lli.lli_lsm_md
 
+def print_lustre_dentry(dentry) :
+    print_dentry(dentry)
+    data = readSU("struct ll_dentry_data", dentry.d_fsdata)
+    print(data, 'invalid:', data.lld_invalid, 'gen:', data.lld_sa_generation)
+
 def print_inode(prefix, inode) :
     lli = readSU("struct ll_inode_info", inode -
             member_offset('struct ll_inode_info', 'lli_vfs_inode'))
@@ -471,14 +476,14 @@ if ( __name__ == '__main__'):
         print_cl_page(cl_page, "")
     elif args.file != 0 :
         f = readSU("struct file", int(args.file, 16))
-        print_dentry(f.f_path.dentry)
+        print_lustre_dentry(f.f_path.dentry)
         print_inode("", f.f_inode)
     elif args.inode != 0 :
         inode = readSU("struct inode", int(args.inode, 16))
         print_inode("", inode)
     elif args.dentry != 0 :
         dentry = readSU("struct dentry", int(args.dentry, 16))
-        print_dentry(dentry)
+        print_lustre_dentry(dentry)
         print_inode("", dentry.d_inode)
     elif args.vvp_object != 0 :
         vvp_object = readSU("struct vvp_object", int(args.vvp_object, 16))
