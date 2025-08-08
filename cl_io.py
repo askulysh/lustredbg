@@ -325,7 +325,9 @@ def print_inode(prefix, inode) :
         inode_lock = inode.i_mutex
     except :
         inode_lock = inode.i_rwsem
-    print(inode, inode_lock, lli, obd.fid2str(lli.lli_fid), lli.lli_clob)
+    print(inode, inode_lock,
+          'owner:', "%x" % (inode_lock.owner.counter&0xffffffffffffffff), lli,
+          obd.fid2str(lli.lli_fid), lli.lli_clob)
 
     if S_ISDIR(inode.i_mode) :
         lsm = lli2lsm(lli)
