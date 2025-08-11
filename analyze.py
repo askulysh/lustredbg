@@ -87,7 +87,10 @@ def cli_get_dentry(stack) :
         dentry = readSU("struct dentry", addr)
         return dentry
 
-    return None
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "do_truncate")
+    if addr != 0 :
+        dentry = readSU("struct dentry", addr)
+        return dentry
 
     return None
 
