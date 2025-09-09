@@ -133,6 +133,10 @@ def cli_get_inode(stack) :
         inode = readSU("struct inode", addr)
         return inode
 
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "ll_layout_refresh")
+    if addr != 0 :
+        inode = readSU("struct inode", addr)
+        return inode
     return None
 
 def cli_get_request(stack, prefix) :
