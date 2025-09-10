@@ -249,7 +249,7 @@ def print_lov_layout_entry(prefix, le) :
         print(prefix, lu_ext2str(le.lle_extent), le)
 
 def print_lov_obj(prefix, lov) :
-    print(prefix, "lov", lov)
+    print(prefix, "lov", lov, "active_ios:", lov.lo_active_ios.counter)
     try:
         print(prefix, "mirrors", lov.u.composite.lo_mirror_count, "flags",
                 lov.u.composite.lo_flags)
