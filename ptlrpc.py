@@ -635,7 +635,9 @@ def show_ptlrpc_request_buf(req) :
           (opcodes.__getitem__(body.pb_opc), body.pb_transno, body.pb_tag,
            body.pb_conn_cnt, dbits2str(body.pb_flags, pb_flags),
            body.pb_status, body.pb_jobid))
-    print("async data:", req.rq_cli.cr_async_args)
+    print("async_args:", req.rq_cli.cr_async_args,
+          "cb_data: %x" % req.rq_cli.cr_cb_data)
+
     if body.pb_opc == opcodes.LDLM_ENQUEUE :
         ldlm_req = readSU("struct ldlm_request", get_req_buffer(req, 1))
         if ldlm_req.lock_desc.l_resource.lr_type == ldlm.ldlm_types.LDLM_IBITS and ldlm_req.lock_flags & ldlm.LDLM_flags.LDLM_FL_HAS_INTENT :
