@@ -1044,6 +1044,9 @@ def rw_sem_owner(sem) :
     owner = owner & 0xffffffffffffffff
     print(sem, "counter: 0x%lx owner: %lx" % (sem.count.counter, owner))
 
+    if sem.count.counter == 0 :
+        return None
+
     return readSU("struct task_struct", owner)
 
 def search_for_rw_semaphore(stack) :
