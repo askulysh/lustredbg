@@ -60,6 +60,8 @@ def cli_get_file(stack) :
         addr = ptlrpc.search_stack_for_reg("RDX", stack, "ll_atomic_open")
     if addr == 0 :
         addr = ptlrpc.search_stack_for_reg("RDI", stack, "vfs_fallocate")
+    if addr == 0 :
+        addr = ptlrpc.search_stack_for_reg("RSI", stack, "do_open")
     if addr != 0 :
         file = readSU("struct file", addr)
         return file
