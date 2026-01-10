@@ -375,18 +375,19 @@ def get_ns_resources(ns) :
         for re in readStructNext(e.first, "next") :
             yield readSU("struct ldlm_resource", int(re) - offset)
 
-def show_ns_locks(ns) :
+def show_ns_locks(ns, res_type) :
     print("ns %x %s total granted %d" % (ns, ns.ns_obd.obd_name,
         ns.ns_pool.pl_granted.counter))
     for res in get_ns_resources(ns) :
-        show_resource(res, False)
+        if not res_type or res_type == res.lr_type :
+            show_resource(res, False)
 
 def ns_list(l, regexp) :
     nss = readSUListFromHead(l, "ns_list_chain", "struct ldlm_namespace")
     for ns in nss :
         print(ns)
         if re.match(regexp, ns.ns_obd.obd_name, re.I) :
-            show_ns_locks(ns)
+            show_ns_locks(ns, False)
 
 def show_namespaces(regexp) :
     print("Looking for CLI active name spaces")
@@ -722,6 +723,8 @@ if ( __name__ == '__main__'):
     parser.add_argument("-r","--res", dest="res", default = 0)
     parser.add_argument("-R","--show-res", dest="show_res",
                         action='store_true')
+    parser.add_argument("-F","--flock", dest="flock",
+                        action='store_true')
     parser.add_argument("-E","--show-export", dest="show_exp",
                         action='store_true')
     parser.add_argument("-V","--verbose", dest="verbose", action='store_true')
@@ -785,7 +788,10 @@ if ( __name__ == '__main__'):
             for res in res_sorted :
                 show_resource_hdr(res)
         else:
-            show_ns_locks(ns)
+            res_type = False
+            if args.flock :
+                res_type = ldlm_types.LDLM_FLOCK
+            show_ns_locks(ns, res_type)
     elif args.compl_waiting != 0 :
         show_completition_waiting_locks()
     elif args.blocking != 0 :
