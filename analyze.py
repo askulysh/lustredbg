@@ -52,6 +52,18 @@ def cli_show_io(stack) :
         fi = io.cis_io.u.ci_fsync
         print("fsync: [", fi.fi_start, "-", fi.fi_end, "]")
 
+
+def cli_show_wait(stack) :
+    addr = ptlrpc.search_stack_for_reg("RCX", stack, "cl_io_submit_sync")
+    if addr != 0 :
+        q = readSU("struct cl_2queue", addr)
+        print("submit_sync: ", q, "in:", q.c2_qin.pl_nr,
+              "out:", q.c2_qout.pl_nr)
+    for cl_page in readSUListFromHead(q.c2_qout.pl_pages, "cp_batch",
+                                  "struct cl_page") :
+        cl_io.print_cl_page(cl_page, "")
+        break
+
 def cli_get_file(stack) :
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "ll_file_open")
     if addr == 0 :
@@ -344,6 +356,7 @@ def show_client_pid(pid, cookie, prefix) :
         cl_io.print_cl_page(cl_page, "")
 
     cli_show_io(stack)
+    cli_show_wait(stack)
 
     req = cli_get_request(stack, prefix)
 
