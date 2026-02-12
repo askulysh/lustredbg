@@ -265,7 +265,7 @@ def show_obds() :
 
 def show_imports() :
     for obd in all_obds() :
-        if obd and obd.obd_lu_dev and obd.u.cli.cl_import :
+        if obd and obd.obd_lu_dev and obd.obd_num_exports < 2 and obd.u.cli.cl_import != 0:
             ptlrpc.show_import("", obd.u.cli.cl_import)
 
 __re_search = re.compile(r'^([a-f0-9]+):')
