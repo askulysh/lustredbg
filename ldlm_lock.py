@@ -461,9 +461,12 @@ def parse_ldlm_cp_ast(stack) :
         if addr == 0 :
             addr = ptlrpc.search_stack_for_reg("RBX", stack, "__schedule")
         if addr != 0 :
-            lock = readSU("struct ldlm_lock", addr)
-            print_ldlm_lock(lock, "")
-            return lock
+            try :
+                lock = readSU("struct ldlm_lock", addr)
+                print_ldlm_lock(lock, "")
+                return lock
+            except :
+                return None
     return None
 
 def show_tgt(pid) :
