@@ -280,6 +280,9 @@ def show_sa_pid(stack, prefix) :
                                   "struct lmvsub_batch") :
         print(sbh)
 
+    req = cli_get_request(stack, prefix)
+    ptlrpc.show_ptlrpc_request(req)
+
     return True
 
 def req_has_cookie(req, cookie):
