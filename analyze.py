@@ -270,18 +270,30 @@ def show_sa_pid(stack, prefix) :
         return False
 
     sai = readSU("struct ll_statahead_info", addr)
-    print(sai)
+    print(sai, "dentry:", sai.sai_dentry, "sent:", sai.sai_sent,
+          "replied:", sai.sai_replied)
+    for se in readSUListFromHead(sai.sai_entries, "se_list",
+                                  "struct sa_entry") :
+        s = readmem(se.se_qstr.name, se.se_qstr.len)
+        val = SmartString(s, se.se_qstr.name, None)
+
+        print(se, hex(se.se_handle), val)
+
     lbh = readSU("struct lmv_batch", sai.sai_bh)
-    print(lbh)
     if lbh == 0:
         return True
 
+    print(lbh, 'lbh_super:', lbh.lbh_super)
     for sbh in readSUListFromHead(lbh.lbh_sub_batch_list, "sbh_sub_item",
                                   "struct lmvsub_batch") :
         print(sbh)
 
+    if lbh.lbh_rqset :
+        ptlrpc.show_ptlrpc_set(lbh.lbh_rqset)
+
     req = cli_get_request(stack, prefix)
-    ptlrpc.show_ptlrpc_request(req)
+    if req:
+        ptlrpc.show_ptlrpc_request(req)
 
     return True
 
