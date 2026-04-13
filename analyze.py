@@ -32,6 +32,19 @@ def cli_get_fsync_io(stack) :
         return io
     return None
 
+def cli_show_io_wait(stack) :
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "__wait_for_common")
+    if addr != 0 :
+        comp = readSU("struct completion", addr)
+        print(comp)
+        addr2 = ptlrpc.search_stack_for_reg("RSI", stack, "osc_io_setattr_end")
+        if addr2 != 0 :
+            io = readSU("struct osc_io", addr2)
+            print(io, "cbarms:", io.oi_cbarg, "rpc_sent:",
+                  io.oi_cbarg.opc_rpc_sent)
+            return io
+    return None
+
 def cli_show_io(stack) :
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "vvp_io_read_start")
     if addr != 0 :
@@ -371,6 +384,7 @@ def show_client_pid(pid, cookie, prefix) :
         cl_io.print_cl_page(cl_page, "")
 
     cli_show_io(stack)
+    cli_show_io_wait(stack)
     cli_show_wait(stack)
 
     req = cli_get_request(stack, prefix)
