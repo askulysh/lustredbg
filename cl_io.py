@@ -106,10 +106,13 @@ def print_osc_page(osc_page, prefix) :
           "cmd:", dbits2str(oap.oap_cmd, obd_brw_flags),
           "flg:", dbits2str(oap.oap_brw_page.bp_flag, obd_brw_flags),
           "off:", oap.oap_obj_off, oap.oap_brw_page.bp_page)
-    if oap.oap_request != 0 :
-       show_ptlrpc_request(oap.oap_request)
-    else :
-        print(prefix, oap.oap_request)
+    try:
+        if oap.oap_request != 0 :
+           show_ptlrpc_request(oap.oap_request)
+        else :
+            print(prefix, oap.oap_request)
+    except:
+        pass
 
 def print_page_slice(layer, prefix) :
     if layer.cpl_ops == vvp_page_ops :
