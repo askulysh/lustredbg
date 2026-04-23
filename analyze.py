@@ -50,7 +50,12 @@ def cli_show_io(stack) :
     if addr != 0 :
         io = readSU("struct cl_io_slice", addr)
         rd = io.cis_io.u.ci_rd.rd
-        print("read: [", rd.crw_pos, "-", rd.crw_pos + rd.crw_count - 1, "]")
+        if rd.hasField('crw_bytes') :
+            count = rd.crw_bytes
+        else :
+            count = rd.crw_count
+
+        print("read: [", rd.crw_pos, "-", rd.crw_pos + count - 1, "]")
         return
 
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "vvp_io_write_start")
