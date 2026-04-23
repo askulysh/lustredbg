@@ -120,8 +120,9 @@ def print_page_slice(layer, prefix) :
             ccc_page = readSU("struct ccc_page", layer)
             print(prefix + "  ", "ccc", ccc_page)
         except:
-            vvp_page = readSU("struct vvp_page", layer)
-            print(prefix + "  ", "vvp", vvp_page)
+            pass
+#            vvp_page = readSU("struct vvp_page", layer)
+#            print(prefix + "  ", "vvp", vvp_page)
     elif layer.cpl_ops == lovsub_page_ops :
         print(prefix + "  ", "lovsub", layer)
     elif layer.cpl_ops == osc_page_ops :
