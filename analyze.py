@@ -370,6 +370,11 @@ def show_client_pid(pid, cookie, prefix) :
             lock_slice = readSU("struct cl_lock_slice", addr)
             cl_lock.print_cl_lock(lock_slice.cls_lock, prefix)
 
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "ldlm_cancel_callback")
+    if addr !=0 :
+        lock = readSU("struct ldlm_lock", addr)
+        ldlm.print_ldlm_lock(lock, prefix)
+
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "lmv_revalidate_slaves")
     if addr != 0 :
         print()
