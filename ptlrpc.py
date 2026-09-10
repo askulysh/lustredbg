@@ -771,7 +771,7 @@ def show_ptlrpc_request(req) :
 
     show_ptlrpc_request_buf(req)
 
-    if req.rq_status == -75 :
+    if req.rq_status == -75 or (get_req_body(req) and (get_req_body(req).pb_flags & 0x0004)) :
         print()
         print("versions:", get_req_body(req).pb_pre_versions)
 
