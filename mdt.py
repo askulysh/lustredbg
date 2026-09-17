@@ -161,6 +161,65 @@ def find_print_fid(lu_dev, fid, prefix) :
         mdt_obj = readSU("struct mdt_object", Addr(lu_obj))
         print_mdt_obj(mdt_obj, prefix)
 
+def obd2mdt(dev) :
+    """Given an MDT's struct obd_device, return its struct mdt_device.
+    dev.obd_lu_dev points at the embedded mdt_lu_dev member."""
+    return readSU("struct mdt_device",
+                  dev.obd_lu_dev - member_offset("struct mdt_device",
+                                                 "mdt_lu_dev"))
+
+def get_tdtd(dev) :
+    """Given an MDT's struct obd_device, return its
+    struct target_distribute_txn_data (mdt_lut.lut_tdtd)."""
+    mdt = obd2mdt(dev)
+    return readSU("struct target_distribute_txn_data", mdt.mdt_lut.lut_tdtd)
+
+def print_dtrq(dtrq, prefix) :
+    print("%s%s transno %d batchid %d xid %d local_update_executed %d" %
+          (prefix, dtrq, dtrq.dtrq_master_transno, dtrq.dtrq_batchid,
+           dtrq.dtrq_xid, dtrq.dtrq_local_update_executed))
+    for dtrqs in readSUListFromHead(dtrq.dtrq_sub_list, "dtrqs_list",
+            "struct distribute_txn_replay_req_sub") :
+        print("%s    sub mdt_index %d %s" %
+              (prefix, dtrqs.dtrqs_mdt_index, dtrqs))
+
+def print_dtrq_list(head, prefix, name) :
+    print("%s%s:" % (prefix, name))
+    for dtrq in readSUListFromHead(head, "dtrq_list",
+            "struct distribute_txn_replay_req") :
+        print_dtrq(dtrq, prefix + "  ")
+
+def show_tdtd(dev) :
+    """Dump target_distribute_txn_data for an MDT (batchid bookkeeping and
+    the two update-replay lists: tdtd_replay_list (pending) and
+    tdtd_replay_finish_list (already applied via update-log replay, which
+    is consulted by is_req_replayed_by_update() to drop duplicate client
+    request replays)."""
+    tdtd = get_tdtd(dev)
+    print("%s tdtd_batchid %d tdtd_committed_batchid %d" %
+          (tdtd, tdtd.tdtd_batchid, tdtd.tdtd_committed_batchid))
+    print_dtrq_list(tdtd.tdtd_replay_list, "  ", "tdtd_replay_list (pending)")
+    print_dtrq_list(tdtd.tdtd_replay_finish_list, "  ",
+                    "tdtd_replay_finish_list (applied)")
+
+def find_dtrq(dev, transno) :
+    """Search both tdtd replay lists for a dtrq matching dtrq_master_transno,
+    e.g. to check whether a given client replay transno was already
+    recorded as applied via the update-log replay path."""
+    tdtd = get_tdtd(dev)
+    for name, head in (("tdtd_replay_list", tdtd.tdtd_replay_list),
+                       ("tdtd_replay_finish_list",
+                        tdtd.tdtd_replay_finish_list)) :
+        for dtrq in readSUListFromHead(head, "dtrq_list",
+                "struct distribute_txn_replay_req") :
+            if dtrq.dtrq_master_transno == transno :
+                print("found in %s:" % name)
+                print_dtrq(dtrq, "  ")
+                return dtrq
+    print("transno %d not found in tdtd_replay_list or "
+          "tdtd_replay_finish_list" % transno)
+    return None
+
 def parse_mti(mti, opc, prefix):
     fid_prefix = prefix + "    "
     print("mdt", mti.mti_mdt)
@@ -205,6 +264,12 @@ if ( __name__ == '__main__'):
     parser.add_argument("-s","--osd", dest="osd", default = 0)
     parser.add_argument("-i","--mti", dest="mti", default = 0)
     parser.add_argument("-l","--lov", dest="lov", default = 0)
+    parser.add_argument("-T","--tdtd", dest="tdtd", default = 0,
+                        help="struct obd_device address of an MDT; "
+                             "dump target_distribute_txn_data replay lists")
+    parser.add_argument("-x","--transno", dest="transno", default = 0,
+                        help="with -T, look up a single dtrq by "
+                             "dtrq_master_transno in either replay list")
     args = parser.parse_args()
     if args.mdt != 0 :
         mdt_obj = readSU("struct mdt_object", int(args.mdt, 16))
@@ -222,4 +287,10 @@ if ( __name__ == '__main__'):
         parse_mti(mti, 0, "")
     elif args.lov != 0 :
         lod_parse_striping("", int(args.lov, 16))
+    elif args.tdtd != 0 :
+        dev = readSU("struct obd_device", int(args.tdtd, 16))
+        if args.transno != 0 :
+            find_dtrq(dev, int(args.transno))
+        else :
+            show_tdtd(dev)
 
