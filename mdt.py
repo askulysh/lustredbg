@@ -174,6 +174,21 @@ def get_tdtd(dev) :
     mdt = obd2mdt(dev)
     return readSU("struct target_distribute_txn_data", mdt.mdt_lut.lut_tdtd)
 
+def show_lut(dev) :
+    """Dump an MDT's struct lu_target reply-data bookkeeping
+    (lut_reply_header) and the export generation hash
+    (lut_obd.obd_gen_hash), the two inputs consulted by
+    update_recovery_update_ses() when it tries to attach dtrq_xid
+    to an update-log replay (see update_recovery.c:1051)."""
+    mdt = obd2mdt(dev)
+    lut = mdt.mdt_lut
+    lrh = lut.lut_reply_header
+    print("lut_reply_header: magic 0x%x header_size %d reply_size %d" %
+          (lrh.lrh_magic, lrh.lrh_header_size, lrh.lrh_reply_size))
+    ghash = lut.lut_obd.obd_gen_hash
+    print("obd_gen_hash %s count %d" % (ghash, ghash.hs_count.counter
+          if hasattr(ghash, "hs_count") else -1))
+
 def print_dtrq(dtrq, prefix) :
     print("%s%s transno %d batchid %d xid %d local_update_executed %d" %
           (prefix, dtrq, dtrq.dtrq_master_transno, dtrq.dtrq_batchid,
@@ -270,6 +285,9 @@ if ( __name__ == '__main__'):
     parser.add_argument("-x","--transno", dest="transno", default = 0,
                         help="with -T, look up a single dtrq by "
                              "dtrq_master_transno in either replay list")
+    parser.add_argument("-L","--lut", dest="lut", default = 0,
+                        help="struct obd_device address of an MDT; dump "
+                             "lut_reply_header and obd_gen_hash")
     args = parser.parse_args()
     if args.mdt != 0 :
         mdt_obj = readSU("struct mdt_object", int(args.mdt, 16))
@@ -293,4 +311,7 @@ if ( __name__ == '__main__'):
             find_dtrq(dev, int(args.transno))
         else :
             show_tdtd(dev)
+    elif args.lut != 0 :
+        dev = readSU("struct obd_device", int(args.lut, 16))
+        show_lut(dev)
 
