@@ -189,6 +189,22 @@ def show_lut(dev) :
     print("obd_gen_hash %s count %d" % (ghash, ghash.hs_count.counter
           if hasattr(ghash, "hs_count") else -1))
 
+def show_gen_hash(dev) :
+    """Walk obd_gen_hash and print each export's lcd_generation (the key
+    update_recovery_update_ses() looks up via lrd_client_gen when trying
+    to attach dtrq_xid to a replayed update). A generation present in the
+    on-disk reply-data record but absent here (e.g. because the client
+    was re-registered under a new generation after an eviction/failover)
+    would explain a lookup miss and a permanently xid=0 dtrq."""
+    exp_off = member_offset("struct obd_export", "exp_gen_hash")
+    def show_exp(hnode) :
+        exp = readSU("struct obd_export", Addr(hnode) - exp_off)
+        gen = exp.u.eu_target_data.ted_lcd.lcd_generation
+        print("  export %s uuid %s generation %d conn_cnt %d failed %d" %
+              (exp, exp.exp_client_uuid.uuid, gen, exp.exp_conn_cnt,
+               exp.exp_failed))
+    obd.hash_for_each_hd(dev.obd_gen_hash, show_exp)
+
 def print_dtrq(dtrq, prefix) :
     print("%s%s transno %d batchid %d xid %d local_update_executed %d" %
           (prefix, dtrq, dtrq.dtrq_master_transno, dtrq.dtrq_batchid,
@@ -288,6 +304,9 @@ if ( __name__ == '__main__'):
     parser.add_argument("-L","--lut", dest="lut", default = 0,
                         help="struct obd_device address of an MDT; dump "
                              "lut_reply_header and obd_gen_hash")
+    parser.add_argument("-G","--gen-hash", dest="genhash", default = 0,
+                        help="struct obd_device address of an MDT; dump "
+                             "obd_gen_hash entries (export generations)")
     args = parser.parse_args()
     if args.mdt != 0 :
         mdt_obj = readSU("struct mdt_object", int(args.mdt, 16))
@@ -314,4 +333,7 @@ if ( __name__ == '__main__'):
     elif args.lut != 0 :
         dev = readSU("struct obd_device", int(args.lut, 16))
         show_lut(dev)
+    elif args.genhash != 0 :
+        dev = readSU("struct obd_device", int(args.genhash, 16))
+        show_gen_hash(dev)
 
