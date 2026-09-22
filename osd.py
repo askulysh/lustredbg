@@ -22,7 +22,11 @@ def print_osd_object(osd_obj, prefix) :
             inode = readSU("struct inode", osd_obj.oo_inode)
             print(prefix, inode, "ino", osd_obj.oo_inode.i_ino,
                   "nlink", osd_obj.oo_inode.i_nlink,
-                  "size", osd_obj.oo_inode.i_size)
+                  "size", osd_obj.oo_inode.i_size,
+                  "generation", osd_obj.oo_inode.i_generation,
+                  "atime", osd_obj.oo_inode.i_atime.tv_sec,
+                  "mtime", osd_obj.oo_inode.i_mtime.tv_sec,
+                  "ctime", osd_obj.oo_inode.i_ctime.tv_sec)
     except :
         try :
             print(prefix, "dnode", osd_obj.oo_dn)
