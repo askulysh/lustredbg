@@ -447,6 +447,16 @@ def get_req_msg(req) :
 def get_req_buffer(req, n) :
     return get_msg_buffer(get_req_msg(req), n)
 
+def get_req_transno(req) :
+    # req.rq_transno is only populated for client-side resend tracking;
+    # for server-side (replay) requests the real transno lives in the
+    # request body, same field show_ptlrpc_request_buf() prints.
+    try :
+        body = readSU("struct ptlrpc_body_v3", get_req_buffer(req, 0))
+        return body.pb_transno
+    except :
+        return 0
+
 def get_rep_buffer(req, n) :
     return get_msg_buffer(get_rep_msg(req), n)
 
@@ -1438,6 +1448,7 @@ if ( __name__ == '__main__'):
     parser.add_argument("-H","--history", dest="history",
                        default = 0)
     parser.add_argument("-x","--xid", dest="xid", default = 0)
+    parser.add_argument("-t","--transno", dest="transno", default = 0)
     parser.add_argument("-V","--verbose", dest="verbose", action='store_true')
     parser.add_argument("-E","--show-export", dest="show_export",
                         action='store_true')
@@ -1491,12 +1502,22 @@ if ( __name__ == '__main__'):
         else :
             print("Wrong service name", args.history)
     elif args.xid != 0 :
+        xids = set(int(x) for x in str(args.xid).split(",") if x != "")
         ptlrpc_all_services = readSymbol("ptlrpc_all_services")
         services = readSUListFromHead(ptlrpc_all_services, "srv_list",
                                       "struct ptlrpc_service")
         for svc in services :
             for req in get_history_list(svc) :
-                if req.rq_xid == int(args.xid) :
+                if req.rq_xid in xids :
+                    show_ptlrpc_request(req)
+    elif args.transno != 0 :
+        transnos = set(int(t) for t in args.transno.split(",") if t != "")
+        ptlrpc_all_services = readSymbol("ptlrpc_all_services")
+        services = readSUListFromHead(ptlrpc_all_services, "srv_list",
+                                      "struct ptlrpc_service")
+        for svc in services :
+            for req in get_history_list(svc) :
+                if get_req_transno(req) in transnos :
                     show_ptlrpc_request(req)
     elif args.object :
         if args.object[:3] == "req" :
