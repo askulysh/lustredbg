@@ -82,6 +82,14 @@ def cli_show_wait(stack) :
               cl_io.print_cl_page(cl_page, "")
               break
 
+def cli_get_filename(stack) :
+    addr = ptlrpc.search_stack_for_reg("RSI", stack, "do_filp_open")
+    if addr != 0 :
+        filename = readSU("struct filename", addr)
+        return filename.name
+
+    return None
+
 def cli_get_file(stack) :
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "ll_file_open")
     if addr == 0 :
@@ -332,6 +340,10 @@ def show_client_pid(pid, cookie, prefix) :
         return True
 
     print()
+    filename = cli_get_filename(stack)
+    if filename :
+        print(prefix, filename)
+
     inode  = None
     dentry = None
     file = cli_get_file(stack)
