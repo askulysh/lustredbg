@@ -9,6 +9,7 @@ from ktime import *
 import ptlrpc as ptlrpc
 import obd as obd
 import mdt as mdt
+import ldiskfs as ldiskfs
 
 def osd_oti_get(env) :
     osd_key = readSymbol("osd_key")
@@ -16,7 +17,35 @@ def osd_oti_get(env) :
     return readSU("struct osd_thread_info",
             env.le_ctx.lc_value[osd_key.lct_index])
 
+def dump_ldiskfs_xattrs(inode, prefix) :
+    try :
+        ei = ldiskfs.get_ldiskfs_inode_info(inode)
+        print(prefix, ei, "i_file_acl", ei.i_file_acl,
+              "i_extra_isize", ei.i_extra_isize)
+        raw_inode = ldiskfs.get_ldiskfs_inode(inode)
+        if raw_inode == 0 :
+            print(prefix, "raw inode not resident in buffer cache, "
+                  "can't inspect on-disk xattrs")
+            return
+        entry_iters = [
+            ("ibody", ldiskfs.ibody_xattr_entries(raw_inode, ei.i_extra_isize)),
+            ("block", ldiskfs.block_xattr_entries(inode.i_sb, ei.i_file_acl)),
+        ]
+        for (kind, entries) in entry_iters :
+            for (idx, name, vaddr, vlen, vinum) in entries :
+                full = ldiskfs.ldiskfs_xattr_name(idx, name)
+                print(prefix, kind, full, "len", vlen)
+                if vinum :
+                    print(prefix, "\t(value stored out-of-line in inode",
+                          vinum, "- not decoded)")
+                elif full == "trusted.link" :
+                    leh = readSU("struct link_ea_header", vaddr)
+                    mdt.print_link_ea(prefix + "\t", leh)
+    except Exception as e :
+        print(prefix, "unable to dump on-disk xattrs:", e)
+
 def print_osd_object(osd_obj, prefix) :
+    inode = 0
     try :
         if osd_obj.oo_inode != 0 :
             inode = readSU("struct inode", osd_obj.oo_inode)
@@ -41,6 +70,8 @@ def print_osd_object(osd_obj, prefix) :
         else :
             name = readmem(oxe.oxe_name, oxe.oxe_namelen)
         print(prefix, name, oxe)
+    if inode != 0 :
+        dump_ldiskfs_xattrs(inode, prefix)
 
 def show_ofd(ofd, prefix) :
     loh = ofd.ofo_header
