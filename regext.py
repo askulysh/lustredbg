@@ -34,6 +34,10 @@ rprog("osd", "OSD device information",
       "-h   - list available options",
       help)
 
+rprog("ldiskfs", "ldiskfs information",
+      "-h   - list available options",
+      help)
+
 rprog("cl_lock", "cl_lock information",
       "-h   - list available options",
       help)
