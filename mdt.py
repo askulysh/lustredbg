@@ -63,6 +63,17 @@ def print_link_ea(prefix, leh) :
     else :
         print("leh magic error !", leh.leh_magic)
 
+def get_link_ea_first(leh) :
+    """ Decode just the first (name, parent_fid) pair of a linkEA, for
+        FID-to-path walking; parent_fid is an obd.Fid usable with
+        obd.lu_object_find(). Returns (None, None) if there is none. """
+    if leh.leh_magic != 0x11EAF1DF or leh.leh_reccount == 0 :
+        return (None, None)
+    lee = readSU("struct link_ea_entry", leh + 1)
+    reclen = (lee.lee_reclen[0] << 8) + lee.lee_reclen[1]
+    name = readmem(lee.lee_name, reclen - 16 - 2)
+    return (name, obd.fid_be2fid(lee.lee_parent_fid))
+
 def print_osp_object(osp_obj, prefix) :
     print(prefix, "osp", osp_obj)
     prefix += "\t"
@@ -154,6 +165,61 @@ def print_mdt_obj(mdt, prefix):
     for layer in readSUListFromHead(mdt.mot_header.loh_layers, "lo_linkage",
             "struct lu_object") :
         print_generic_mdt_obj(layer, prefix + "    ")
+
+FID_SEQ_ROOT = 0x200000007
+FID_OID_ROOT = 1
+
+def fid_is_root(fid) :
+    return fid.f_seq == FID_SEQ_ROOT and fid.f_oid == FID_OID_ROOT
+
+def get_link_name_parent(mdt_obj) :
+    """ Find this object's osd layer, fetch its raw linkEA (leh) via
+        osd.get_link_ea(), and decode the first (name, parent_fid) pair
+        here (mdt.py owns linkEA parsing). """
+    for layer in readSUListFromHead(mdt_obj.mot_header.loh_layers,
+                                     "lo_linkage", "struct lu_object") :
+        if layer.lo_ops == osd_lu_obj_ops :
+            osd_obj = readSU("struct osd_object", layer)
+            leh = osd.get_link_ea(osd_obj)
+            if leh is None :
+                return (None, None)
+            return get_link_ea_first(leh)
+    return (None, None)
+
+def get_lu_dev(mdt_obj) :
+    for layer in readSUListFromHead(mdt_obj.mot_header.loh_layers,
+                                     "lo_linkage", "struct lu_object") :
+        return layer.lo_dev
+    return None
+
+def print_full_path(mdt_obj) :
+    """ Walk trusted.link (linkEA) from mdt_obj up to the root FID,
+        resolving each ancestor via the in-memory lu_object cache, and
+        print the reconstructed path.  Stops (and reports why) as soon
+        as a linkEA or a parent object can't be found. """
+    dev = get_lu_dev(mdt_obj)
+    fid = mdt_obj.mot_header.loh_fid
+    cur = mdt_obj
+    parts = []
+    while not fid_is_root(fid) :
+        (name, parent) = get_link_name_parent(cur)
+        if name is None :
+            parts.append("<%s: no linkEA>" % obd.fid2str(fid))
+            break
+        parts.append(name.decode(errors="replace"))
+        if dev is None :
+            parts.append("<%s: no lu_device to continue>" %
+                          obd.fid2str(parent))
+            break
+        lu_obj = obd.lu_object_find(dev, parent)
+        if not lu_obj :
+            parts.append("<%s not resident in object cache>" %
+                          obd.fid2str(parent))
+            break
+        cur = readSU("struct mdt_object", Addr(lu_obj))
+        fid = parent
+    parts.reverse()
+    print("/" + "/".join(parts))
 
 def find_print_fid(lu_dev, fid, prefix) :
     lu_obj = obd.lu_object_find(lu_dev, fid)
@@ -307,18 +373,28 @@ if ( __name__ == '__main__'):
     parser.add_argument("-G","--gen-hash", dest="genhash", default = 0,
                         help="struct obd_device address of an MDT; dump "
                              "obd_gen_hash entries (export generations)")
+    parser.add_argument("-P","--path", dest="path", action='store_true',
+                        help="with -t/-d/-s, also decode trusted.link "
+                             "(linkEA) and walk parents via the object "
+                             "cache to print the object's full path")
     args = parser.parse_args()
     if args.mdt != 0 :
         mdt_obj = readSU("struct mdt_object", int(args.mdt, 16))
         print_mdt_obj(mdt_obj, "")
+        if args.path :
+            print_full_path(mdt_obj)
     elif args.mdd != 0 :
         mdd_obj = readSU("struct mdd_object", int(args.mdd, 16))
         mdt_obj = readSU("struct mdt_object", mdd_obj.mod_obj.mo_lu.lo_header)
         print_mdt_obj(mdt_obj, "")
+        if args.path :
+            print_full_path(mdt_obj)
     elif args.osd != 0 :
         osd_obj = readSU("struct osd_object", int(args.osd, 16))
         mdt_obj = readSU("struct mdt_object", osd_obj.oo_dt.do_lu.lo_header)
         print_mdt_obj(mdt_obj, "")
+        if args.path :
+            print_full_path(mdt_obj)
     elif args.mti != 0 :
         mti = readSU("struct mdt_thread_info", int(args.mti, 16))
         parse_mti(mti, 0, "")

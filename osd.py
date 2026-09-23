@@ -17,6 +17,47 @@ def osd_oti_get(env) :
     return readSU("struct osd_thread_info",
             env.le_ctx.lc_value[osd_key.lct_index])
 
+def get_link_ea(osd_obj) :
+    """ Locate this object's trusted.link (linkEA) xattr and return the
+        raw 'struct link_ea_header', or None if it can't be found:
+        checks the in-memory write-back xattr cache first, then falls
+        back to the on-disk ldiskfs xattrs (e.g. root object, or the
+        relevant blocks aren't resident in memory).  Decoding the
+        returned header is the caller's (mdt.py's) job. """
+    oxe_name_exists = member_size("struct osd_xattr_entry", "oxe_name")
+    for oxe in readSUListFromHead(osd_obj.oo_xattr_list,
+                                  "oxe_list", "struct osd_xattr_entry") :
+        if oxe_name_exists == -1 :
+            if not oxe.oxe_exist :
+                continue
+            name = readmem(oxe.oxe_buf, oxe.oxe_namelen)
+            if name == b'trusted.link' :
+                vaddr = Addr(oxe.oxe_buf) + oxe.oxe_namelen + 1
+                return readSU("struct link_ea_header", vaddr)
+        else :
+            name = readmem(oxe.oxe_name, oxe.oxe_namelen)
+            if name == b'trusted.link' :
+                return readSU("struct link_ea_header", oxe.oxe_value)
+    try :
+        if osd_obj.oo_inode == 0 :
+            return None
+        inode = readSU("struct inode", osd_obj.oo_inode)
+        ei = ldiskfs.get_ldiskfs_inode_info(inode)
+        raw_inode = ldiskfs.get_ldiskfs_inode(inode)
+        if raw_inode == 0 :
+            return None
+        for entries in (
+                ldiskfs.ibody_xattr_entries(raw_inode, ei.i_extra_isize),
+                ldiskfs.block_xattr_entries(inode.i_sb, ei.i_file_acl)) :
+            for (idx, name, vaddr, vlen, vinum) in entries :
+                if vinum :
+                    continue
+                if ldiskfs.ldiskfs_xattr_name(idx, name) == "trusted.link" :
+                    return readSU("struct link_ea_header", vaddr)
+    except :
+        pass
+    return None
+
 def dump_ldiskfs_xattrs(inode, prefix) :
     try :
         ei = ldiskfs.get_ldiskfs_inode_info(inode)

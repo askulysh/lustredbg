@@ -64,6 +64,11 @@ def fid_be2str(f) :
     ver = (f[12]<<24)|(f[13]<<16)|(f[14]<<8)|f[15]
     return "[0x%x:0x%x:0x%x]" % (seq, oid, ver)
 
+def fid_be2fid(f) :
+    """ Decode a link_ea_entry's packed big-endian lee_parent_fid bytes
+        into a Fid usable with lu_object_find()/loh_cmp_fid(). """
+    return Fid(fid_be2str(f)[1:-1])
+
 def hash_long(val, bits) :
     CFS_GOLDEN_RATIO_PRIME_64 = 0x9e37fffffffc0001
     h = val & 0xffffffffffffffff
