@@ -24,6 +24,51 @@ else if grep "ptlrpc_replay_interpret()) LBUG" $dmesg; then
 	fi
 	crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
 		      epython ../../bin/analyze.py >> $analysis"
+else if grep "mdt_version_check()) LBUG" $dmesg; then
+	# Server-side VBR mismatch: mdt_version_check() found that the
+	# client's cached pre-version for a replayed request doesn't match
+	# the object's current on-disk version, then LBUGs instead of
+	# returning -EOVERFLOW. Automatically locate the "suspicious"
+	# request: the one whose OWN transno equals the client's cached
+	# (expected) version, since VBR versions are transnos -- that
+	# request is normally the one that last (re)established the
+	# object's version, and its context reveals the affected FID.
+	vermis=$(grep "mdt_version_check()) Version mismatch" $dmesg | tail -n 1)
+	echo "$vermis" >> $analysis
+	pid=$(echo "$vermis" | sed -n 's/.*LustreError: \([0-9]*\):.*/\1/p')
+	expected=$(echo "$vermis" | sed -n 's/.*Version mismatch \([0-9]*\) != .*/\1/p')
+	actual=$(echo "$vermis" | sed -n 's/.*Version mismatch [0-9]* != \([0-9]*\).*/\1/p')
+	echo "" >> $analysis
+	echo "expected (client cached) version = $expected" >> $analysis
+	echo "actual (on-disk) version         = $actual" >> $analysis
+
+	# dump the crashing thread's live mdt_thread_info/reint record first --
+	# gives immediate context (fid, opcode, lock handles) for the crash;
+	# it also prints the currently-processed request's own "transno",
+	# a 3rd value (besides expected/actual) worth including in the search
+	crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
+		      epython ../../bin/ldlm_lock.py -p $pid >> $analysis"
+	current=$(grep -o "transno [0-9]*" $analysis | tail -n 1 | cut -d' ' -f2)
+
+	echo "" >> $analysis
+	grepargs="-e RECOVERY"
+	transnos=""
+	for v in "$expected" "$actual" "$current"; do
+		[ -n "$v" ] && [ "$v" != "0" ] && [ "$v" != "1" ] && grepargs="$grepargs -e $v"
+	done
+	for v in "$expected" "$actual"; do
+		if [ -n "$v" ] && [ "$v" != "0" ] && [ "$v" != "1" ]; then
+			[ -n "$transnos" ] && transnos="$transnos,$v" || transnos="$v"
+		fi
+	done
+	[ -n "$transnos" ] && crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
+		      epython ../../bin/ptlrpc.py -t $transnos >> $analysis"
+
+	wait $log_pid
+	logf=log.dk_$core
+
+	[ -n "$grepargs" ] && grep $grepargs $logf >> $analysis
+	grep ":"$pid":" $logf | tail >> $analysis
 else if grep "LBUG upon eviction" $dmesg; then
 	crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
 		      epython ../../bin/analyze.py >> $analysis"
@@ -35,6 +80,7 @@ else
 	grep ":"$pid":" log.dk_$core | tail >> $analysis
 	[ $req != 0 ] && crash_cmd $1 "extend $WDIR/crash_ext/mpykdump64.so \n
 		 epython ../../bin/ptlrpc.py -r $req >> $analysis"
+fi
 fi
 fi
 fi
