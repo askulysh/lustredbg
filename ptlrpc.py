@@ -903,7 +903,7 @@ def imp_show_requests(imp) :
 
 def imp_show_history(imp) :
     print("replay list:")
-    replay_list = readSUListFromHead(imp.imp_replay_list, "rq_replay_list", "struct ptlrpc_request")
+    replay_list = readSUListFromHead(imp.imp_replay_list, "rq_replay_list", "struct ptlrpc_request", maxel=100000)
     show_requests_from_list(replay_list)
 
 def show_export_hdr(prefix, exp) :
