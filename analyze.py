@@ -552,7 +552,7 @@ def parse_blast_lock(lock) :
     ldlm.print_ldlm_lock(lock, "")
     if ktime.get_seconds() - lock.l_activity < 100 :
         return False
-    if lock.l_granted_mode == ldlm.ldlm_modes.LCK_MINMODE or lock.l_readers != 0 or lock.l_writers != 0 :
+    if ldlm.lock_mode(lock.l_granted_mode) == ldlm.ldlm_modes.LCK_MINMODE or lock.l_readers != 0 or lock.l_writers != 0 :
         if show_client_pid(lock.l_pid, lock.l_handle.h_cookie, "") :
             cli_waits = True
     else :

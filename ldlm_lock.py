@@ -126,8 +126,25 @@ lck_compat_array = {
 def print_connection(conn) :
     print_nid(conn.c_peer.nid)
 
+# struct ldlm_lock declares l_req_mode/l_granted_mode as 9-bit bitfields
+# (enum ldlm_mode l_req_mode:9). pykdump can return the raw backing storage
+# unit (which also covers neighboring bitfields) instead of just the masked
+# 9-bit value, so always mask before looking the value up.
+LDLM_MODE_BITFIELD_MASK = 0x1ff
+
+def lock_mode(mode) :
+        try :
+                mode = int(mode)
+        except Exception :
+                return mode
+        return mode & LDLM_MODE_BITFIELD_MASK
+
 def ldlm_mode2str(mode) :
-        return ldlm_modes.__getitem__(mode)
+        mode = lock_mode(mode)
+        try :
+                return ldlm_modes.__getitem__(mode)
+        except Exception :
+                return "unknown mode (%s)" % (mode,)
 
 def res2str(res) :
     return "[0x%x:0x%x:0x%x]" % (res.lr_name.name[0], res.lr_name.name[1],
@@ -238,7 +255,7 @@ def print_ldlm_lock(ldlm_lock, prefix) :
                             ldlm_lock.l_writers, remote,
                             res2str(ldlm_lock.l_resource), pid))
     print(prefix, "flags:", dbits2str(ldlm_lock.l_flags, LDLM_flags))
-    if ldlm_lock.l_req_mode == ldlm_lock.l_granted_mode :
+    if lock_mode(ldlm_lock.l_req_mode) == lock_mode(ldlm_lock.l_granted_mode) :
         timeout = ""
         t = lock_cb_time(ldlm_lock)
         if t != 0 :
@@ -403,7 +420,7 @@ def cli_granted_locks() :
                 "l_res_link", "struct ldlm_lock")
 
 def lock_compatible(lock1, lock2) :
-    if lck_compat_array[lock1.l_req_mode] & lock2.l_req_mode == 0 :
+    if lck_compat_array[lock_mode(lock1.l_req_mode)] & lock_mode(lock2.l_req_mode) == 0 :
         if lock1.l_resource.lr_type == ldlm_types.LDLM_IBITS :
             bits = lock1.l_policy_data.l_inodebits.bits
             if bits & lock2.l_policy_data.l_inodebits.bits != 0 :
@@ -663,14 +680,14 @@ def analyze_deadlock(lock) :
 
     show_resource(lock.l_resource, False)
 
-    if lock.l_req_mode == lock.l_granted_mode :
+    if lock_mode(lock.l_req_mode) == lock_mode(lock.l_granted_mode) :
         conflict = find_conflicting_in_list(lock, lock.l_resource.lr_waiting)
     else :
         conflict = find_conflicting_in_list(lock, lock.l_resource.lr_granted)
 
     while conflict :
         print("\nconflicting lock", conflict)
-        if conflict.l_req_mode == conflict.l_granted_mode :
+        if lock_mode(conflict.l_req_mode) == lock_mode(conflict.l_granted_mode) :
             print_ldlm_lock(conflict, "")
 
         print()
@@ -680,7 +697,7 @@ def analyze_deadlock(lock) :
             lock = show_tgt(conflict.l_pid)
 
         if lock == 0 :
-            if conflict.l_req_mode != conflict.l_granted_mode :
+            if lock_mode(conflict.l_req_mode) != lock_mode(conflict.l_granted_mode) :
                 print_ldlm_lock(conflict, "")
             print("\nexport", conflict.l_export, ":")
             if conflict.l_export != 0 :
