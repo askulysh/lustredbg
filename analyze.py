@@ -62,7 +62,12 @@ def cli_show_io(stack) :
     if addr != 0 :
         io = readSU("struct cl_io_slice", addr)
         wr = io.cis_io.u.ci_wr.wr
-        print("write: [", wr.crw_pos, "-", wr.crw_pos + wr.crw_count - 1, "]")
+        if wr.hasField('crw_bytes') :
+            count = wr.crw_bytes
+        else :
+            count = wr.crw_count
+
+        print("write: [", wr.crw_pos, "-", wr.crw_pos + count - 1, "]")
         return
 
     io = cli_get_fsync_io(stack)
