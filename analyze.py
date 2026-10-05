@@ -502,6 +502,18 @@ def show_bl_pid(pid, prefix) :
         ptlrpc.show_export_hdr(prefix, exp)
         ldlm.print_ldlm_lock(lock, prefix)
 
+    addr = ptlrpc.search_stack_for_reg("RDI", stack,
+                                       "osc_ldlm_blocking_ast")
+    if addr != 0:
+        lock = readSU("struct ldlm_lock", addr)
+        ldlm.print_ldlm_lock(lock, prefix)
+
+    addr = ptlrpc.search_stack_for_reg("RDI", stack, "__lock_page")
+    if addr != 0:
+        page = readSU("struct page", addr)
+        cl_page = page2cl_page(page)
+        cl_io.print_cl_page(cl_page, prefix)
+
     addr = ptlrpc.search_stack_for_reg("RSI", stack, "osc_extent_wait")
     if addr != 0 :
         print()
