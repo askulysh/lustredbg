@@ -605,6 +605,39 @@ def show_msg_loc(msg, req_format, location) :
                     field.ouh_inline_data)
             print_update_req("   ", our)
 
+def show_osc_brw_async_args(req) :
+    addr = req.rq_cli.cr_async_args
+    if addr == 0 :
+        return
+    try :
+        aa = readSU("struct osc_brw_async_args", addr)
+    except :
+        return
+
+    if aa.aa_oa != 0 :
+        fid = fid2str(aa.aa_oa.o_oi.oi_fid)
+    else :
+        fid = "no obdo"
+
+    print("brw_async_args: %s nob %d nio_count %d page_count %d "
+          "resends %d started %s ago cli %s" %
+          (fid, aa.aa_requested_nob, aa.aa_nio_count, aa.aa_page_count,
+           aa.aa_resends, ktime_diff(aa.aa_start_time), aa.aa_cli))
+
+    n = aa.aa_page_count
+    if n > 0 and aa.aa_ppga != 0 :
+        p = int(aa.aa_ppga)
+        start = None
+        end = None
+        for i in range(n) :
+            bp = readSU("struct brw_page", readU64(p + i*8))
+            if start is None or bp.bp_off < start :
+                start = bp.bp_off
+            off_end = bp.bp_off + bp.bp_count
+            if end is None or off_end > end :
+                end = off_end
+        print("  pages: [", start, "-", end - 1, "]")
+
 def show_request_loc(req, req_format, location) :
     if location == 0 :
         msg = get_req_msg(req)
@@ -723,8 +756,12 @@ def show_ptlrpc_request_buf(req) :
         show_request_fmt(req, "RQF_OST_SETATTR")
     elif body.pb_opc == opcodes.OST_READ :
         show_request_fmt(req, "RQF_OST_BRW_READ")
+        if req.rq_import != 0:
+            show_osc_brw_async_args(req)
     elif body.pb_opc == opcodes.OST_WRITE :
         show_request_fmt(req, "RQF_OST_BRW_WRITE")
+        if req.rq_import != 0:
+            show_osc_brw_async_args(req)
     elif body.pb_opc == opcodes.OST_CREATE :
         show_request_fmt(req, "RQF_OST_CREATE")
     elif body.pb_opc == opcodes.OST_DESTROY :
