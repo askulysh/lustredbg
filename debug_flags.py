@@ -60,6 +60,7 @@ def print_flags(flag_tbl, mask):
 def dump_debug_flags(bitmask):
     print(bitmask)
     if not bitmask:
+        print('libcfs_debug_mb:', readSymbol('libcfs_debug_mb'))
         bitmask = readSymbol('libcfs_debug')
     print_flags(debug_flags_tbl, bitmask)
 
