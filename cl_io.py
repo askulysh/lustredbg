@@ -101,11 +101,19 @@ def print_osc_page(osc_page, prefix) :
         index = osc_page.ops_cl.cpl_page.cp_osc_index
         #index = osc_page.ops_cl.cpl_index
     oap = osc_page.ops_oap
+    bp = oap.oap_brw_page
+
+    if member_offset("struct brw_page", "bp_flag") != -1 :
+        bp_flag = bp.bp_flag
+        bp_page = bp.bp_page
+    else :
+        bp_flag = bp.flag
+        bp_page = bp.pg
     print(prefix, # osc_page,
           "idx:", index,
           "cmd:", dbits2str(oap.oap_cmd, obd_brw_flags),
-          "flg:", dbits2str(oap.oap_brw_page.bp_flag, obd_brw_flags),
-          "off:", oap.oap_obj_off, oap.oap_brw_page.bp_page)
+          "flg:", dbits2str(bp_flag, obd_brw_flags),
+          "off:", oap.oap_obj_off, bp_page)
     try:
         if oap.oap_request != 0 :
            show_ptlrpc_request(oap.oap_request)
@@ -143,16 +151,20 @@ def print_cl_page(cl, prefix):
         page_type ="unknown"
         page_state ="unknown"
     print(prefix, cl, "state: ", page_state, "type:",  page_type, cl.cp_vmpage)
-    try:
+    if member_offset("struct cl_page", "cp_layer_count") != -1 :
+        # newer "struct cl_page" stores slices inline, indexed by offset
         for i in range(cl.cp_layer_count) :
             # struct_size("struct cl_page")
             a = Addr(cl) + struct_size("struct cl_page") + cl.cp_layer_offset[i]
             layer = readSU("struct cl_page_slice", a)
             print_page_slice(layer, prefix)
-    except:
+    elif member_offset("struct cl_page", "cp_layers") != -1 :
+        # older "struct cl_page" keeps slices on a linked list
         for layer in readSUListFromHead(cl.cp_layers, "cpl_linkage",
                 "struct cl_page_slice") :
             print_page_slice(layer, prefix)
+    else :
+        print(prefix, "<cl_page has neither cp_layer_count nor cp_layers>")
 
 
 def search_for_reg(r, pid, func) :
