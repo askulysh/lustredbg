@@ -1285,6 +1285,16 @@ def show_pid(pid, pattern) :
                     except:
                         pass
                 print(start_lock)
+            elif sys_info.kernel == "5.14.0" :
+                addr = search_stack_for_reg("RDI", stack, "bit_wait_io")
+                start_lock = 0
+                if addr != 0 :
+                    print("%x %x" % (addr, addr - 0x38))
+                    try :
+                        start_lock = readU64(addr - 0x38)
+                    except:
+                        pass
+                print(start_lock)
             print("journal do_get_write_access", bh, page, "idx:", page.index,
                     "started", j_delay(start_lock, jiffies), "ago")
 
