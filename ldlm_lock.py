@@ -87,6 +87,16 @@ enum ldlm_type {
 '''
 ldlm_types = CEnum(ldlm_type_c)
 
+# an unmasked int
+def ldlm_type_val(lr_type) :
+    try :
+        return int(lr_type) & 0xf
+    except (ValueError, TypeError) :
+        return ldlm_types.getByName(str(lr_type))
+
+def ldlm_type_name(lr_type) :
+    return ldlm_types[ldlm_type_val(lr_type)]
+
 ldlm_mode_c = '''
 enum ldlm_mode {
 	LCK_MINMODE	= 0,
@@ -180,11 +190,11 @@ def policy_data2str(lr_type, data) :
 
 def print_ldlm_request(prefix, req) :
     res = req.lock_desc.l_resource
-    if res.lr_type != 0 :
+    if ldlm_type_val(res.lr_type) != 0 :
         print("%s %s %s %s %s %s" %
-                (prefix, ldlm_types.__getitem__(res.lr_type), res2str(res),
+                (prefix, ldlm_type_name(res.lr_type), res2str(res),
                 ldlm_mode2str(req.lock_desc.l_req_mode),
-                policy_data2str(res.lr_type, req.lock_desc.l_policy_data),
+                policy_data2str(ldlm_type_val(res.lr_type), req.lock_desc.l_policy_data),
                 dbits2str(req.lock_flags, LDLM_flags)))
     n = req.lock_count
     if n == 0 :
@@ -196,11 +206,11 @@ def print_ldlm_request(prefix, req) :
 
 def print_ldlm_reply(prefix, rep) :
     res = rep.lock_desc.l_resource
-    if res.lr_type != 0 :
+    if ldlm_type_val(res.lr_type) != 0 :
         print("%s %s %s %s %s 0x%x %s %x %d" %
-                (prefix, ldlm_types.__getitem__(res.lr_type), res2str(res),
+                (prefix, ldlm_type_name(res.lr_type), res2str(res),
                 ldlm_mode2str(rep.lock_desc.l_granted_mode),
-                policy_data2str(res.lr_type, rep.lock_desc.l_policy_data),
+                policy_data2str(ldlm_type_val(res.lr_type), rep.lock_desc.l_policy_data),
                 rep.lock_handle.cookie, dbits2str(rep.lock_flags, LDLM_flags),
                 rep.lock_policy_res1, rep.lock_policy_res2))
         lock = find_lock_by_cookie(rep.lock_handle.cookie)
@@ -283,13 +293,13 @@ def print_ldlm_lock(ldlm_lock, prefix) :
         print("%s req_mode: %s enqueued %us ago" % (prefix,
               ldlm_mode2str(ldlm_lock.l_req_mode),
               get_seconds() - get_last_activity_seconds(ldlm_lock)))
-    if ldlm_lock.l_resource.lr_type == ldlm_types.LDLM_EXTENT :
+    if ldlm_type_val(ldlm_lock.l_resource.lr_type) == ldlm_types.LDLM_EXTENT :
         print("%s [%d-%d] requested [%d-%d]" % (prefix,
             ldlm_lock.l_policy_data.l_extent.start,
             ldlm_lock.l_policy_data.l_extent.end,
             ldlm_lock.l_req_extent.start, ldlm_lock.l_req_extent.end))
     else :
-        print("%s %s" % (prefix, policy_data2str(ldlm_lock.l_resource.lr_type,
+        print("%s %s" % (prefix, policy_data2str(ldlm_type_val(ldlm_lock.l_resource.lr_type),
             ldlm_lock.l_policy_data)))
 
 def find_lock_by_cookie(cookie) :
@@ -336,14 +346,14 @@ def show_resource_hdr(res) :
         recent = "recent lock " + ldlm_mode2str(res.lr_most_restr)
     except:
         recent = ""
-    if res.lr_ns_bucket.nsb_namespace.ns_client == 0x2 and res.lr_type == ldlm_types.LDLM_IBITS :
+    if res.lr_ns_bucket.nsb_namespace.ns_client == 0x2 and ldlm_type_val(res.lr_type) == ldlm_types.LDLM_IBITS :
         inode = "%s" % res.lr_lvb_inode
         if res.lr_lvb_inode and S_ISDIR(res.lr_lvb_inode.i_mode) :
             inode += " DIR"
     else :
         inode = ""
     print("res %x %s %s refc %d %s %s" %
-            (res, ldlm_types.__getitem__(res.lr_type), res2str(res),
+            (res, ldlm_type_name(res.lr_type), res2str(res),
             res_refcnt(res), recent, inode))
     if res.lr_waiting.next != res.lr_waiting.prev and res.lr_granted.next == res.lr_granted.prev :
         print("Error: Empty granted list while locks are waiting !!!")
@@ -396,7 +406,7 @@ def show_ns_locks(ns, res_type) :
     print("ns %x %s total granted %d" % (ns, ns.ns_obd.obd_name,
         ns.ns_pool.pl_granted.counter))
     for res in get_ns_resources(ns) :
-        if not res_type or res_type == res.lr_type :
+        if not res_type or res_type == ldlm_type_val(res.lr_type) :
             show_resource(res, False)
 
 def ns_list(l, regexp) :
@@ -421,20 +431,20 @@ def cli_granted_locks() :
 
 def lock_compatible(lock1, lock2) :
     if lck_compat_array[lock_mode(lock1.l_req_mode)] & lock_mode(lock2.l_req_mode) == 0 :
-        if lock1.l_resource.lr_type == ldlm_types.LDLM_IBITS :
+        if ldlm_type_val(lock1.l_resource.lr_type) == ldlm_types.LDLM_IBITS :
             bits = lock1.l_policy_data.l_inodebits.bits
             if bits & lock2.l_policy_data.l_inodebits.bits != 0 :
                 return False
             else :
                 return True
-        elif lock1.l_resource.lr_type == ldlm_types.LDLM_EXTENT :
+        elif ldlm_type_val(lock1.l_resource.lr_type) == ldlm_types.LDLM_EXTENT :
             pol1 = lock1.l_policy_data.l_extent
             pol2 = lock2.l_policy_data.l_extent
             if pol1.end < pol2.start or pol1.start > pol2.end :
                 return True
             else :
                 return False
-        elif lock1.l_resource.lr_type == ldlm_types.LDLM_FLOCK :
+        elif ldlm_type_val(lock1.l_resource.lr_type) == ldlm_types.LDLM_FLOCK :
             pol1 = lock1.l_policy_data.l_flock
             pol2 = lock2.l_policy_data.l_flock
             if pol1.owner == pol2.owner:
