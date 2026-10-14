@@ -219,12 +219,23 @@ def fld_lookup(fld, seq) :
         print("0x%x-0x%x %d" % (flde.fce_range.lsr_start,
                 flde.fce_range.lsr_end, flde.fce_range.lsr_flags))
 
+OBDF_ATTACHED = 0
+OBDF_SET_UP = 1
+OBDF_RECOVERING = 2
+
+def obd_bit(dev, name, bit) :
+    if member_offset("struct obd_device", name) != -1 :
+        return getattr(dev, name)
+    return (dev.obd_flags[bit // 64] >> (bit % 64)) & 1
+
 def show_obd(dev) :
     print("0x%x %036s 0x%016x %01d   %01d   %01d   %01d   %01d   "
           "%01d   %01d   %01d  %01d  %03d/%03d %03d/%03d %d %d %d" %
           (dev, dev.obd_name, dev.obd_lu_dev, dev.obd_inactive,
-           dev.obd_starting, dev.obd_attached, dev.obd_set_up,
-           dev.obd_stopping, dev.obd_force, dev.obd_fail, dev.obd_recovering,
+           dev.obd_starting, obd_bit(dev, 'obd_attached', OBDF_ATTACHED),
+           obd_bit(dev, 'obd_set_up', OBDF_SET_UP),
+           dev.obd_stopping, dev.obd_force, dev.obd_fail,
+           obd_bit(dev, 'obd_recovering', OBDF_RECOVERING),
            dev.obd_no_recov,
            dev.u.cli.cl_r_in_flight, dev.u.cli.cl_max_rpcs_in_flight,
            dev.u.cli.cl_w_in_flight, dev.u.cli.cl_max_rpcs_in_flight,
