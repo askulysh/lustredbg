@@ -143,6 +143,18 @@ def print_page_slice(layer, prefix) :
     else :
         print("unknown layer", layer, layer.cpl_ops)
 
+def page_flags_str(page) :
+    # decode via crash "kmem": flag names differ between kernel versions
+    try :
+        lines = exec_crash_command("kmem 0x%x" % long(page)).splitlines()
+        o = lines[1].split()
+        return " ".join(o[5:])
+    except :
+        try :
+            return "%x" % long(readSU("struct page", long(page)).flags)
+        except :
+            return "unknown"
+
 def print_cl_page(cl, prefix):
     try :
         page_state = cl_page_state.__getitem__(cl.cp_state)
@@ -150,7 +162,8 @@ def print_cl_page(cl, prefix):
     except :
         page_type ="unknown"
         page_state ="unknown"
-    print(prefix, cl, "state: ", page_state, "type:",  page_type, cl.cp_vmpage)
+    print(prefix, cl, "state: ", page_state, "type:",  page_type, cl.cp_vmpage,
+          "pgflags:", page_flags_str(cl.cp_vmpage) if cl.cp_vmpage else "")
     if member_offset("struct cl_page", "cp_layer_count") != -1 :
         # newer "struct cl_page" stores slices inline, indexed by offset
         for i in range(cl.cp_layer_count) :
@@ -487,6 +500,7 @@ if ( __name__ == '__main__'):
         print_osc_page(osc_page, "")
     elif args.page != 0 :
         page = readSU("struct page", int(args.page, 16))
+        print(page, "flags:", page_flags_str(page))
         cl_page = readSU("struct cl_page", page.private)
         print_cl_page(cl_page, "")
     elif args.cl_page != 0 :
