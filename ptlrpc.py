@@ -729,10 +729,12 @@ def show_ptlrpc_request_buf(req) :
         show_request_fmt(req, "RQF_MDS_BATCH")
         buh = readSU("struct but_update_header ", get_req_buffer(req, 1))
         print(buh)
+        sub_opcs = []
         if buh.buh_inline_data :
             burq = readSU("struct batch_update_request", buh.buh_inline_data)
             reqmsg = burq.burq_reqmsg
             for i in range(burq.burq_count) :
+                sub_opcs.append(reqmsg.lm_opc)
                 print("\nrequest:", reqmsg, reqmsg.lm_opc)
                 if reqmsg.lm_opc == 1:
                     show_msg_loc(reqmsg, readSymbol("RQF_BUT_GETATTR"), 0)
@@ -742,14 +744,15 @@ def show_ptlrpc_request_buf(req) :
                 reqmsg = readSU("struct lustre_msg_v2",
                                   int(reqmsg)+msg_buffer_size(reqmsg))
 
-        buh = readSU("struct but_update_header ", get_req_buffer(req, 1))
-        print(buh)
-        if buh.buh_inline_data :
-            burp = readSU("struct batch_update_reply", buh.buh_inline_data)
+        if get_rep_msg(req) :
+            burp = readSU("struct batch_update_reply", get_rep_buffer(req, 1))
+            print(burp)
             repmsg = burp.burp_repmsg
             for i in range(burp.burp_count) :
-                print("\nreply:", repmsg, repmsg.lm_opc)
-                if repmsg.lm_opc == 1:
+                # In a reply lm_opc is aliased as lm_result (sub-request rc)
+                print("\nreply:", repmsg, "result", repmsg.lm_opc)
+                if i < len(sub_opcs) and sub_opcs[i] == 1 and \
+                   repmsg.lm_bufcount > 0:
                     show_msg_loc(repmsg, readSymbol("RQF_BUT_GETATTR"), 1)
                 else :
                     for j in range(repmsg.lm_bufcount) :
